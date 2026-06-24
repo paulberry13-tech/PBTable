@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PBTable — Your Club's Own Pickleball Rating & Leaderboard</title>
+<meta name="description" content="Give every member a live RDR rating and a leaderboard your whole club is invested in. No player app, no DUPR needed. Set up in 20 minutes." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+<script src="https://js.stripe.com/v3/"></script>
+
+<style>
+:root{
+  --navy:#1B2B4B;
+  --navy-deep:#0f1e38;
+  --navy-mid:#243660;
+  --coral:#D94F2B;
+  --coral-light:#ff6844;
+  --amber:#E8A020;
+  --cream:#FAF7F2;
+  --mid:#F0F2F5;
+  --border:#E2E8F0;
+  --green:#16a34a;
+  --red:#dc2626;
+  --ink:#1B2B4B;
+  --muted:#5a6b86;
+  --radius:18px;
+  --shadow-lg:0 30px 70px -25px rgba(15,30,56,.55);
+  --shadow-md:0 18px 45px -20px rgba(15,30,56,.4);
+  --maxw:1180px;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Barlow',system-ui,sans-serif;
+  font-weight:400;
+  color:var(--ink);
+  background:var(--navy-deep);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  line-height:1.55;
+}
+h1,h2,h3,.display{font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:800;line-height:1.02;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+section{position:relative}
+
+/* ---------- helpers ---------- */
+.eyebrow{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  text-transform:uppercase;letter-spacing:.22em;font-size:13px;
+  color:var(--coral);display:inline-flex;align-items:center;gap:9px;
+}
+.eyebrow.on-dark{color:var(--coral-light)}
+.eyebrow::before{content:"";width:26px;height:2px;background:currentColor;border-radius:2px;opacity:.7}
+.coral{color:var(--coral)}
+.amber{color:var(--amber)}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  font-family:'Barlow',sans-serif;font-weight:600;font-size:16px;
+  padding:15px 28px;border-radius:13px;cursor:pointer;border:none;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background .25s,color .2s;
+  white-space:nowrap;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--coral-light),var(--coral));
+  color:#fff;box-shadow:0 14px 30px -10px rgba(217,79,43,.7),inset 0 1px 0 rgba(255,255,255,.25);
+}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 22px 42px -12px rgba(217,79,43,.85),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn-ghost{
+  background:rgba(255,255,255,.05);color:#fff;
+  border:1.5px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);
+}
+.btn-ghost:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.1)}
+.btn-dark{background:var(--navy);color:#fff;box-shadow:var(--shadow-md)}
+.btn-dark:hover{transform:translateY(-3px);background:var(--navy-mid)}
+.btn-block{width:100%}
+
+/* ---------- NAV ---------- */
+header.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(15,30,56,.72);backdrop-filter:blur(16px) saturate(140%);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  transition:background .3s,border-color .3s,box-shadow .3s;
+}
+header.nav.scrolled{
+  background:rgba(15,30,56,.92);
+  border-bottom:1px solid rgba(217,79,43,.4);
+  box-shadow:0 10px 40px -20px rgba(0,0,0,.7);
+}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px}
+.brand{display:flex;align-items:center;gap:6px}
+.brand img{height:46px;width:auto}
+.brand .wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:25px;color:#fff;letter-spacing:.01em}
+.brand .wordmark b{color:var(--coral);font-weight:800}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a.link{color:#cdd6e6;font-weight:500;font-size:15.5px;position:relative;transition:color .2s}
+.nav-links a.link::after{content:"";position:absolute;left:0;right:100%;bottom:-6px;height:2px;background:var(--coral);transition:right .3s;border-radius:2px}
+.nav-links a.link:hover{color:#fff}
+.nav-links a.link:hover::after{right:0}
+.hamburger{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:8px}
+.hamburger span{width:24px;height:2.5px;background:#fff;border-radius:2px;transition:.3s}
+
+/* ---------- HERO ---------- */
+.hero{
+  background:radial-gradient(1200px 700px at 75% -10%,#26365f 0%,var(--navy) 38%,var(--navy-deep) 80%);
+  padding:148px 0 90px;overflow:hidden;
+}
+.hero-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.grid-mesh{
+  position:absolute;inset:-50% -10% -10% -10%;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:54px 54px;
+  mask-image:radial-gradient(900px 600px at 70% 20%,#000 0%,transparent 75%);
+  -webkit-mask-image:radial-gradient(900px 600px at 70% 20%,#000 0%,transparent 75%);
+  animation:gridShift 20s linear infinite;
+}
+.orb{position:absolute;border-radius:50%;filter:blur(75px);opacity:.5;animation:orbFloat 8s ease-in-out infinite}
+.orb.o1{width:420px;height:420px;background:var(--coral);top:-120px;right:-60px}
+.orb.o2{width:380px;height:380px;background:var(--amber);bottom:-140px;left:-90px;animation-delay:-3s;opacity:.35}
+.orb.o3{width:340px;height:340px;background:#3b6fd4;top:30%;right:18%;animation-delay:-5s;opacity:.3}
+.scanline{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 3px);mix-blend-mode:overlay;opacity:.5}
+
+.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:9px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);
+  padding:8px 15px;border-radius:100px;font-size:13.5px;font-weight:500;color:#dbe3f0;
+  backdrop-filter:blur(6px);margin-bottom:24px;
+}
+.hero-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(22,163,74,.6);animation:pulse 2s infinite}
+.hero h1{font-size:clamp(44px,5.6vw,76px);color:#fff;margin-bottom:22px}
+.hero h1 .fight{position:relative;color:var(--coral);white-space:nowrap}
+.hero h1 .fight::after{content:"";position:absolute;left:0;bottom:.06em;height:.09em;width:100%;background:linear-gradient(90deg,var(--coral),var(--amber));border-radius:4px;transform:scaleX(0);transform-origin:left;animation:lineGrow .8s cubic-bezier(.2,.8,.2,1) .8s forwards}
+.hero .strap{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(19px,2.1vw,25px);color:var(--amber);letter-spacing:.005em;margin-bottom:20px}
+.hero .body{font-size:18px;color:#b7c2d6;max-width:520px;font-weight:300;margin-bottom:34px}
+.hero .body b{color:#e6ecf6;font-weight:600}
+.hero-ctas{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:30px}
+.trust-row{display:flex;align-items:center;gap:18px;color:#8da0bd;font-size:13.5px;flex-wrap:wrap}
+.trust-row .stars{color:var(--amber);letter-spacing:2px;font-size:15px}
+.trust-row .sep{width:1px;height:16px;background:rgba(255,255,255,.15)}
+
+.fade-up{opacity:0;animation:fadeSlideUp .7s cubic-bezier(.2,.8,.2,1) forwards}
+.d1{animation-delay:.05s}.d2{animation-delay:.18s}.d3{animation-delay:.3s}.d4{animation-delay:.42s}.d5{animation-delay:.55s}
+
+/* hero visual */
+.hero-visual{position:relative;animation:fadeSlideLeft .8s cubic-bezier(.2,.8,.2,1) .2s both}
+.board{
+  position:relative;z-index:3;background:rgba(20,34,62,.72);
+  border:1px solid rgba(255,255,255,.12);border-radius:22px;
+  backdrop-filter:blur(20px) saturate(140%);
+  box-shadow:var(--shadow-lg),inset 0 1px 0 rgba(255,255,255,.1);
+  padding:22px 22px 12px;
+}
+.board-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.board-head .title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;color:#fff;letter-spacing:.02em}
+.board-head .sub{font-size:11.5px;color:#8da0bd;font-weight:400}
+.live-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(217,79,43,.16);border:1px solid rgba(217,79,43,.4);color:#ff8a64;font-size:11px;font-weight:700;letter-spacing:.1em;padding:5px 10px;border-radius:100px;font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.live-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--coral-light);animation:pulse 1.6s infinite}
+.row{display:flex;align-items:center;gap:13px;padding:11px 8px;border-radius:11px;transition:background .2s}
+.row:hover{background:rgba(255,255,255,.04)}
+.row + .row{border-top:1px solid rgba(255,255,255,.05)}
+.pos{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;flex-shrink:0;color:#fff}
+.pos.g1{background:linear-gradient(135deg,#f3c34e,#d99a1e);color:#3a2a00;border-radius:50%}
+.pos.g2{background:linear-gradient(135deg,#dfe6ef,#aab6c8);color:#2a3548;border-radius:50%}
+.pos.g3{background:linear-gradient(135deg,#e3a36b,#c47634);color:#3a2200;border-radius:50%}
+.pos.np{background:rgba(255,255,255,.07);color:#aebbd0;border:1px solid rgba(255,255,255,.1)}
+.row .who{flex:1;min-width:0}
+.row .nm{font-weight:600;font-size:14.5px;color:#eef2f8;display:flex;align-items:center;gap:7px}
+.hot{font-size:9px;font-weight:800;letter-spacing:.06em;color:#fff;background:linear-gradient(135deg,var(--coral-light),var(--coral));padding:2px 6px;border-radius:5px;font-family:'Barlow Condensed',sans-serif}
+.row .meta{font-size:11px;color:#8094b3}
+.rdr{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:18px;color:#fff;letter-spacing:.01em}
+.chg{font-size:12px;font-weight:700;display:flex;align-items:center;gap:3px;width:42px;justify-content:flex-end}
+.chg.up{color:#4ade80}.chg.dn{color:#f87171}.chg.fl{color:#8da0bd}
+
+.fcard{
+  position:absolute;z-index:4;background:rgba(255,255,255,.96);border-radius:14px;
+  padding:12px 15px;box-shadow:0 20px 40px -18px rgba(0,0,0,.55);
+  border:1px solid rgba(255,255,255,.6);animation:floatCard 6s ease-in-out infinite;
+}
+.fcard .lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Barlow Condensed',sans-serif}
+.fcard .val{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:21px;color:var(--navy);line-height:1.1;display:flex;align-items:center;gap:6px}
+.fcard.f1{top:-26px;left:-34px}
+.fcard.f2{bottom:48px;left:-44px;animation-delay:-2s}
+.fcard.f3{bottom:-22px;right:-26px;animation-delay:-4s}
+.fcard .up{color:var(--green);font-size:14px}
+
+/* ---------- COUNTERS ---------- */
+.counters{background:var(--cream);padding:40px 0}
+.counters-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.counter{text-align:center;position:relative}
+.counter + .counter::before{content:"";position:absolute;left:-12px;top:14%;height:72%;width:1px;background:var(--border)}
+.counter .num{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:clamp(40px,5vw,58px);color:var(--navy);line-height:1;display:flex;align-items:baseline;justify-content:center;gap:2px}
+.counter .num .suf{color:var(--coral);font-size:.6em}
+.counter .cap{font-size:14px;color:var(--muted);font-weight:500;margin-top:6px;letter-spacing:.01em}
+
+/* ---------- FEATURES ---------- */
+.features{background:var(--navy-deep);padding:96px 0;overflow:hidden}
+.features::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 400px at 15% 0%,rgba(217,79,43,.08),transparent 70%);pointer-events:none}
+.sec-head{max-width:640px;margin-bottom:48px;position:relative;z-index:2}
+.sec-head.center{margin-left:auto;margin-right:auto;text-align:center}
+.sec-head h2{font-size:clamp(34px,4.4vw,52px);margin:16px 0 14px}
+.sec-head.on-dark h2{color:#fff}
+.sec-head .lede{font-size:18px;font-weight:300}
+.sec-head.on-dark .lede{color:#aab6cc}
+.sec-head.on-light .lede{color:var(--muted)}
+
+.bento{display:grid;grid-template-columns:1.25fr 1fr 1fr;grid-auto-rows:minmax(168px,auto);gap:18px;position:relative;z-index:2}
+.cell{
+  position:relative;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.09);border-radius:var(--radius);padding:26px;
+  overflow:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s;
+}
+.cell::before{content:"";position:absolute;top:-40%;left:-20%;width:80%;height:120%;background:radial-gradient(circle,rgba(217,79,43,.22),transparent 60%);opacity:0;transition:opacity .4s;pointer-events:none}
+.cell:hover{transform:translateY(-3px);border-color:rgba(217,79,43,.5)}
+.cell:hover::before{opacity:1}
+.cell.tall{grid-row:span 2}
+.cell.wide{grid-column:span 2}
+.ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(217,79,43,.14);border:1px solid rgba(217,79,43,.28);margin-bottom:16px}
+.ic svg{width:24px;height:24px}
+.cell h3{font-size:23px;color:#fff;margin-bottom:8px}
+.cell p{font-size:15px;color:#9fadc6;font-weight:300}
+.cell .chart-wrap{margin-top:20px;border-top:1px solid rgba(255,255,255,.08);padding-top:18px}
+.draw-line{stroke-dasharray:1;stroke-dashoffset:1;animation:drawLine 1.8s ease-out forwards;animation-delay:.3s}
+.dot-end{opacity:0;animation:fadeIn .4s ease forwards 2s}
+
+/* ---------- HOW IT WORKS ---------- */
+.how{background:linear-gradient(180deg,var(--navy),var(--navy-deep));padding:96px 0;overflow:hidden}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;position:relative;z-index:2}
+.connector{position:absolute;top:48px;left:16%;right:16%;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--coral),var(--amber),var(--coral));background-size:200% 100%;animation:lineAnim 4s linear infinite;z-index:1;opacity:.55}
+.step{text-align:center;position:relative;z-index:2}
+.step .nstep{width:78px;height:78px;margin:0 auto 22px;border-radius:50%;background:linear-gradient(160deg,var(--navy-mid),var(--navy-deep));border:2px solid rgba(217,79,43,.55);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:30px;color:#fff;box-shadow:0 14px 30px -12px rgba(217,79,43,.5),inset 0 1px 0 rgba(255,255,255,.12)}
+.step h3{font-size:24px;color:#fff;margin-bottom:10px}
+.step p{font-size:15.5px;color:#9fadc6;font-weight:300;max-width:300px;margin:0 auto}
+
+/* ---------- DEMO ---------- */
+.demo{background:var(--cream);padding:96px 0}
+.browser{max-width:920px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:var(--shadow-lg);border:1px solid var(--border);overflow:hidden}
+.browser-bar{display:flex;align-items:center;gap:8px;padding:13px 16px;background:#f3f5f8;border-bottom:1px solid var(--border)}
+.browser-bar .dots{display:flex;gap:6px}
+.browser-bar .dots i{width:11px;height:11px;border-radius:50%;display:block}
+.browser-bar .dots i:nth-child(1){background:#ff5f57}.browser-bar .dots i:nth-child(2){background:#febc2e}.browser-bar .dots i:nth-child(3){background:#28c840}
+.browser-bar .url{flex:1;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 13px;font-size:12.5px;color:var(--muted);font-weight:500;text-align:center;max-width:340px;margin:0 auto}
+.tbl{width:100%;border-collapse:collapse}
+.tbl thead th{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--muted);text-align:left;padding:15px 18px;border-bottom:2px solid var(--border);font-weight:700}
+.tbl thead th.r,.tbl tbody td.r{text-align:right}
+.tbl tbody td{padding:14px 18px;border-bottom:1px solid var(--border);font-size:15px}
+.tbl tbody tr{transition:background .2s}
+.tbl tbody tr:hover{background:var(--cream)}
+.tbl tbody tr.top{background:linear-gradient(90deg,rgba(232,160,32,.07),transparent)}
+.tposchip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;background:var(--mid);color:var(--navy)}
+.tposchip.m1{background:linear-gradient(135deg,#f3c34e,#d99a1e);color:#3a2a00;border-radius:50%}
+.tposchip.m2{background:linear-gradient(135deg,#dfe6ef,#aab6c8);color:#2a3548;border-radius:50%}
+.tposchip.m3{background:linear-gradient(135deg,#e3a36b,#c47634);color:#3a2200;border-radius:50%}
+.tname{font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px}
+.tbl .hot{color:#fff;font-size:10px}
+.trdr{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;color:var(--navy)}
+.tchg{font-weight:700;font-size:13.5px}
+.tchg.up{color:var(--green)}.tchg.dn{color:var(--red)}.tchg.fl{color:var(--muted)}
+.demo-cap{text-align:center;color:var(--muted);font-size:14px;margin-top:22px;font-style:italic}
+.demo-cap a{color:var(--coral);font-weight:600;font-style:normal}
+.demo-cta{text-align:center;margin-top:30px}
+.live-demo-link{display:inline-flex;align-items:center;gap:6px;margin-top:16px;font-family:'Barlow',sans-serif;font-weight:600;font-size:14px;color:var(--coral-light);transition:gap .2s,color .2s}
+.live-demo-link:hover{gap:11px;color:#fff}
+.hero-micro{font-size:12.5px;color:#8094b3;max-width:540px;margin-top:18px;font-weight:300;line-height:1.55}
+.versus{background:linear-gradient(160deg,var(--navy),var(--navy-deep));padding:92px 0;overflow:hidden}
+.versus .lede i{font-style:italic;color:#e6ecf6}
+.versus-table{max-width:860px;margin:6px auto 0;overflow-x:auto}
+.versus-table table{width:100%;border-collapse:separate;border-spacing:0}
+.versus-table th,.versus-table td{padding:15px 18px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08)}
+.versus-table thead th{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:19px;letter-spacing:.02em;color:#fff;border-bottom:1px solid rgba(255,255,255,.18)}
+.versus-table thead th span{font-weight:600;font-size:13px;color:#9fadc6}
+.versus-table .rowlbl{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:#aab6cc;text-transform:uppercase;letter-spacing:.05em;font-size:13px;white-space:nowrap}
+.versus-table td{color:#c2cde0;font-weight:300;font-size:15px}
+.versus-table .rdr-col{background:rgba(217,79,43,.09)}
+.versus-table thead th.rdr-col{color:var(--coral-light)}
+.versus-table td.rdr-col{color:#fff;font-weight:400}
+.versus-table .rdr-col i{color:#fff;font-style:italic}
+.versus-table tbody tr:last-child td{border-bottom:none}
+.versus-close{max-width:760px;margin:34px auto 0;text-align:center;color:#c2cde0;font-size:17px;font-weight:300;line-height:1.6}
+.versus-close b{color:#fff;font-weight:600}
+.versus-close i{font-style:italic}
+.versus-smallprint{text-align:center;color:#7d8eab;font-size:12.5px;margin-top:16px;font-weight:300}
+@media(max-width:560px){.versus-table th,.versus-table td{padding:11px 10px;font-size:13.5px}.versus-table .rowlbl{font-size:11.5px}}
+
+/* ---------- PRICING ---------- */
+.pricing{background:#fff;padding:96px 0}
+.plans{display:grid;grid-template-columns:repeat(2,1fr);gap:26px;max-width:840px;margin:0 auto}
+.plan{position:relative;border:1.5px solid var(--border);border-radius:22px;padding:36px 32px;background:var(--cream);overflow:hidden;transition:transform .3s,box-shadow .3s}
+.plan:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+.plan.feat{background:linear-gradient(165deg,var(--navy),var(--navy-deep));border-color:transparent;color:#fff}
+.plan.feat::after{content:"";position:absolute;top:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(217,79,43,.3),transparent 65%)}
+.ribbon{position:absolute;top:18px;right:-34px;transform:rotate(45deg);background:var(--coral);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:12px;letter-spacing:.12em;padding:6px 44px;box-shadow:0 6px 16px -6px rgba(217,79,43,.7)}
+.plan .pname{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--coral)}
+.plan.feat .pname{color:var(--coral-light)}
+.plan .desc{font-size:14.5px;color:var(--muted);margin:8px 0 20px;min-height:42px}
+.plan.feat .desc{color:#aeb9cf}
+.price{display:flex;align-items:baseline;gap:4px;margin-bottom:6px}
+.price .amt{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:58px;color:var(--navy);line-height:1}
+.plan.feat .price .amt{color:#fff}
+.price .per{font-size:16px;color:var(--muted);font-weight:500}
+.plan.feat .price .per{color:#9fb}
+.plan.feat .price .per{color:#aeb9cf}
+.annual-note{font-size:13.5px;color:var(--amber);font-weight:600;margin-bottom:22px;min-height:20px}
+.plan ul{list-style:none;margin-bottom:26px;position:relative;z-index:2}
+.plan li{display:flex;align-items:flex-start;gap:10px;font-size:15px;padding:7px 0;color:#33405a}
+.plan.feat li{color:#dbe3f0}
+.plan li svg{width:18px;height:18px;flex-shrink:0;margin-top:2px;color:var(--coral)}
+.plan.feat li svg{color:var(--coral-light)}
+.pricing-contact{text-align:center;color:var(--muted);font-size:15.5px;margin-top:32px}
+.pricing-contact a{color:var(--coral);font-weight:600}
+
+/* ---------- TESTIMONIAL ---------- */
+.testi{background:linear-gradient(160deg,var(--navy),var(--navy-deep));padding:90px 0;text-align:center;overflow:hidden}
+.testi::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 360px at 50% 0%,rgba(232,160,32,.1),transparent 70%);pointer-events:none}
+.quote-mark{font-family:'Barlow Condensed',sans-serif;font-size:120px;line-height:.5;color:rgba(217,79,43,.4);height:60px}
+.testi blockquote{position:relative;z-index:2;max-width:780px;margin:0 auto;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(24px,3.4vw,38px);color:#fff;line-height:1.18}
+.testi .stars{color:var(--amber);letter-spacing:3px;font-size:20px;margin:24px 0 16px}
+.testi .by{color:#aeb9cf;font-size:15.5px}
+.testi .by b{color:#fff;font-weight:600}
+
+/* ---------- ORDER ---------- */
+.order{background:var(--mid);padding:96px 0}
+.order-grid{display:grid;grid-template-columns:.95fr 1.05fr;gap:32px;max-width:1000px;margin:0 auto;align-items:start}
+.panel{background:#fff;border:1px solid var(--border);border-radius:20px;padding:30px;box-shadow:var(--shadow-md)}
+.panel h3{font-size:22px;color:var(--navy);margin-bottom:4px}
+.panel .ph-sub{font-size:14px;color:var(--muted);margin-bottom:22px;font-weight:400}
+.plan-opt{display:flex;align-items:center;gap:14px;border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:12px}
+.plan-opt:hover{border-color:var(--coral)}
+.plan-opt.active{border-color:var(--coral);background:rgba(217,79,43,.05)}
+.plan-opt .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;position:relative;transition:border-color .2s}
+.plan-opt.active .radio{border-color:var(--coral)}
+.plan-opt.active .radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--coral)}
+.plan-opt .po-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;color:var(--navy);text-transform:uppercase;letter-spacing:.04em}
+.plan-opt .po-desc{font-size:13px;color:var(--muted)}
+.plan-opt .po-price{margin-left:auto;text-align:right}
+.plan-opt .po-price b{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:var(--navy)}
+.plan-opt .po-price span{font-size:12px;color:var(--muted);display:block}
+
+.billing-toggle{display:flex;align-items:center;gap:12px;margin:18px 0 22px;padding:14px 16px;background:var(--cream);border-radius:12px}
+.billing-toggle .bt-label{font-size:14px;font-weight:500;color:var(--navy)}
+.switch{position:relative;width:46px;height:26px;background:var(--border);border-radius:100px;cursor:pointer;transition:background .25s;flex-shrink:0}
+.switch.on{background:var(--coral)}
+.switch .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.2);transition:transform .25s}
+.switch.on .knob{transform:translateX(20px)}
+.save-badge{margin-left:auto;background:rgba(22,163,74,.12);color:var(--green);font-weight:700;font-size:12.5px;padding:4px 11px;border-radius:100px;opacity:0;transition:opacity .25s}
+.save-badge.show{opacity:1}
+
+.summary{background:var(--cream);border-radius:14px;padding:18px;margin-top:6px}
+.summary .srow{display:flex;justify-content:space-between;font-size:14.5px;padding:6px 0;color:#33405a}
+.summary .srow.total{border-top:1px solid var(--border);margin-top:8px;padding-top:13px;font-weight:700;font-size:17px;color:var(--navy)}
+.summary .srow.total b{font-family:'Barlow Condensed',sans-serif;font-size:22px}
+
+/* form */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;letter-spacing:.01em}
+.field input{width:100%;padding:13px 15px;border:1.5px solid var(--border);border-radius:11px;font-family:'Barlow',sans-serif;font-size:15px;color:var(--navy);transition:border-color .2s,box-shadow .2s;background:#fff}
+.field input:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 3px rgba(217,79,43,.12)}
+.field.err input{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.12)}
+.field.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.field.two .field{margin-bottom:0}
+#card-element{padding:13px 15px;border:1.5px solid var(--border);border-radius:11px;background:#fff;transition:border-color .2s,box-shadow .2s}
+#card-element.StripeElement--focus{border-color:var(--coral);box-shadow:0 0 0 3px rgba(217,79,43,.12)}
+#card-element.StripeElement--invalid{border-color:var(--red)}
+.card-err{color:var(--red);font-size:13px;margin-top:7px;min-height:18px;font-weight:500}
+.secure-note{display:flex;align-items:center;gap:8px;justify-content:center;color:var(--muted);font-size:12.5px;margin-top:14px}
+.secure-note svg{width:14px;height:14px}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.btn-primary.loading .spinner{display:inline-block}
+.btn-primary.loading .pay-label{display:none}
+.success-state{display:none;text-align:center;padding:30px 10px}
+.success-state.show{display:block;animation:fadeSlideUp .5s ease}
+.success-state .check{width:64px;height:64px;border-radius:50%;background:rgba(22,163,74,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.success-state .check svg{width:32px;height:32px;color:var(--green)}
+.success-state h3{font-size:25px;color:var(--navy);margin-bottom:10px}
+.success-state p{color:var(--muted);font-size:15.5px;max-width:360px;margin:0 auto}
+
+/* ---------- FAQ ---------- */
+.faq{background:var(--cream);padding:96px 0}
+.faq-list{max-width:780px;margin:0 auto}
+.faq-item{background:#fff;border:1px solid var(--border);border-radius:14px;margin-bottom:12px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.faq-item.open{border-color:rgba(217,79,43,.4);box-shadow:var(--shadow-md)}
+.faq-q{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px;background:none;border:none;cursor:pointer;text-align:left;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:19px;color:var(--navy)}
+.faq-q .ico{flex-shrink:0;width:26px;height:26px;border-radius:7px;background:var(--cream);display:flex;align-items:center;justify-content:center;transition:transform .3s,background .2s;color:var(--coral);font-size:20px;font-weight:600}
+.faq-item.open .faq-q .ico{transform:rotate(45deg);background:var(--coral);color:#fff}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.faq-a-inner{padding:0 24px 22px;color:var(--muted);font-size:15.5px;font-weight:300}
+.faq-a-inner a{color:var(--coral);font-weight:600}
+
+/* ---------- CTA banner ---------- */
+.cta-banner{background:linear-gradient(135deg,var(--coral),var(--coral-light));padding:74px 0;text-align:center;position:relative;overflow:hidden}
+.cta-banner::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:40px 40px;mask-image:radial-gradient(600px 300px at 50% 50%,#000,transparent 75%);-webkit-mask-image:radial-gradient(600px 300px at 50% 50%,#000,transparent 75%)}
+.cta-banner h2{position:relative;z-index:2;color:#fff;font-size:clamp(30px,4vw,46px);margin-bottom:14px}
+.cta-banner p{position:relative;z-index:2;color:rgba(255,255,255,.9);font-size:18px;margin-bottom:28px}
+.cta-banner .btn-light{background:#fff;color:var(--coral);position:relative;z-index:2;box-shadow:0 16px 36px -14px rgba(0,0,0,.4)}
+.cta-banner .btn-light:hover{transform:translateY(-3px);box-shadow:0 22px 44px -14px rgba(0,0,0,.5)}
+
+/* ---------- FOOTER ---------- */
+footer.site{background:var(--navy-deep);padding:60px 0 34px;border-top:1px solid rgba(255,255,255,.06)}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:42px}
+.foot-brand .brand{margin-bottom:16px}
+.foot-brand img{height:40px}
+.foot-brand p{color:#8da0bd;font-size:15px;font-weight:300;max-width:300px}
+.foot-brand .strap{color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;margin-top:12px}
+.foot-col h4{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:#fff;margin-bottom:16px}
+.foot-col a{display:block;color:#8da0bd;font-size:15px;padding:6px 0;transition:color .2s}
+.foot-col a:hover{color:var(--coral-light)}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.07);padding-top:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.foot-bottom .cpy{color:#6f82a3;font-size:13.5px}
+.foot-bottom .cpy a{color:#9fb0cc}
+.foot-bottom .nex{color:#6f82a3;font-size:13.5px}
+.foot-bottom .nex b{color:#aeb9cf;font-weight:600}
+
+/* ---------- animations ---------- */
+@keyframes gridShift{from{background-position:0 0}to{background-position:0 -54px}}
+@keyframes orbFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-30px) scale(1.06)}}
+@keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}70%{box-shadow:0 0 0 9px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+@keyframes lineGrow{to{transform:scaleX(1)}}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeSlideLeft{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes drawLine{to{stroke-dashoffset:0}}
+@keyframes fadeIn{to{opacity:1}}
+@keyframes lineAnim{from{background-position:0% 0}to{background-position:200% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- responsive ---------- */
+@media(max-width:1024px){
+  .hero-grid{grid-template-columns:1fr;gap:48px}
+  .hero .body{max-width:100%}
+  .fcard{display:none}
+  .bento{grid-template-columns:1fr 1fr}
+  .cell.tall{grid-row:span 1}
+  .cell.wide{grid-column:span 2}
+  .foot-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:768px){
+  .nav-links{position:fixed;top:74px;left:0;right:0;flex-direction:column;background:rgba(15,30,56,.98);backdrop-filter:blur(16px);padding:22px;gap:18px;transform:translateY(-130%);transition:transform .35s;border-bottom:1px solid rgba(217,79,43,.3)}
+  .nav-links.show{transform:translateY(0)}
+  .nav-links a.link{font-size:17px}
+  .hamburger{display:flex}
+  .counters-grid{grid-template-columns:1fr 1fr;gap:30px}
+  .counter:nth-child(3)::before,.counter:nth-child(2)::before,.counter:nth-child(4)::before{display:none}
+  .bento{grid-template-columns:1fr}
+  .cell.wide{grid-column:span 1}
+  .steps{grid-template-columns:1fr;gap:40px}
+  .connector{display:none}
+  .plans{grid-template-columns:1fr}
+  .order-grid{grid-template-columns:1fr}
+  .foot-grid{grid-template-columns:1fr;gap:30px}
+}
+@media(max-width:480px){
+  .wrap{padding:0 18px}
+  .hero{padding:120px 0 70px}
+  .hero-ctas{flex-direction:column}
+  .hero-ctas .btn{width:100%}
+  .field.two{grid-template-columns:1fr}
+  .browser-bar .url{display:none}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .hero h1 .fight::after{transform:scaleX(1)}
+  .fade-up{opacity:1}
+  .draw-line{stroke-dashoffset:0}
+  .dot-end{opacity:1}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">
+      <img src="pbtable-logo.png" alt="PBTable logo" />
+      <span class="wordmark">PB<b>Table</b></span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a class="link" href="#features" onclick="closeMenu()">Features</a>
+      <a class="link" href="#how" onclick="closeMenu()">How It Works</a>
+      <a class="link" href="#pricing" onclick="closeMenu()">Pricing</a>
+      <a class="link" href="https://demo.pbtable.com" target="_blank" rel="noopener" onclick="closeMenu()">Demo</a>
+      <a class="btn btn-primary" href="#order" onclick="closeMenu()" style="padding:11px 22px;font-size:15px">Order Now</a>
+    </nav>
+    <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="top">
+  <div class="hero-bg">
+    <div class="grid-mesh"></div>
+    <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+    <div class="scanline"></div>
+  </div>
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <div class="hero-badge fade-up d1"><span class="dot"></span> Live ratings for UK pickleball clubs</div>
+      <h1 class="fade-up d2">Give every player a rating <span class="fight">worth fighting for</span></h1>
+      <p class="strap fade-up d3">A live rating your players trust — earned on your courts, owned by your club.</p>
+      <p class="body fade-up d4">PBTable gives every member a live <b>RDR</b> rating, personal stats, and a leaderboard the whole club is invested in. <b>No player app. No accounts. No DUPR required.</b> Set up in under 20 minutes.</p>
+      <div class="hero-ctas fade-up d5">
+        <a class="btn btn-primary" href="#order">Order now</a>
+        <a class="btn btn-ghost" href="https://demo.pbtable.com" target="_blank" rel="noopener">See live demo →</a>
+      </div>
+      <div class="trust-row fade-up d5">
+        <span class="stars">★★★★★</span>
+        <span>Trusted by club secretaries</span>
+        <span class="sep"></span>
+        <span>No app for players to download</span>
+      </div>
+      <p class="hero-micro fade-up d5">RDR (Rally Doubles Rating) is your club's own rating, calculated from your sessions. It's independent of — and not the same as — a player's global DUPR rating.</p>
+    </div>
+
+    <div class="hero-visual">
+      <div class="fcard f1">
+        <div class="lbl">Club avg rating</div>
+        <div class="val">4.18</div>
+      </div>
+      <div class="fcard f2">
+        <div class="lbl">Top mover</div>
+        <div class="val">R. Nkemdirim <span class="up">▲5</span></div>
+      </div>
+      <div class="fcard f3">
+        <div class="lbl">Sessions</div>
+        <div class="val">52</div>
+      </div>
+
+      <div class="board">
+        <div class="board-head">
+          <div>
+            <div class="title">Club Leaderboard</div>
+            <div class="sub">Rally Doubles Rating · this week</div>
+          </div>
+          <span class="live-badge"><span class="dot"></span> Live</span>
+        </div>
+        <div class="row">
+          <div class="pos g1">1</div>
+          <div class="who"><div class="nm">K. Ashworth <span class="hot">🔥 HOT</span></div><div class="meta">14 sessions · 81% win</div></div>
+          <div class="rdr">4.812</div><div class="chg up">▲ 2</div>
+        </div>
+        <div class="row">
+          <div class="pos g2">2</div>
+          <div class="who"><div class="nm">M. Oduya</div><div class="meta">12 sessions · 74% win</div></div>
+          <div class="rdr">4.634</div><div class="chg dn">▼ 1</div>
+        </div>
+        <div class="row">
+          <div class="pos g3">3</div>
+          <div class="who"><div class="nm">S. Fletcher</div><div class="meta">15 sessions · 70% win</div></div>
+          <div class="rdr">4.391</div><div class="chg up">▲ 1</div>
+        </div>
+        <div class="row">
+          <div class="pos np">4</div>
+          <div class="who"><div class="nm">R. Nkemdirim</div><div class="meta">9 sessions · 68% win</div></div>
+          <div class="rdr">4.203</div><div class="chg up">▲ 3</div>
+        </div>
+        <div class="row">
+          <div class="pos np">5</div>
+          <div class="who"><div class="nm">T. Balogun</div><div class="meta">11 sessions · 63% win</div></div>
+          <div class="rdr">4.047</div><div class="chg fl">— 0</div>
+        </div>
+        <div class="row">
+          <div class="pos np">6</div>
+          <div class="who"><div class="nm">P. Callahan</div><div class="meta">10 sessions · 61% win</div></div>
+          <div class="rdr">3.876</div><div class="chg up">▲ 2</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COUNTERS ============ -->
+<section class="counters">
+  <div class="wrap counters-grid">
+    <div class="counter"><div class="num"><span class="cnum" data-target="80">0</span><span class="suf">+</span></div><div class="cap">Players rated per club</div></div>
+    <div class="counter"><div class="num"><span class="cnum" data-target="500">0</span><span class="suf">+</span></div><div class="cap">Matches processed weekly</div></div>
+    <div class="counter"><div class="num"><span class="cnum" data-target="20">0</span><span class="suf"> min</span></div><div class="cap">To set up your club</div></div>
+    <div class="counter"><div class="num"><span class="suf" style="font-size:.6em">£</span><span class="cnum" data-target="29">0</span></div><div class="cap">Per month, all in</div></div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="features" id="features">
+  <div class="wrap">
+    <div class="sec-head on-dark">
+      <span class="eyebrow on-dark">Everything your club needs</span>
+      <h2>Built to keep players coming back</h2>
+      <p class="lede">Every feature is designed around one thing: giving your members a reason to check the table, play another session, and chase a better rating.</p>
+    </div>
+    <div class="bento">
+      <div class="cell tall">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#ff8a64" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/></svg></div>
+        <h3>Live RDR Ratings</h3>
+        <p>Recalculated after every session, the moment you upload, so players always know where they stand and what it takes to climb.</p>
+        <div class="chart-wrap">
+          <svg viewBox="0 0 280 110" width="100%" preserveAspectRatio="none" style="display:block">
+            <defs>
+              <linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(217,79,43,.35)"/>
+                <stop offset="100%" stop-color="rgba(217,79,43,0)"/>
+              </linearGradient>
+            </defs>
+            <path class="draw-line" d="M5 92 L50 78 L95 84 L140 55 L185 60 L230 30 L275 18" fill="none" stroke="#ff6844" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/>
+            <path d="M5 92 L50 78 L95 84 L140 55 L185 60 L230 30 L275 18 L275 110 L5 110 Z" fill="url(#lg)" opacity=".9"/>
+            <circle class="dot-end" cx="275" cy="18" r="5" fill="#fff" stroke="#ff6844" stroke-width="3"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="cell">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/><path d="M17 11l1.5 1.5L22 9" stroke="#ff6844"/></svg></div>
+        <h3>Player Profiles</h3>
+        <p>Personal stats, win rate, partner history, and a rating chart that tells a story.</p>
+      </div>
+
+      <div class="cell">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#E8A020" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3-1 5-1 7a3 3 0 0 0 6 0c0-1 0-2-1-3 2 2 4 4 4 8a8 8 0 0 1-16 0c0-4 3-6 4-9 1 3 3 3 4-3z" fill="rgba(232,160,32,.18)"/></svg></div>
+        <h3>HOT Streak Badges</h3>
+        <p>Winning runs get recognised with a badge the whole club sees. Members chase them.</p>
+      </div>
+
+      <div class="cell wide">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#ff6844" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
+        <h3>Session Upload in Seconds</h3>
+        <p>Paste or import your results and PBTable recalculates every rating and reshuffles the leaderboard automatically. No spreadsheets, no manual maths.</p>
+      </div>
+
+      <div class="cell">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#E8A020" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1" stroke="#ff6844"/><rect x="17" y="3" width="4" height="17" rx="1"/></svg></div>
+        <h3>Live Club Leaderboard</h3>
+        <p>The screen everyone checks before they've taken their coat off: one ranked table your whole club argues about every week.</p>
+        <a class="live-demo-link" href="https://demo.pbtable.com" target="_blank" rel="noopener">See this in a live demo →</a>
+      </div>
+
+      <div class="cell">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z" stroke="#ff6844" fill="rgba(217,79,43,.12)"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <h3>Admin Dashboard</h3>
+        <p>Manage members, own all your club's data, and export anytime, with no lock-in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section class="how" id="how">
+  <div class="wrap">
+    <div class="sec-head center on-dark">
+      <span class="eyebrow on-dark" style="justify-content:center">Up and running in three steps</span>
+      <h2>From spreadsheet chaos to live ratings</h2>
+      <p class="lede">There's no migration project and no training day. You'll have a working club leaderboard before your next session.</p>
+    </div>
+    <div class="steps">
+      <div class="connector"></div>
+      <div class="step">
+        <div class="nstep">1</div>
+        <h3>Add your players</h3>
+        <p>Import your member list in one go. Players don't need an account or an app; they just check the table.</p>
+      </div>
+      <div class="step">
+        <div class="nstep">2</div>
+        <h3>Upload your sessions</h3>
+        <p>Match results in, ratings out. PBTable does the maths automatically, with no formulas and no fuss.</p>
+      </div>
+      <div class="step">
+        <div class="nstep">3</div>
+        <h3>Watch the club light up</h3>
+        <p>Ratings move, streaks build, and members keep coming back to a leaderboard they genuinely care about.</p>
+        <a class="live-demo-link" href="https://demo.pbtable.com" target="_blank" rel="noopener">See this in a live demo →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DEMO ============ -->
+<section class="demo">
+  <div class="wrap">
+    <div class="sec-head center on-light">
+      <span class="eyebrow" style="justify-content:center">See it in action</span>
+      <h2 style="color:var(--navy)">This is what your players will check</h2>
+      <p class="lede">A live, ranked club leaderboard: clean enough for the clubhouse screen, and addictive enough to keep them coming back.</p>
+    </div>
+    <div class="browser">
+      <div class="browser-bar">
+        <div class="dots"><i></i><i></i><i></i></div>
+        <div class="url">🔒 yourclub.pbtable.com</div>
+      </div>
+      <table class="tbl">
+        <thead>
+          <tr><th>#</th><th>Player</th><th class="r">RDR</th><th class="r">Change</th></tr>
+        </thead>
+        <tbody>
+          <tr class="top"><td><span class="tposchip m1">1</span></td><td><span class="tname">K. Ashworth <span class="hot">🔥 HOT</span></span></td><td class="r"><span class="trdr">4.812</span></td><td class="r"><span class="tchg up">▲ 2</span></td></tr>
+          <tr><td><span class="tposchip m2">2</span></td><td><span class="tname">M. Oduya</span></td><td class="r"><span class="trdr">4.634</span></td><td class="r"><span class="tchg dn">▼ 1</span></td></tr>
+          <tr><td><span class="tposchip m3">3</span></td><td><span class="tname">S. Fletcher</span></td><td class="r"><span class="trdr">4.391</span></td><td class="r"><span class="tchg up">▲ 1</span></td></tr>
+          <tr><td><span class="tposchip">4</span></td><td><span class="tname">R. Nkemdirim</span></td><td class="r"><span class="trdr">4.203</span></td><td class="r"><span class="tchg up">▲ 3</span></td></tr>
+          <tr><td><span class="tposchip">5</span></td><td><span class="tname">T. Balogun</span></td><td class="r"><span class="trdr">4.047</span></td><td class="r"><span class="tchg fl">— 0</span></td></tr>
+          <tr><td><span class="tposchip">6</span></td><td><span class="tname">P. Callahan</span></td><td class="r"><span class="trdr">3.876</span></td><td class="r"><span class="tchg up">▲ 2</span></td></tr>
+          <tr><td><span class="tposchip">7</span></td><td><span class="tname">G. Whitmore</span></td><td class="r"><span class="trdr">3.711</span></td><td class="r"><span class="tchg dn">▼ 2</span></td></tr>
+          <tr><td><span class="tposchip">8</span></td><td><span class="tname">C. Mbeki</span></td><td class="r"><span class="trdr">3.558</span></td><td class="r"><span class="tchg fl">— 0</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="demo-cta"><a class="btn btn-primary" href="https://demo.pbtable.com" target="_blank" rel="noopener">See this in a live demo →</a></div>
+    <p class="demo-cap">All names are fictitious. Explore the real, interactive board at <a href="https://demo.pbtable.com" target="_blank" rel="noopener">demo.pbtable.com →</a></p>
+  </div>
+</section>
+
+<!-- ============ RDR vs DUPR ============ -->
+<section class="versus">
+  <div class="wrap">
+    <div class="sec-head center on-dark">
+      <span class="eyebrow on-dark" style="justify-content:center">RDR vs DUPR</span>
+      <h2>Already use DUPR? Great. RDR does a different job.</h2>
+      <p class="lede">DUPR is the global pickleball rating — a passport that travels with a player wherever they go. RDR is your <b style="color:#fff;font-weight:600">club's own</b> rating: earned on your courts, against the people your members actually play, week in, week out. One is about the wider world. The other is about <i>your club night.</i></p>
+    </div>
+    <div class="versus-table">
+      <table>
+        <thead>
+          <tr><th></th><th>DUPR</th><th class="rdr-col">RDR <span>(PBTable)</span></th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="rowlbl">What it's for</td><td>Your global skill rating</td><td class="rdr-col">Your standing inside <i>your</i> club</td></tr>
+          <tr><td class="rowlbl">Who needs it</td><td>Players who travel or compete widely</td><td class="rdr-col">Everyone in your club — no sign-up needed</td></tr>
+          <tr><td class="rowlbl">Where it's earned</td><td>Anywhere, against anyone</td><td class="rdr-col">Your sessions, your members</td></tr>
+          <tr><td class="rowlbl">Who owns the data</td><td>DUPR</td><td class="rdr-col">Your club</td></tr>
+          <tr><td class="rowlbl">Best at</td><td>Comparing across the world</td><td class="rdr-col">Running a brilliant club night</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="versus-close">You don't have to choose. Most of our members have never logged a DUPR game — and RDR works for them from session one. If some of your players <i>do</i> have a DUPR, RDR sits happily alongside it. <b>DUPR is your global passport. RDR is your home-court standing.</b></p>
+    <p class="versus-smallprint">RDR is independent and is not affiliated with, endorsed by, or a substitute for DUPR.</p>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section class="pricing" id="pricing">
+  <div class="wrap">
+    <div class="sec-head center on-light">
+      <span class="eyebrow" style="justify-content:center">Simple, honest pricing</span>
+      <h2 style="color:var(--navy)">One price. Your whole club.</h2>
+      <p class="lede">No per-player fees. No setup costs. Cancel any time. Just a leaderboard your members love.</p>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <div class="ribbon">LIMITED</div>
+        <div class="pname">Founder</div>
+        <p class="desc">For the first 20 clubs: your rate, grandfathered forever.</p>
+        <div class="price"><span class="amt">£19</span><span class="per">/month</span></div>
+        <div class="annual-note">or £190/year — save 2 months</div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Up to 150 players</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Live RDR ratings & leaderboard</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Player profiles & HOT badges</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Locked-in founder pricing</li>
+        </ul>
+        <button class="btn btn-dark btn-block" onclick="selectPlan('founder')">Order — Founder rate</button>
+      </div>
+
+      <div class="plan feat">
+        <div class="pname">Club</div>
+        <p class="desc">For established clubs that want the full PBTable experience.</p>
+        <div class="price"><span class="amt">£29</span><span class="per">/month</span></div>
+        <div class="annual-note">or £290/year — save £58</div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Up to 150 players</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Everything in Founder</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Admin dashboard & data export</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Priority email support</li>
+        </ul>
+        <button class="btn btn-primary btn-block" onclick="selectPlan('club')">Order — Club plan</button>
+      </div>
+    </div>
+    <p class="pricing-contact">Have more than 150 players, multiple divisions, or other requirements? <a href="mailto:paul@pbtable.co.uk">Contact us</a> and we'll sort something out.</p>
+  </div>
+</section>
+
+<!-- ============ TESTIMONIAL ============ -->
+<section class="testi">
+  <div class="wrap">
+    <div class="quote-mark">&ldquo;</div>
+    <blockquote>The leaderboard has completely changed our club nights. Players check their rating before they've even taken their coat off — and they stay for an extra game to climb it.</blockquote>
+    <div class="stars">★★★★★</div>
+    <div class="by"><b>Club Administrator</b> · Swindon Pickleball Club</div>
+  </div>
+</section>
+
+<!-- ============ ORDER ============ -->
+<section class="order" id="order">
+  <div class="wrap">
+    <div class="sec-head center on-light">
+      <span class="eyebrow" style="justify-content:center">Order now</span>
+      <h2 style="color:var(--navy)">Get your club's leaderboard live</h2>
+      <p class="lede">Pick your plan and you'll be set up within 20 minutes. No free-trial faff — just a club table your players will love.</p>
+    </div>
+
+    <div class="order-grid">
+      <!-- left: plan selector -->
+      <div class="panel">
+        <h3>Choose your plan</h3>
+        <p class="ph-sub">You can change or cancel any time.</p>
+
+        <div class="plan-opt active" id="opt-founder" onclick="selectPlan('founder')">
+          <span class="radio"></span>
+          <div><div class="po-name">Founder</div><div class="po-desc">First 20 clubs · grandfathered</div></div>
+          <div class="po-price"><b id="founder-amt">£19</b><span id="founder-per">per month</span></div>
+        </div>
+
+        <div class="plan-opt" id="opt-club" onclick="selectPlan('club')">
+          <span class="radio"></span>
+          <div><div class="po-name">Club</div><div class="po-desc">Full PBTable experience</div></div>
+          <div class="po-price"><b id="club-amt">£29</b><span id="club-per">per month</span></div>
+        </div>
+
+        <div class="billing-toggle">
+          <div class="switch" id="annualSwitch" onclick="toggleAnnual()"><span class="knob"></span></div>
+          <span class="bt-label">Pay annually</span>
+          <span class="save-badge" id="saveBadge">Save £58</span>
+        </div>
+
+        <div class="summary">
+          <div class="srow"><span>Plan</span><span id="sumPlan">Founder Rate</span></div>
+          <div class="srow"><span>Billing</span><span id="sumBilling">Monthly</span></div>
+          <div class="srow total"><span>Total today</span><b id="sumTotal">£19</b></div>
+        </div>
+      </div>
+
+      <!-- right: payment form -->
+      <div class="panel">
+        <div id="payForm">
+          <h3>Your details</h3>
+          <p class="ph-sub">We'll use these to set up your club account.</p>
+          <div class="field" id="f-name"><label>Your name</label><input id="in-name" type="text" placeholder="Jane Secretary" autocomplete="name" /></div>
+          <div class="field" id="f-email"><label>Email address</label><input id="in-email" type="email" placeholder="jane@yourclub.org" autocomplete="email" /></div>
+          <div class="field" id="f-club"><label>Club name</label><input id="in-club" type="text" placeholder="Your Pickleball Club" /></div>
+          <button class="btn btn-primary btn-block" id="payBtn" onclick="startCheckout()">
+            <span class="spinner"></span>
+            <span class="pay-label">Continue to secure payment →</span>
+          </button>
+          <div class="card-err" id="form-err"></div>
+          <div class="secure-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            Secured by Stripe · your card details never touch our servers
+          </div>
+        </div>
+
+        <div id="checkout-wrap" style="display:none">
+          <div id="checkout"></div>
+        </div>
+
+        <div class="success-state" id="successState">
+          <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <h3>You're all set! 🎉</h3>
+          <p>Thanks for subscribing — a receipt is on its way to your email. We'll have <b>your club's leaderboard</b> live within one working day.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="faq">
+  <div class="wrap">
+    <div class="sec-head center on-light">
+      <span class="eyebrow" style="justify-content:center">Questions, answered</span>
+      <h2 style="color:var(--navy)">Everything you need to know</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">How do I upload match results?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">After each session you enter or paste your results into PBTable — it takes a couple of minutes. The system instantly recalculates every player's RDR rating and reshuffles the leaderboard. No spreadsheets, no manual maths.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">What is the RDR rating?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">RDR stands for Rally Doubles Rating: a transparent, results-based number that reflects how a player is actually performing in your club's sessions. It updates after every session so the table always reflects current form.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Is RDR the same as DUPR?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">No. DUPR is a global rating that travels with a player. RDR is your club's own rating, calculated only from your sessions, so it reflects how members do <i>at your club</i>. They're built for different jobs, and RDR works whether or not your players have a DUPR.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Do my players need a DUPR account to use this?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">No. There's nothing for players to sign up for or download. RDR works for every member from their first session.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Do my players need accounts?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">No. There's nothing for players to download or sign up for. They simply check the live club leaderboard via a web link. Only you, as the club admin, manage the account.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Can I cancel my subscription?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes, any time, with no notice period and no cancellation fees. If you're on a Founder rate and you leave, that grandfathered price is only guaranteed while your subscription is active.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">We have more than 150 players — can you help?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Absolutely. If you have more than 150 players, multiple divisions, or other requirements, <a href="mailto:paul@pbtable.co.uk">contact us</a> and we'll sort something out that fits your club.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Can I use this for a padel club?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">PBTable is built and tuned for pickleball, but the rating engine works for any doubles racquet sport. If you run a padel club and want a live ratings table, <a href="mailto:paul@pbtable.co.uk">get in touch</a> and we'll talk it through.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Is my data secure?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes. Your club's data is yours: you can export it any time, and there's no lock-in. Payments are handled entirely by Stripe, so card details never touch our servers.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA BANNER ============ -->
+<section class="cta-banner">
+  <div class="wrap">
+    <h2>Give your club a rating worth fighting for.</h2>
+    <p>Live in 20 minutes. Cancel anytime. Your data, always.</p>
+    <a class="btn btn-light" href="#order">Order now →</a>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="#top">
+          <img src="pbtable-logo.png" alt="PBTable logo" />
+          <span class="wordmark" style="font-size:23px">PB<b>Table</b></span>
+        </a>
+        <p>Live league ratings and leaderboards for UK pickleball clubs.</p>
+        <p class="strap">Ratings your players trust — and your club owns.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="https://demo.pbtable.com" target="_blank" rel="noopener">Live demo</a>
+      </div>
+      <div class="foot-col">
+        <h4>Get in touch</h4>
+        <a href="#order">Order now</a>
+        <a href="mailto:paul@pbtable.co.uk">paul@pbtable.co.uk</a>
+        <a href="https://pbtable.com">pbtable.com</a>
+        <a href="https://pbtable.co.uk">pbtable.co.uk</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div class="cpy">© <span id="yr">2026</span> PBTable · <a href="https://pbtable.com">pbtable.com</a> · <a href="https://pbtable.co.uk">pbtable.co.uk</a></div>
+      <div class="nex">Powered by <b>Nexlane</b></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ===== config (replace before going live) ===== */
+const STRIPE_KEY = 'pk_live_51TlPPQ1uDFkhZnppGKjXz9AZBW6reGMHzVMs2fcVUwUbMWb1M0H4NZLbJbPjGTlipy3O6RUjQUrnwVr2uEZ0SVoA00LCdXF3tJ';
+const FN_BASE = 'https://kxvtqsmjlhlajkoyejwk.supabase.co/functions/v1';
+const PLANS = {
+  founder: {
+    monthly: { label:'Founder Rate',          amount:'£19',  priceId:'price_1TlW2x1uDFkhZnpp0khvPajy' },
+    annual:  { label:'Founder Rate — Annual', amount:'£190', priceId:'price_1TlW2s1uDFkhZnppmc05X2hW' }
+  },
+  club: {
+    monthly: { label:'Club Plan',             amount:'£29',  priceId:'price_1TlW2v1uDFkhZnppHJvcXiSi' },
+    annual:  { label:'Club Plan — Annual',    amount:'£290', priceId:'price_1TlW2o1uDFkhZnpp2kWsWrsD' }
+  }
+};
+const ANNUAL_SAVE = { founder:'£38', club:'£58' };
+
+let currentPlan = 'founder';
+let isAnnual = false;
+let stripe = null, checkout = null;
+
+/* ===== nav ===== */
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 30);
+});
+function toggleMenu(){ document.getElementById('navLinks').classList.toggle('show'); }
+function closeMenu(){ document.getElementById('navLinks').classList.remove('show'); }
+
+/* ===== counters ===== */
+function animateCounter(el){
+  const target = +el.dataset.target;
+  const dur = 1400, start = performance.now();
+  function tick(now){
+    const p = Math.min((now - start)/dur, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(eased * target);
+    if(p < 1) requestAnimationFrame(tick);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(tick);
+}
+const cObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if(e.isIntersecting){ animateCounter(e.target); cObs.unobserve(e.target); }
+  });
+}, { threshold:.6 });
+document.querySelectorAll('.cnum').forEach(el => cObs.observe(el));
+
+/* ===== FAQ ===== */
+function toggleFaq(btn){
+  const item = btn.closest('.faq-item');
+  const ans = item.querySelector('.faq-a');
+  const open = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(o => {
+    o.classList.remove('open');
+    o.querySelector('.faq-a').style.maxHeight = null;
+  });
+  if(!open){
+    item.classList.add('open');
+    ans.style.maxHeight = ans.scrollHeight + 'px';
+  }
+}
+
+/* ===== plan selection ===== */
+function selectPlan(p){
+  currentPlan = p;
+  document.getElementById('opt-founder').classList.toggle('active', p === 'founder');
+  document.getElementById('opt-club').classList.toggle('active', p === 'club');
+  updateSummary();
+  document.getElementById('order').scrollIntoView({ behavior:'smooth' });
+}
+
+function toggleAnnual(){
+  isAnnual = !isAnnual;
+  updateAnnualUI();
+  updateSummary();
+}
+function updateAnnualUI(){
+  const sw = document.getElementById('annualSwitch');
+  const badge = document.getElementById('saveBadge');
+  sw.classList.toggle('on', isAnnual);
+  badge.textContent = 'Save ' + ANNUAL_SAVE[currentPlan];
+  badge.classList.toggle('show', isAnnual);
+  // per-plan amount labels
+  document.getElementById('founder-amt').textContent = isAnnual ? '£190' : '£19';
+  document.getElementById('founder-per').textContent = isAnnual ? 'per year' : 'per month';
+  document.getElementById('club-amt').textContent = isAnnual ? '£290' : '£29';
+  document.getElementById('club-per').textContent = isAnnual ? 'per year' : 'per month';
+}
+function updateSummary(){
+  const period = isAnnual ? 'annual' : 'monthly';
+  const plan = PLANS[currentPlan][period];
+  document.getElementById('sumPlan').textContent = plan.label.replace(' — Annual','');
+  document.getElementById('sumBilling').textContent = isAnnual ? 'Annually' : 'Monthly';
+  document.getElementById('sumTotal').textContent = plan.amount;
+  // refresh save badge label for current plan
+  document.getElementById('saveBadge').textContent = 'Save ' + ANNUAL_SAVE[currentPlan];
+}
+
+/* ===== Stripe embedded checkout ===== */
+function hl(id){
+  const f = document.getElementById(id);
+  f.classList.add('err');
+  setTimeout(() => f.classList.remove('err'), 1600);
+}
+
+async function startCheckout(){
+  const name = document.getElementById('in-name').value.trim();
+  const email = document.getElementById('in-email').value.trim();
+  const club = document.getElementById('in-club').value.trim();
+  let ok = true;
+  if(!name){ hl('f-name'); ok = false; }
+  if(!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ hl('f-email'); ok = false; }
+  if(!club){ hl('f-club'); ok = false; }
+  if(!ok) return;
+
+  const btn = document.getElementById('payBtn');
+  const err = document.getElementById('form-err');
+  err.textContent = '';
+  btn.classList.add('loading');
+
+  const priceId = PLANS[currentPlan][isAnnual ? 'annual' : 'monthly'].priceId;
+
+  try {
+    const res = await fetch(FN_BASE + '/create-checkout-session', {
+      method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ priceId, name, email, club })
+    });
+    const data = await res.json();
+    if(!res.ok || data.error) throw new Error(data.error || 'Could not start checkout. Please try again.');
+
+    if(!stripe) stripe = Stripe(STRIPE_KEY);
+    checkout = await stripe.initEmbeddedCheckout({ clientSecret: data.clientSecret });
+    document.getElementById('payForm').style.display = 'none';
+    const wrap = document.getElementById('checkout-wrap');
+    wrap.style.display = 'block';
+    checkout.mount('#checkout');
+    wrap.scrollIntoView({ behavior:'smooth', block:'start' });
+  } catch(e){
+    err.textContent = e.message || 'Something went wrong. Please try again.';
+    btn.classList.remove('loading');
+  }
+}
+
+/* When Stripe sends the buyer back after a completed payment, show the success panel. */
+function checkReturn(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('checkout') === 'complete'){
+    const f = document.getElementById('payForm'); if(f) f.style.display = 'none';
+    const cw = document.getElementById('checkout-wrap'); if(cw) cw.style.display = 'none';
+    document.getElementById('successState').classList.add('show');
+    document.getElementById('order').scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+
+/* ===== init ===== */
+document.getElementById('yr').textContent = new Date().getFullYear();
+document.addEventListener('DOMContentLoaded', () => {
+  updateAnnualUI();
+  updateSummary();
+  checkReturn();
+});
+</script>
+</body>
+</html>

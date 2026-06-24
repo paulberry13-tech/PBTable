@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "WebFetch(domain:vocal-madeleine-57fe3a.netlify.app)",
+      "PowerShell(python -c \"import PIL, numpy; from PIL import Image; im=Image.open\\(r'C:\\\\Users\\\\PaulBerry\\\\OneDrive - Berry Business Informatics\\\\Documents\\\\PBTable\\\\PBTable Logo.png'\\); print\\('PIL', PIL.__version__, 'numpy', numpy.__version__\\); print\\('size', im.size, 'mode', im.mode\\); im2=im.convert\\('RGB'\\); print\\('corners', im2.getpixel\\(\\(3,3\\)\\), im2.getpixel\\(\\(im.size[0]-3,3\\)\\), im2.getpixel\\(\\(3,im.size[1]-3\\)\\)\\)\")",
+      "PowerShell(try { Resolve-DnsName demo.pbtable.com -Server 8.8.8.8 -ErrorAction Stop | Select-Object Name, Type, NameHost, IPAddress | Format-Table -AutoSize } catch { \"Lookup failed: $\\($_.Exception.Message\\)\" })",
+      "WebFetch(domain:demo.pbtable.com)",
+      "WebFetch(domain:supabase.com)",
+      "WebFetch(domain:github.com)",
+      "PowerShell(Copy-Item -Path 'C:\\\\Users\\\\PaulBerry\\\\OneDrive - Berry Business Informatics\\\\Documents\\\\PBTable\\\\pbtable-website.html' -Destination 'C:\\\\Users\\\\PaulBerry\\\\OneDrive - Berry Business Informatics\\\\Documents\\\\PBTable\\\\pbtable-site\\\\index.html' -Force)",
+      "PowerShell('Staged in pbtable-site/ - not published')",
+      "WebFetch(domain:www.selkirk.com)",
+      "PowerShell(git init -b main 2>$null; git config user.name \"Paul Berry\"; git config user.email \"paulberry13@googlemail.com\"; git add -A; git commit -q -m \"Initial commit: PBTable marketing site, Stripe+Supabase subscription backend, docs\" ; \"--- committed ---\"; git log --oneline -1; \"--- files tracked ---\"; \\(git ls-files | Measure-Object\\).Count; git ls-files | Select-Object -First 20)"
+    ]
+  }
+}
