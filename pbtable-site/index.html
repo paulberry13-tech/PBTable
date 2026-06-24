@@ -108,23 +108,25 @@ header.nav.scrolled{
 
 /* ---------- HERO ---------- */
 .hero{
-  background:radial-gradient(1200px 700px at 75% -10%,#26365f 0%,var(--navy) 38%,var(--navy-deep) 80%);
-  padding:148px 0 90px;overflow:hidden;
+  position:relative;min-height:100vh;min-height:100svh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:118px 0 84px;overflow:hidden;
+  background:radial-gradient(1300px 820px at 72% -8%,#2c3f70 0%,var(--navy) 40%,var(--navy-deep) 84%);
 }
 .hero-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .grid-mesh{
   position:absolute;inset:-50% -10% -10% -10%;
-  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
-  background-size:54px 54px;
-  mask-image:radial-gradient(900px 600px at 70% 20%,#000 0%,transparent 75%);
-  -webkit-mask-image:radial-gradient(900px 600px at 70% 20%,#000 0%,transparent 75%);
-  animation:gridShift 20s linear infinite;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:62px 62px;
+  mask-image:radial-gradient(1000px 680px at 70% 22%,#000 0%,transparent 76%);
+  -webkit-mask-image:radial-gradient(1000px 680px at 70% 22%,#000 0%,transparent 76%);
+  animation:gridShift 26s linear infinite;
 }
-.orb{position:absolute;border-radius:50%;filter:blur(75px);opacity:.5;animation:orbFloat 8s ease-in-out infinite}
-.orb.o1{width:420px;height:420px;background:var(--coral);top:-120px;right:-60px}
-.orb.o2{width:380px;height:380px;background:var(--amber);bottom:-140px;left:-90px;animation-delay:-3s;opacity:.35}
-.orb.o3{width:340px;height:340px;background:#3b6fd4;top:30%;right:18%;animation-delay:-5s;opacity:.3}
-.scanline{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 3px);mix-blend-mode:overlay;opacity:.5}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;animation:orbFloat 11s ease-in-out infinite}
+.orb.o1{width:520px;height:520px;background:radial-gradient(circle,var(--coral),transparent 68%);top:-160px;right:-90px}
+.orb.o2{width:480px;height:480px;background:radial-gradient(circle,var(--amber),transparent 68%);bottom:-180px;left:-120px;animation-delay:-4s;opacity:.4}
+.orb.o3{width:420px;height:420px;background:radial-gradient(circle,#3b6fd4,transparent 68%);top:28%;right:16%;animation-delay:-7s;opacity:.32}
+.scanline{position:absolute;inset:-25% -35%;background:linear-gradient(115deg,transparent 42%,rgba(255,255,255,.06) 49%,rgba(255,255,255,.10) 50%,rgba(255,255,255,.06) 51%,transparent 58%);animation:shineSweep 10s ease-in-out infinite}
 
 .hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
 .hero-badge{
@@ -134,16 +136,18 @@ header.nav.scrolled{
   backdrop-filter:blur(6px);margin-bottom:24px;
 }
 .hero-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(22,163,74,.6);animation:pulse 2s infinite}
-.hero h1{font-size:clamp(44px,5.6vw,76px);color:#fff;margin-bottom:22px}
+.hero h1{font-size:clamp(50px,6.6vw,92px);color:#fff;margin-bottom:22px;letter-spacing:-.018em;line-height:.97}
 .hero h1 .fight{position:relative;color:var(--coral);white-space:nowrap}
 .hero h1 .fight::after{content:"";position:absolute;left:0;bottom:.06em;height:.09em;width:100%;background:linear-gradient(90deg,var(--coral),var(--amber));border-radius:4px;transform:scaleX(0);transform-origin:left;animation:lineGrow .8s cubic-bezier(.2,.8,.2,1) .8s forwards}
-.hero .strap{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(19px,2.1vw,25px);color:var(--amber);letter-spacing:.005em;margin-bottom:20px}
+.hero .strap{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(20px,2.3vw,27px);color:var(--amber);letter-spacing:.005em;margin-bottom:20px}
 .hero .body{font-size:18px;color:#b7c2d6;max-width:520px;font-weight:300;margin-bottom:34px}
 .hero .body b{color:#e6ecf6;font-weight:600}
 .hero-ctas{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:30px}
 .trust-row{display:flex;align-items:center;gap:18px;color:#8da0bd;font-size:13.5px;flex-wrap:wrap}
 .trust-row .stars{color:var(--amber);letter-spacing:2px;font-size:15px}
 .trust-row .sep{width:1px;height:16px;background:rgba(255,255,255,.15)}
+.hero-ctas .btn{padding:17px 34px;font-size:16.5px}
+.hero-visual::before{content:"";position:absolute;inset:-14% -10%;background:radial-gradient(closest-side,rgba(217,79,43,.20),transparent 70%);filter:blur(24px);z-index:0;pointer-events:none}
 
 .fade-up{opacity:0;animation:fadeSlideUp .7s cubic-bezier(.2,.8,.2,1) forwards}
 .d1{animation-delay:.05s}.d2{animation-delay:.18s}.d3{animation-delay:.3s}.d4{animation-delay:.42s}.d5{animation-delay:.55s}
@@ -417,7 +421,8 @@ footer.site{background:var(--navy-deep);padding:60px 0 34px;border-top:1px solid
 .foot-bottom .nex b{color:#aeb9cf;font-weight:600}
 
 /* ---------- animations ---------- */
-@keyframes gridShift{from{background-position:0 0}to{background-position:0 -54px}}
+@keyframes gridShift{from{background-position:0 0}to{background-position:0 -62px}}
+@keyframes shineSweep{0%,100%{transform:translateX(-45%);opacity:0}50%{transform:translateX(45%);opacity:.9}}
 @keyframes orbFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-30px) scale(1.06)}}
 @keyframes floatCard{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}70%{box-shadow:0 0 0 9px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
