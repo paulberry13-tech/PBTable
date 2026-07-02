@@ -10,7 +10,7 @@ export function BannerHost() {
   if (banners.length === 0) return null;
 
   return (
-    <View style={styles.host} pointerEvents="box-none">
+    <View style={[styles.host, { pointerEvents: 'box-none' }]}>
       {banners.map((b) => {
         const bg =
           b.tone === 'success' ? colors.up : b.tone === 'warning' ? colors.amber : colors.navySoft;

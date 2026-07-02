@@ -118,15 +118,18 @@ export default function EnterScoresScreen() {
         <Card style={{ marginTop: spacing.lg }}>
           {sorted.map(([memberId, delta]) => {
             const m = membersById.get(memberId);
-            const up = delta >= 0;
+            const flat = Math.abs(delta) < 0.0005;
+            const up = delta > 0;
+            const colour = flat ? colors.textFaint : up ? colors.up : colors.down;
             return (
               <Row key={memberId} style={{ justifyContent: 'space-between', marginBottom: 8 }}>
                 <Text style={type.body}>{m?.name ?? memberId}</Text>
                 <Row gap={4}>
-                  <Ionicons name={up ? 'caret-up' : 'caret-down'} size={14} color={up ? colors.up : colors.down} />
-                  <Text style={[type.body, type.mono, { color: up ? colors.up : colors.down, fontWeight: '700' }]}>
-                    {up ? '+' : ''}
-                    {delta.toFixed(3)}
+                  {flat ? null : (
+                    <Ionicons name={up ? 'caret-up' : 'caret-down'} size={14} color={colour} />
+                  )}
+                  <Text style={[type.body, type.mono, { color: colour, fontWeight: '700' }]}>
+                    {flat ? '—' : `${up ? '+' : ''}${delta.toFixed(3)}`}
                   </Text>
                 </Row>
               </Row>
