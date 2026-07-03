@@ -17,7 +17,7 @@ PBTable is "Spond, but tailored for pickleball": a closed loop competitors don't
 
 Sporty, sharp, trustworthy. Friendly and lively, never corporate. British spelling throughout. The leaderboard should feel competitive and alive (HOT 🔥 streaks, movement arrows), the booking flow calm and reliable.
 
-**Primary design reference: Timely (gettimely.com)** — warm off-white canvas, blue-charcoal ink, deep indigo brand surfaces, soft lilac/pink pastel chips with deep same-hue text, coral pill CTAs, serif display headlines (Fraunces, standing in for Domaine Display) over a clean sans (Manrope), generous card radii. Monospace rating numbers (JetBrains Mono) keep the scoreboard feel.
+**Design language: athletic scoreboard.** PBTable's own navy (#0B2545) + coral (#E8571F), dark chrome top and bottom (navy header AND navy tab bar), condensed uppercase display titles (Barlow Condensed — jersey/broadcast-graphics energy) over Manrope UI text, JetBrains Mono scoreboard numbers, solid "jersey" badges (coral + navy pairing), and a dark podium panel for the leaderboard top 3. Rejected directions, do not revisit: Timely-style pastel/serif salon softness (tried, user disliked); cream/warm-neutral canvases; corporate grey SaaS.
 
 ## Anti-references
 

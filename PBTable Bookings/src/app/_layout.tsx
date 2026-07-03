@@ -1,4 +1,7 @@
-import { Fraunces_600SemiBold, Fraunces_700Bold } from '@expo-google-fonts/fraunces';
+import {
+  BarlowCondensed_600SemiBold,
+  BarlowCondensed_700Bold,
+} from '@expo-google-fonts/barlow-condensed';
 import {
   JetBrainsMono_500Medium,
   JetBrainsMono_700Bold,
@@ -24,8 +27,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    Fraunces_600SemiBold,
-    Fraunces_700Bold,
+    BarlowCondensed_600SemiBold,
+    BarlowCondensed_700Bold,
     Manrope_400Regular,
     Manrope_500Medium,
     Manrope_600SemiBold,
@@ -50,17 +53,20 @@ export default function RootLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: colors.navy },
           headerTintColor: colors.textOnDark,
-          headerTitleStyle: { fontFamily: fonts.bold, fontSize: 17 },
+          headerTitleStyle: {
+            fontFamily: fonts.displayBold,
+            fontSize: 20,
+          },
           headerShadowVisible: false,
           contentStyle: { backgroundColor: colors.background },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="session/[id]" options={{ title: 'Session' }} />
-        <Stack.Screen name="player/[id]" options={{ title: 'Player' }} />
-        <Stack.Screen name="admin/create" options={{ title: 'Create session' }} />
-        <Stack.Screen name="admin/manage/[id]" options={{ title: 'Manage session' }} />
-        <Stack.Screen name="admin/scores/[id]" options={{ title: 'Enter scores' }} />
+        <Stack.Screen name="session/[id]" options={{ title: 'SESSION' }} />
+        <Stack.Screen name="player/[id]" options={{ title: 'PLAYER' }} />
+        <Stack.Screen name="admin/create" options={{ title: 'CREATE SESSION' }} />
+        <Stack.Screen name="admin/manage/[id]" options={{ title: 'MANAGE SESSION' }} />
+        <Stack.Screen name="admin/scores/[id]" options={{ title: 'ENTER SCORES' }} />
       </Stack>
       <BannerHost />
     </AppProvider>

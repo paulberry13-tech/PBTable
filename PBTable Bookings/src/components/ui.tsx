@@ -75,10 +75,11 @@ export function Badge({
   label: string;
   tone?: 'navy' | 'coral' | 'green' | 'red' | 'amber' | 'grey';
 }) {
-  // Timely-style pastel chips: soft tint background + deep same-hue text.
+  // Scoreboard badges: the two brand tones are SOLID (jersey colours);
+  // signal tones stay tinted with AA-deep text.
   const tones = {
-    navy: { bg: colors.lilac, fg: colors.navy },
-    coral: { bg: colors.pink, fg: colors.pinkDeep },
+    navy: { bg: colors.navy, fg: colors.textOnDark },
+    coral: { bg: colors.coral, fg: colors.navy },
     green: { bg: colors.upSoft, fg: colors.upText },
     red: { bg: colors.downSoft, fg: colors.downText },
     amber: { bg: colors.amberSoft, fg: colors.amberText },
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   button: {
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     paddingVertical: 13,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',

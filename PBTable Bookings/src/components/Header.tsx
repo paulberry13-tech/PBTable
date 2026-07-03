@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   logoLight: { fontFamily: fonts.regular },
   logoBold: { fontFamily: fonts.extrabold },
   sport: {
-    color: colors.pink,
+    color: colors.coralBright,
     fontSize: 10,
     fontFamily: fonts.extrabold,
     letterSpacing: 1.8,
