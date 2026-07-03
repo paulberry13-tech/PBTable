@@ -101,7 +101,7 @@ export default function SessionDetailScreen() {
       <Card style={{ marginTop: spacing.lg }}>
         <Row style={{ justifyContent: 'space-between' }}>
           <Text style={type.h2}>Who's playing</Text>
-          <Text style={[type.caption, full && { color: colors.amber, fontWeight: '700' }]}>
+          <Text style={[type.captionBold, type.mono, full && { color: colors.amberText }]}>
             {roster.length}/{session.capacity}
             {full ? ' · Full' : ''}
           </Text>
@@ -118,14 +118,14 @@ export default function SessionDetailScreen() {
           );
         })}
         {session.waitlist.length > 0 ? (
-          <Text style={[type.caption, { marginTop: spacing.md, color: colors.amber }]}>
+          <Text style={[type.captionBold, { marginTop: spacing.md, color: colors.amberText }]}>
             +{session.waitlist.length} on the waitlist
           </Text>
         ) : null}
       </Card>
 
       {outsideBand ? (
-        <Text style={[type.caption, { marginTop: spacing.md, color: colors.amber }]}>
+        <Text style={[type.caption, { marginTop: spacing.md, color: colors.amberText }]}>
           Heads-up: your {sportProfile.terms.rating} ({currentUser.rating?.toFixed(2)}) is outside this
           session's band — you can still book for the demo.
         </Text>
@@ -133,8 +133,8 @@ export default function SessionDetailScreen() {
 
       <View style={{ marginTop: spacing.xl, gap: spacing.md }}>
         {myBooking ? (
-          <Card style={{ backgroundColor: colors.upSoft }}>
-            <Text style={[type.h2, { color: colors.up }]}>
+          <Card style={{ backgroundColor: colors.upSoft, borderColor: 'transparent' }}>
+            <Text style={[type.h2, { color: colors.upText }]}>
               {myBooking.status === 'waitlisted' ? "You're on the waitlist" : "You're booked in"}
             </Text>
             <Text style={[type.caption, { marginTop: 4 }]}>

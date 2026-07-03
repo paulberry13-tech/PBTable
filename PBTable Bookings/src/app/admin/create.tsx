@@ -6,7 +6,7 @@ import { Button, Card, Chip, Row } from '@/components/ui';
 import { FORMAT_LABELS } from '@/domain/sportProfile';
 import * as data from '@/services/data';
 import { useApp } from '@/store/AppContext';
-import { colors, radius, spacing, type } from '@/theme';
+import { colors, fonts, radius, spacing, type } from '@/theme';
 import { SessionFormat } from '@/types';
 
 function isoInDays(days: number): string {
@@ -201,8 +201,8 @@ function ToggleRow({
   return (
     <Row style={{ justifyContent: 'space-between', marginBottom: spacing.md }}>
       <View style={{ flex: 1, marginRight: spacing.md }}>
-        <Text style={[type.body, { fontWeight: '700' }]}>{label}</Text>
-        <Text style={type.tiny}>{hint}</Text>
+        <Text style={type.bodyBold}>{label}</Text>
+        <Text style={[type.caption, { fontSize: 12 }]}>{hint}</Text>
       </View>
       <Switch
         value={value}
@@ -225,11 +225,13 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
+    minHeight: 44,
     fontSize: 15,
+    fontFamily: fonts.regular,
     color: colors.text,
     backgroundColor: colors.card,
   },

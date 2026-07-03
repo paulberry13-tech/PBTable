@@ -6,7 +6,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { EmptyState, LoadingView, Row } from '@/components/ui';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
-import { colors, radius, shadow, spacing, type } from '@/theme';
+import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
 export default function LeaderboardScreen() {
   const router = useRouter();
@@ -34,9 +34,12 @@ export default function LeaderboardScreen() {
         renderItem={({ item }) => (
           <Pressable
             onPress={() => router.push({ pathname: '/player/[id]', params: { id: item.member.id } })}
+            accessibilityRole="button"
             style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
           >
-            <Text style={styles.rank}>{item.rank}</Text>
+            <Text style={[styles.rank, item.rank <= 3 && { color: colors.coralText }]}>
+              {item.rank}
+            </Text>
             <View style={{ flex: 1 }}>
               <Row gap={6}>
                 <Text style={type.h2} numberOfLines={1}>
@@ -61,7 +64,10 @@ export default function LeaderboardScreen() {
                     color={item.movement === 'up' ? colors.up : colors.down}
                   />
                   <Text
-                    style={[styles.move, { color: item.movement === 'up' ? colors.up : colors.down }]}
+                    style={[
+                      styles.move,
+                      { color: item.movement === 'up' ? colors.upText : colors.downText },
+                    ]}
                   >
                     {Math.abs(item.movementDelta).toFixed(2)}
                   </Text>
@@ -90,37 +96,37 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   rank: {
-    ...type.h2,
-    ...type.mono,
+    ...type.monoBold,
+    fontSize: 15,
     width: 30,
     color: colors.textFaint,
   },
   rating: {
-    ...type.h1,
-    ...type.mono,
+    ...type.monoBold,
+    fontSize: 19,
+    color: colors.navy,
   },
   move: {
-    ...type.tiny,
     ...type.mono,
-    fontWeight: '700',
+    fontSize: 11,
   },
   hot: {
     fontSize: 10,
-    fontWeight: '900',
-    color: colors.coral,
+    fontFamily: fonts.extrabold,
+    color: colors.coralText,
     backgroundColor: colors.coralSoft,
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 2.5,
     borderRadius: radius.pill,
     overflow: 'hidden',
   },
   provisional: {
     fontSize: 10,
-    fontWeight: '900',
-    color: colors.textMuted,
-    backgroundColor: colors.border,
+    fontFamily: fonts.extrabold,
+    color: colors.textFaint,
+    backgroundColor: colors.trackBg,
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 2.5,
     borderRadius: radius.pill,
     overflow: 'hidden',
   },

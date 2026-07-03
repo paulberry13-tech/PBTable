@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useApp } from '@/store/AppContext';
-import { colors, spacing } from '@/theme';
+import { colors, fonts, spacing } from '@/theme';
 
 /**
  * Brand header: "PB" light + "Table" bold lockup, sport toggle and the
@@ -19,6 +19,7 @@ export function Header() {
         <Pressable
           onPress={() => setSport(sportProfile.sport === 'pickleball' ? 'tennis' : 'pickleball')}
           accessibilityLabel="Toggle sport profile"
+          style={({ pressed }) => pressed && { opacity: 0.8 }}
         >
           <Text style={styles.logo}>
             <Text style={styles.logoLight}>PB</Text>
@@ -32,6 +33,8 @@ export function Header() {
             <Pressable
               key={r}
               onPress={() => switchRole(r)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: role === r }}
               style={[styles.switchBtn, role === r && styles.switchBtnActive]}
             >
               <Text style={[styles.switchText, role === r && styles.switchTextActive]}>
@@ -57,17 +60,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   logo: {
-    fontSize: 24,
+    fontSize: 23,
     color: colors.textOnDark,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
   },
-  logoLight: { fontWeight: '300' },
-  logoBold: { fontWeight: '900' },
+  logoLight: { fontFamily: fonts.regular },
+  logoBold: { fontFamily: fonts.extrabold },
   sport: {
     color: colors.coral,
     fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.6,
+    fontFamily: fonts.extrabold,
+    letterSpacing: 1.8,
     marginTop: 1,
   },
   switcher: {
@@ -78,16 +81,18 @@ const styles = StyleSheet.create({
   },
   switchBtn: {
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 999,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   switchBtnActive: {
     backgroundColor: colors.coral,
   },
   switchText: {
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.8)',
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   switchTextActive: {
     color: colors.textOnDark,

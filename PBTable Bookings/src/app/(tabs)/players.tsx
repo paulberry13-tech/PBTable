@@ -5,7 +5,7 @@ import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import { Badge, LoadingView, Row } from '@/components/ui';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
-import { colors, radius, shadow, spacing, type } from '@/theme';
+import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
 /** Players directory — EVERYONE, with unrated members clearly marked. */
 export default function PlayersScreen() {
@@ -76,11 +76,12 @@ const styles = StyleSheet.create({
   search: {
     marginTop: spacing.md,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
     fontSize: 15,
+    fontFamily: fonts.regular,
     color: colors.text,
     backgroundColor: colors.card,
   },
@@ -96,7 +97,8 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   rating: {
-    ...type.h2,
-    ...type.mono,
+    ...type.monoBold,
+    fontSize: 15,
+    color: colors.navy,
   },
 });

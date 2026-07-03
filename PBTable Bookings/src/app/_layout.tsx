@@ -1,12 +1,45 @@
+import {
+  JetBrainsMono_500Medium,
+  JetBrainsMono_700Bold,
+} from '@expo-google-fonts/jetbrains-mono';
+import {
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+  useFonts,
+} from '@expo-google-fonts/manrope';
 import { Stack } from 'expo-router';
-import React from 'react';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import React, { useEffect } from 'react';
 
 import { BannerHost } from '@/components/BannerHost';
 import { AppProvider } from '@/store/AppContext';
-import { colors } from '@/theme';
+import { colors, fonts } from '@/theme';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
+    JetBrainsMono_500Medium,
+    JetBrainsMono_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <AppProvider>
       <StatusBar style="light" />
@@ -14,7 +47,8 @@ export default function RootLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: colors.navy },
           headerTintColor: colors.textOnDark,
-          headerTitleStyle: { fontWeight: '800' },
+          headerTitleStyle: { fontFamily: fonts.bold, fontSize: 17 },
+          headerShadowVisible: false,
           contentStyle: { backgroundColor: colors.background },
         }}
       >

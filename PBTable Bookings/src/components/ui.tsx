@@ -9,7 +9,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import { colors, radius, shadow, spacing, type } from '@/theme';
+import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
 // --- Card ----------------------------------------------------------------------
 export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
@@ -38,7 +38,7 @@ export function Button({
     primary: { backgroundColor: colors.coral },
     secondary: { backgroundColor: colors.navy },
     danger: { backgroundColor: colors.down },
-    ghost: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border },
+    ghost: { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.borderStrong },
   };
   const fg: Record<ButtonVariant, TextStyle> = {
     primary: { color: colors.textOnDark },
@@ -54,7 +54,7 @@ export function Button({
         styles.button,
         bg[variant],
         (disabled || loading) && { opacity: 0.5 },
-        pressed && { opacity: 0.82 },
+        pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
         style,
       ]}
     >
@@ -77,11 +77,11 @@ export function Badge({
 }) {
   const tones = {
     navy: { bg: colors.navy, fg: colors.textOnDark },
-    coral: { bg: colors.coralSoft, fg: colors.coral },
-    green: { bg: colors.upSoft, fg: colors.up },
-    red: { bg: colors.downSoft, fg: colors.down },
-    amber: { bg: colors.amberSoft, fg: colors.amber },
-    grey: { bg: colors.border, fg: colors.textMuted },
+    coral: { bg: colors.coralSoft, fg: colors.coralText },
+    green: { bg: colors.upSoft, fg: colors.upText },
+    red: { bg: colors.downSoft, fg: colors.downText },
+    amber: { bg: colors.amberSoft, fg: colors.amberText },
+    grey: { bg: colors.trackBg, fg: colors.textFaint },
   } as const;
   const t = tones[tone];
   return (
@@ -104,7 +104,11 @@ export function Chip({
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.chip, selected && { backgroundColor: colors.navy, borderColor: colors.navy }]}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && { backgroundColor: colors.navy, borderColor: colors.navy },
+        pressed && { opacity: 0.85 },
+      ]}
     >
       <Text style={[styles.chipText, selected && { color: colors.textOnDark }]}>{label}</Text>
     </Pressable>
@@ -135,8 +139,20 @@ export function EmptyState({ title, hint }: { title: string; hint?: string }) {
 export function ErrorState({ message }: { message: string }) {
   return (
     <View style={styles.centered}>
-      <Text style={[type.h2, { color: colors.down }]}>Something went wrong</Text>
+      <Text style={[type.h2, { color: colors.downText }]}>Something went wrong</Text>
       <Text style={[type.caption, { marginTop: spacing.sm, textAlign: 'center' }]}>{message}</Text>
+    </View>
+  );
+}
+
+// --- Capacity meter -------------------------------------------------------------------
+/** Thin booked/capacity track — green with room, amber when nearly full, navy when full. */
+export function CapacityBar({ booked, capacity }: { booked: number; capacity: number }) {
+  const ratio = capacity > 0 ? Math.min(1, booked / capacity) : 0;
+  const fill = ratio >= 1 ? colors.navy : ratio >= 0.75 ? colors.amber : colors.up;
+  return (
+    <View style={styles.track}>
+      <View style={[styles.trackFill, { width: `${ratio * 100}%`, backgroundColor: fill }]} />
     </View>
   );
 }
@@ -168,6 +184,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     ...shadow.card,
   },
   button: {
@@ -180,32 +198,34 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
     letterSpacing: 0.2,
   },
   badge: {
     borderRadius: radius.pill,
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 3.5,
     alignSelf: 'flex-start',
   },
   badgeText: {
     fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.4,
+    fontFamily: fonts.extrabold,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   chip: {
     borderRadius: radius.pill,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     backgroundColor: colors.card,
     paddingHorizontal: 14,
     paddingVertical: 7,
+    minHeight: 34,
+    justifyContent: 'center',
   },
   chipText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fonts.semibold,
     color: colors.textMuted,
   },
   centered: {
@@ -214,5 +234,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xxl,
     minHeight: 220,
+  },
+  track: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.trackBg,
+    overflow: 'hidden',
+    flex: 1,
+  },
+  trackFill: {
+    height: '100%',
+    borderRadius: 2,
   },
 });

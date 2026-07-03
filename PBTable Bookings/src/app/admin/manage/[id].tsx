@@ -7,7 +7,7 @@ import { slipRating } from '@/domain/slips';
 import { formatSessionWhen, spotsLeft } from '@/lib/format';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
-import { colors, radius, spacing, type } from '@/theme';
+import { colors, fonts, radius, spacing, type } from '@/theme';
 import { CourtSlipRound, Member, Session } from '@/types';
 
 export default function ManageSessionScreen() {
@@ -72,7 +72,7 @@ export default function ManageSessionScreen() {
 
       {/* ★ The differentiator: balanced court slips */}
       {session.status === 'upcoming' ? (
-        <Card style={{ marginTop: spacing.lg, backgroundColor: colors.navy }}>
+        <Card style={{ marginTop: spacing.lg, backgroundColor: colors.navy, borderColor: colors.navy }}>
           <Text style={[type.h2, { color: colors.textOnDark }]}>Balanced {slipTerm}s</Text>
           <Text style={[type.caption, { color: 'rgba(255,255,255,0.75)', marginTop: 4 }]}>
             Fair teams from {sportProfile.terms.rating} — strong paired with developing, no repeated
@@ -193,8 +193,8 @@ function SlipCourt({
   return (
     <View style={styles.slipCourt}>
       <Row style={{ justifyContent: 'space-between' }}>
-        <Text style={[type.tiny, { color: colors.coral }]}>{courtLabel.toUpperCase()}</Text>
-        <Text style={[type.tiny, type.mono]}>
+        <Text style={[type.tiny, { color: colors.coralText }]}>{courtLabel.toUpperCase()}</Text>
+        <Text style={[type.tiny, type.mono, { letterSpacing: 0 }]}>
           {avg(team1).toFixed(2)} v {avg(team2).toFixed(2)}
         </Text>
       </Row>
@@ -206,7 +206,7 @@ function SlipCourt({
             </Text>
           ))}
         </View>
-        <Text style={[type.caption, { fontWeight: '800', color: colors.textFaint }]}>vs</Text>
+        <Text style={{ fontSize: 11, fontFamily: fonts.extrabold, color: colors.textFaint }}>vs</Text>
         <View style={{ flex: 1, alignItems: 'flex-end' }}>
           {team2.map((m, i) => (
             <Text key={i} style={type.body} numberOfLines={1}>

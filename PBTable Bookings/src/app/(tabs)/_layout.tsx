@@ -5,7 +5,7 @@ import { View } from 'react-native';
 
 import { Header } from '@/components/Header';
 import { useApp } from '@/store/AppContext';
-import { colors } from '@/theme';
+import { colors, fonts } from '@/theme';
 
 export default function TabsLayout() {
   const { role } = useApp();
@@ -19,7 +19,7 @@ export default function TabsLayout() {
           tabBarActiveTintColor: colors.coral,
           tabBarInactiveTintColor: colors.textFaint,
           tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
-          tabBarLabelStyle: { fontWeight: '700', fontSize: 11 },
+          tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
           sceneStyle: { backgroundColor: colors.background },
         }}
       >

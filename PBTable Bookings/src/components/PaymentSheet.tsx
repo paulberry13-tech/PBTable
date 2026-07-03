@@ -4,7 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 
 import { Button, Row } from '@/components/ui';
 import { charge, formatPence } from '@/services/payments';
-import { colors, radius, shadow, spacing, type } from '@/theme';
+import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
 /**
  * MOCK payment sheet — fake card fields, no validation, always succeeds.
@@ -133,24 +133,25 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   demoNoteText: {
-    color: colors.amber,
+    color: colors.amberText,
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: fonts.bold,
   },
   label: {
     ...type.tiny,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
     marginTop: spacing.md,
     marginBottom: 4,
   },
   input: {
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
+    minHeight: 44,
     fontSize: 15,
+    fontFamily: fonts.regular,
     color: colors.text,
     backgroundColor: colors.card,
   },

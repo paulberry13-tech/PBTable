@@ -7,7 +7,7 @@ import { Badge, Card, ErrorState, LoadingView, Row } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
-import { colors, spacing, type } from '@/theme';
+import { colors, fonts, spacing, type } from '@/theme';
 
 export default function PlayerProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -47,8 +47,8 @@ export default function PlayerProfileScreen() {
       </Row>
 
       {unrated ? (
-        <Card style={{ marginTop: spacing.lg, backgroundColor: colors.coralSoft }}>
-          <Text style={[type.h2, { color: colors.coral }]}>Unrated</Text>
+        <Card style={{ marginTop: spacing.lg, backgroundColor: colors.coralSoft, borderColor: 'transparent' }}>
+          <Text style={[type.h2, { color: colors.coralText }]}>Unrated</Text>
           <Text style={[type.body, { marginTop: 4 }]}>
             Play a graded {sportProfile.terms.session.toLowerCase()} to earn a{' '}
             {sportProfile.terms.rating}.
@@ -65,7 +65,7 @@ export default function PlayerProfileScreen() {
             <StatCard
               label="Streak"
               value={streak === 0 ? '—' : streak > 0 ? `W${streak}` : `L${Math.abs(streak)}`}
-              color={streak > 0 ? colors.up : streak < 0 ? colors.down : undefined}
+              color={streak > 0 ? colors.upText : streak < 0 ? colors.downText : undefined}
             />
           </Row>
 
@@ -113,8 +113,8 @@ export default function PlayerProfileScreen() {
 function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <Card style={{ flex: 1, alignItems: 'center', paddingVertical: spacing.md }}>
-      <Text style={[type.h1, type.mono, color ? { color } : null]}>{value}</Text>
-      <Text style={[type.tiny, { marginTop: 2 }]}>{label.toUpperCase()}</Text>
+      <Text style={[type.monoBold, { fontSize: 19, color: color ?? colors.navy }]}>{value}</Text>
+      <Text style={[type.tiny, { marginTop: 3 }]}>{label.toUpperCase()}</Text>
     </Card>
   );
 }
@@ -123,10 +123,9 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 48, maxWidth: 720, width: '100%', alignSelf: 'center' },
   bigRating: {
-    fontSize: 40,
-    fontWeight: '800',
+    ...type.monoBold,
+    fontSize: 38,
     color: colors.navy,
-    ...type.mono,
   },
   formDot: {
     width: 26,
@@ -138,6 +137,6 @@ const styles = StyleSheet.create({
   formDotText: {
     color: colors.textOnDark,
     fontSize: 11,
-    fontWeight: '900',
+    fontFamily: fonts.extrabold,
   },
 });

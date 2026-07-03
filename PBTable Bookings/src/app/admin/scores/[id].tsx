@@ -7,7 +7,7 @@ import { Button, Card, EmptyState, ErrorState, LoadingView, Row } from '@/compon
 import { RatingChange } from '@/domain/ratings';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
-import { colors, radius, spacing, type } from '@/theme';
+import { colors, fonts, radius, spacing, type } from '@/theme';
 
 interface ScoreDraft {
   key: string;
@@ -120,7 +120,7 @@ export default function EnterScoresScreen() {
             const m = membersById.get(memberId);
             const flat = Math.abs(delta) < 0.0005;
             const up = delta > 0;
-            const colour = flat ? colors.textFaint : up ? colors.up : colors.down;
+            const colour = flat ? colors.textFaint : up ? colors.upText : colors.downText;
             return (
               <Row key={memberId} style={{ justifyContent: 'space-between', marginBottom: 8 }}>
                 <Text style={type.body}>{m?.name ?? memberId}</Text>
@@ -128,7 +128,7 @@ export default function EnterScoresScreen() {
                   {flat ? null : (
                     <Ionicons name={up ? 'caret-up' : 'caret-down'} size={14} color={colour} />
                   )}
-                  <Text style={[type.body, type.mono, { color: colour, fontWeight: '700' }]}>
+                  <Text style={[type.monoBold, { fontSize: 14, color: colour }]}>
                     {flat ? '—' : `${up ? '+' : ''}${delta.toFixed(3)}`}
                   </Text>
                 </Row>
@@ -164,7 +164,7 @@ export default function EnterScoresScreen() {
               </Text>
             ) : null}
             <Card style={{ marginBottom: spacing.md }}>
-              <Text style={[type.tiny, { color: colors.coral }]}>
+              <Text style={[type.tiny, { color: colors.coralText }]}>
                 {sportProfile.terms.court.toUpperCase()} {d.court}
               </Text>
               <Row style={{ marginTop: spacing.sm }} gap={spacing.md}>
@@ -219,13 +219,14 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: 48, maxWidth: 720, width: '100%', alignSelf: 'center' },
   scoreInput: {
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
     borderRadius: radius.sm,
     width: 64,
+    minHeight: 44,
     textAlign: 'center',
     paddingVertical: 8,
     fontSize: 18,
-    fontWeight: '700',
+    fontFamily: fonts.monoBold,
     color: colors.navy,
     backgroundColor: colors.card,
   },

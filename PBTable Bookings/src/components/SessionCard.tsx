@@ -1,13 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Badge, Row } from '@/components/ui';
+import { Badge, CapacityBar, Row } from '@/components/ui';
 import { FORMAT_LABELS } from '@/domain/sportProfile';
 import { formatSessionWhen, skillBandLabel, spotsLeft } from '@/lib/format';
 import { formatPence } from '@/services/payments';
-import { colors, radius, shadow, spacing, type } from '@/theme';
+import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 import { Session, SportProfile } from '@/types';
 
 export function SessionCard({ session, profile }: { session: Session; profile: SportProfile }) {
@@ -15,18 +14,20 @@ export function SessionCard({ session, profile }: { session: Session; profile: S
   const left = spotsLeft(session);
   const full = left === 0;
   const band = skillBandLabel(session);
+  const booked = session.capacity - left;
 
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/session/[id]', params: { id: session.id } })}
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
       <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ flex: 1, marginRight: spacing.md }}>
           <Text style={type.h2}>{session.title}</Text>
           <Text style={[type.caption, { marginTop: 2 }]}>{formatSessionWhen(session)}</Text>
         </View>
-        <Text style={[styles.price, session.pricePence === 0 && { color: colors.up }]}>
+        <Text style={[styles.price, session.pricePence === 0 && { color: colors.upText }]}>
           {formatPence(session.pricePence)}
         </Text>
       </Row>
@@ -44,22 +45,14 @@ export function SessionCard({ session, profile }: { session: Session; profile: S
         {session.isRecurring ? <Badge label="Weekly" tone="grey" /> : null}
       </Row>
 
-      <Row style={{ marginTop: spacing.md, justifyContent: 'space-between' }}>
-        <Row gap={4}>
-          <Ionicons name="grid-outline" size={14} color={colors.textMuted} />
-          <Text style={type.caption}>
-            {session.courts} {session.courts === 1 ? profile.terms.court.toLowerCase() : `${profile.terms.court.toLowerCase()}s`}
-          </Text>
-        </Row>
+      <Row style={{ marginTop: spacing.lg }} gap={spacing.md}>
+        <CapacityBar booked={booked} capacity={session.capacity} />
         {full ? (
-          <Row gap={4}>
-            <Ionicons name="time-outline" size={14} color={colors.amber} />
-            <Text style={[type.caption, { color: colors.amber, fontWeight: '700' }]}>
-              Full — waitlist{session.waitlist.length > 0 ? ` (${session.waitlist.length})` : ''}
-            </Text>
-          </Row>
+          <Text style={[styles.spots, { color: colors.amberText }]}>
+            Full · waitlist{session.waitlist.length > 0 ? ` ${session.waitlist.length}` : ''}
+          </Text>
         ) : (
-          <Text style={[type.caption, { color: colors.up, fontWeight: '700' }]}>
+          <Text style={[styles.spots, { color: colors.upText }]}>
             {left} {left === 1 ? 'spot' : 'spots'} left
           </Text>
         )}
@@ -74,11 +67,23 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.lg,
     marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
     ...shadow.card,
   },
+  cardPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.995 }],
+  },
   price: {
-    ...type.h2,
-    ...type.mono,
+    fontSize: 16,
+    fontFamily: fonts.monoBold,
+    fontVariant: ['tabular-nums'],
     color: colors.navy,
+  },
+  spots: {
+    fontSize: 12.5,
+    fontFamily: fonts.bold,
+    flexShrink: 0,
   },
 });
