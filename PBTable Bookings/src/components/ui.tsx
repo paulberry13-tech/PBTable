@@ -75,9 +75,10 @@ export function Badge({
   label: string;
   tone?: 'navy' | 'coral' | 'green' | 'red' | 'amber' | 'grey';
 }) {
+  // Timely-style pastel chips: soft tint background + deep same-hue text.
   const tones = {
-    navy: { bg: colors.navy, fg: colors.textOnDark },
-    coral: { bg: colors.coralSoft, fg: colors.coralText },
+    navy: { bg: colors.lilac, fg: colors.navy },
+    coral: { bg: colors.pink, fg: colors.pinkDeep },
     green: { bg: colors.upSoft, fg: colors.upText },
     red: { bg: colors.downSoft, fg: colors.downText },
     amber: { bg: colors.amberSoft, fg: colors.amberText },
@@ -189,7 +190,7 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   button: {
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     paddingVertical: 13,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',

@@ -1,3 +1,4 @@
+import { Fraunces_600SemiBold, Fraunces_700Bold } from '@expo-google-fonts/fraunces';
 import {
   JetBrainsMono_500Medium,
   JetBrainsMono_700Bold,
@@ -23,6 +24,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
+    Fraunces_600SemiBold,
+    Fraunces_700Bold,
     Manrope_400Regular,
     Manrope_500Medium,
     Manrope_600SemiBold,

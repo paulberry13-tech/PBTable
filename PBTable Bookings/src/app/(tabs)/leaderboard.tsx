@@ -113,8 +113,8 @@ const styles = StyleSheet.create({
   hot: {
     fontSize: 10,
     fontFamily: fonts.extrabold,
-    color: colors.coralText,
-    backgroundColor: colors.coralSoft,
+    color: colors.pinkDeep,
+    backgroundColor: colors.pink,
     paddingHorizontal: 6,
     paddingVertical: 2.5,
     borderRadius: radius.pill,
