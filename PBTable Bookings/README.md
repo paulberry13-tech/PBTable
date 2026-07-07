@@ -40,12 +40,13 @@ via React Native Web. One codebase, three platforms.
 
 Also worth showing:
 
-- **The wallet / credits model** — members hold a prepaid balance (stored in
-  pence; "credits" at £2 each are a display layer). Booking draws the price
-  down from the balance; a shortfall opens the top-up sheet (buy credits in
-  whole-number bundles) then completes the booking. The **Wallet** tab shows
-  the balance and a full deposit/spend/refund ledger. Cancellations refund
-  **credits back to the balance**, not out to a card.
+- **The wallet** — each member holds a prepaid balance in **pounds** (money
+  deposited against their name). Booking draws the session's £ price down from
+  the balance; a shortfall opens the top-up sheet (add money by card — the one
+  place real money enters) and then completes the booking. Cancellations return
+  the **money to the balance**, never out to a card. The **Wallet** tab shows
+  the balance and a full deposit/spend/refund ledger. (No credits abstraction —
+  everything is £.)
 - **The 24-hour cancellation rule** (My Bookings → Cancel): the seeded data has you
   booked on a full session **tonight** (cancel = no refund unless a waitlister takes
   the seat — and one does, so you're refunded) and a full session **later in the
@@ -61,8 +62,8 @@ Also worth showing:
 | Mock | File | Swap for |
 | --- | --- | --- |
 | Data API | `src/services/data.ts` | Supabase queries/RPCs — the **only** module that knows data is mocked; every function is async and returns copies, so screens already behave as API clients |
-| Payments | `src/services/payments.ts` | Stripe (top-up card charge) |
-| Wallet / ledger | `src/services/data.ts` (`getBalance`/`getLedger`/`topUp`, drawdown in `bookSession`, refund in `cancelBooking`) | Supabase table + RPC; balance is a running sum of the ledger |
+| Payments | `src/services/payments.ts` | Stripe (top-up card charge only) |
+| Wallet / ledger | `src/services/data.ts` (`getBalance`/`getLedger`/`topUp`, drawdown in `bookSession`, refund in `cancelBooking`) | Supabase table + RPC; balance in pence, a running sum of the ledger |
 | Auth + role | `src/services/auth.ts` | Supabase Auth |
 | Seed data | `src/mock/seed.ts` | deleted — 40 members, 9 upcoming + 6 completed sessions whose matches are replayed through the real rating engine on load |
 

@@ -1,6 +1,6 @@
-// TODO: swap for Stripe. Fake payment service — every charge succeeds after a
-// short delay. The mock payment sheet collects card fields for realism but
-// nothing is validated or stored.
+// TODO: swap for Stripe. Fake payment service used ONLY when topping up the
+// wallet (the one place real money enters). Every charge succeeds after a
+// short delay; the mock card fields are never validated or stored.
 
 export interface ChargeRequest {
   amountPence: number;
@@ -23,14 +23,4 @@ let receiptSeq = 5000;
 export async function charge(request: ChargeRequest): Promise<ChargeResult> {
   await new Promise((resolve) => setTimeout(resolve, 900)); // "contacting your bank…"
   return { success: true, receiptId: `rcpt_${receiptSeq++}`, amountPence: request.amountPence };
-}
-
-export async function refund(amountPence: number): Promise<ChargeResult> {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  return { success: true, receiptId: `rfnd_${receiptSeq++}`, amountPence };
-}
-
-export function formatPence(pence: number): string {
-  if (pence === 0) return 'Free';
-  return `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`;
 }

@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { TopUpSheet } from '@/components/TopUpSheet';
 import { Badge, Button, Card, ErrorState, LoadingView, Row } from '@/components/ui';
 import { FORMAT_LABELS } from '@/domain/sportProfile';
-import { creditsFromPence, formatCredits, formatMoney } from '@/lib/credits';
+import { formatMoney, formatMoneyShort } from '@/lib/money';
 import { formatDateLong, formatTimeRange, skillBandLabel, spotsLeft } from '@/lib/format';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
@@ -17,7 +17,7 @@ export default function SessionDetailScreen() {
   const router = useRouter();
   const { currentUser, role, sportProfile, refresh, showBanner } = useApp();
   const [topUpOpen, setTopUpOpen] = useState(false);
-  const [shortfallCredits, setShortfallCredits] = useState(0);
+  const [shortfallPence, setShortfallPence] = useState(0);
   const [booking, setBooking] = useState(false);
 
   const { data: session, error } = useAsyncData(() => data.getSession(id), [id]);
@@ -56,10 +56,7 @@ export default function SessionDetailScreen() {
       if (result.waitlisted) {
         showBanner(`You're #${result.position} on the waitlist for ${session.title}.`, 'info');
       } else if (cost > 0) {
-        showBanner(
-          `Booked! ${formatMoney(cost)} (${formatCredits(cost)}) drawn from your balance.`,
-          'success'
-        );
+        showBanner(`Booked! ${formatMoneyShort(cost)} drawn from your balance.`, 'success');
       } else {
         showBanner(`Booked! See you at ${session.title}.`, 'success');
       }
@@ -68,7 +65,7 @@ export default function SessionDetailScreen() {
     } catch (e) {
       if (e instanceof data.InsufficientBalanceError) {
         // Balance moved under us (e.g. concurrent booking) — send to top-up.
-        setShortfallCredits(Math.ceil(creditsFromPence(e.shortfallPence)));
+        setShortfallPence(e.shortfallPence);
         setTopUpOpen(true);
       } else {
         showBanner(e instanceof Error ? e.message : 'Booking failed', 'warning');
@@ -82,7 +79,7 @@ export default function SessionDetailScreen() {
     if (full || cost === 0 || canAfford) {
       void completeBooking();
     } else {
-      setShortfallCredits(Math.ceil(creditsFromPence(cost - balancePence)));
+      setShortfallPence(cost - balancePence);
       setTopUpOpen(true);
     }
   };
@@ -113,10 +110,7 @@ export default function SessionDetailScreen() {
           icon="grid-outline"
           text={`${session.courts} ${sportProfile.terms.court.toLowerCase()}s · capacity ${session.capacity}`}
         />
-        <InfoRow
-          icon="pricetag-outline"
-          text={cost === 0 ? 'Free' : `${formatMoney(cost)} · ${formatCredits(cost)}`}
-        />
+        <InfoRow icon="pricetag-outline" text={cost === 0 ? 'Free' : formatMoneyShort(cost)} />
         {session.affectsRating ? (
           <InfoRow
             icon="trending-up-outline"
@@ -179,8 +173,8 @@ export default function SessionDetailScreen() {
                   : cost === 0
                     ? 'Book — free'
                     : canAfford
-                      ? `Book · ${formatCredits(cost)}`
-                      : `Top up & book · ${formatCredits(cost)}`
+                      ? `Book · ${formatMoneyShort(cost)}`
+                      : `Top up & book · ${formatMoneyShort(cost)}`
               }
               onPress={onBookPress}
               loading={booking}
@@ -188,7 +182,7 @@ export default function SessionDetailScreen() {
             />
             {!full && cost > 0 ? (
               <Text style={styles.balanceLine}>
-                Balance {formatMoney(balancePence)} · {formatCredits(balancePence)}
+                Balance {formatMoney(balancePence)}
                 {canAfford ? '' : ' — top up to book'}
               </Text>
             ) : null}
@@ -205,8 +199,8 @@ export default function SessionDetailScreen() {
 
       <TopUpSheet
         visible={topUpOpen}
-        minCredits={shortfallCredits}
-        reason={`This session costs ${formatCredits(cost)}. Top up to book ${session.title}.`}
+        minPence={shortfallPence}
+        reason={`This session costs ${formatMoneyShort(cost)}. Top up to book ${session.title}.`}
         onConfirm={onTopUp}
         onClose={() => setTopUpOpen(false)}
       />

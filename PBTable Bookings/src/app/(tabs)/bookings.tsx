@@ -6,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ConfirmSheet } from '@/components/ConfirmSheet';
 import { Badge, Button, Card, EmptyState, LoadingView, Row } from '@/components/ui';
 import { sessionStart } from '@/domain/cancellation';
-import { formatCredits, formatMoney } from '@/lib/credits';
+import { formatMoney, formatMoneyShort } from '@/lib/money';
 import { formatSessionWhen } from '@/lib/format';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
@@ -71,9 +71,7 @@ export default function MyBookingsScreen() {
         <Ionicons name="wallet" size={20} color={colors.coralBright} />
         <View style={{ flex: 1 }}>
           <Text style={styles.walletLabel}>WALLET</Text>
-          <Text style={styles.walletBalance}>
-            {formatMoney(balance ?? 0)} · {formatCredits(balance ?? 0)}
-          </Text>
+          <Text style={styles.walletBalance}>{formatMoney(balance ?? 0)}</Text>
         </View>
         <Text style={styles.walletCta}>Top up</Text>
         <Ionicons name="chevron-forward" size={16} color={colors.textOnDarkMuted} />
@@ -100,7 +98,7 @@ export default function MyBookingsScreen() {
                   ? booking.status === 'waitlisted'
                     ? 'No charge yet'
                     : 'Free'
-                  : `Paid ${formatCredits(booking.paidPence)}`}
+                  : `Paid ${formatMoneyShort(booking.paidPence)}`}
               </Text>
             </Pressable>
             <Button

@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { TopUpSheet } from '@/components/TopUpSheet';
 import { Button, Card, EmptyState, LoadingView, Row } from '@/components/ui';
 import { formatDate } from '@/lib/format';
-import { formatCredits, formatMoney } from '@/lib/credits';
+import { formatMoney } from '@/lib/money';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
@@ -34,7 +34,7 @@ export default function WalletScreen() {
     await data.topUp(currentUser.id, amountPence);
     refresh();
     setTopUpOpen(false);
-    showBanner(`${formatMoney(amountPence)} added — you're topped up.`, 'success');
+    showBanner(`${formatMoney(amountPence)} added to your balance.`, 'success');
   };
 
   return (
@@ -44,7 +44,6 @@ export default function WalletScreen() {
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>BALANCE</Text>
         <Text style={styles.balanceMoney}>{formatMoney(pence)}</Text>
-        <Text style={styles.balanceCredits}>{formatCredits(pence)}</Text>
         <Button
           title="Top up"
           onPress={() => setTopUpOpen(true)}
@@ -57,7 +56,7 @@ export default function WalletScreen() {
       {ledgerLoading && !ledger ? (
         <LoadingView label="Loading activity…" />
       ) : (ledger ?? []).length === 0 ? (
-        <EmptyState title="No activity yet" hint="Top up to start booking sessions with credits." />
+        <EmptyState title="No activity yet" hint="Top up your balance to start booking sessions." />
       ) : (
         <Card style={{ paddingVertical: spacing.sm }}>
           {(ledger ?? []).map((entry, i) => (
@@ -92,13 +91,10 @@ function LedgerRow({ entry, last }: { entry: LedgerEntry; last: boolean }) {
         </Text>
         <Text style={type.caption}>{formatDate(entry.createdAt.slice(0, 10))}</Text>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Text style={[styles.amount, { color: credit ? colors.upText : colors.text }]}>
-          {sign}
-          {formatMoney(magnitude)}
-        </Text>
-        <Text style={styles.amountCredits}>{formatCredits(magnitude)}</Text>
-      </View>
+      <Text style={[styles.amount, { color: credit ? colors.upText : colors.text }]}>
+        {sign}
+        {formatMoney(magnitude)}
+      </Text>
     </Row>
   );
 }
@@ -120,15 +116,9 @@ const styles = StyleSheet.create({
   },
   balanceMoney: {
     fontFamily: fonts.monoBold,
-    fontSize: 44,
+    fontSize: 46,
     color: colors.textOnDark,
-    marginTop: spacing.sm,
-  },
-  balanceCredits: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textOnDarkMuted,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   ledgerRow: {
     paddingVertical: spacing.md,
@@ -140,12 +130,6 @@ const styles = StyleSheet.create({
   },
   amount: {
     fontFamily: fonts.monoBold,
-    fontSize: 15,
-  },
-  amountCredits: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: colors.textFaint,
-    marginTop: 1,
+    fontSize: 16,
   },
 });

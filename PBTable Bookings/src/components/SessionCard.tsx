@@ -4,8 +4,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Badge, CapacityBar, Row } from '@/components/ui';
 import { FORMAT_LABELS } from '@/domain/sportProfile';
+import { formatMoneyShort } from '@/lib/money';
 import { formatSessionWhen, skillBandLabel, spotsLeft } from '@/lib/format';
-import { formatPence } from '@/services/payments';
 import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 import { Session, SportProfile } from '@/types';
 
@@ -28,7 +28,7 @@ export function SessionCard({ session, profile }: { session: Session; profile: S
           <Text style={[type.caption, { marginTop: 2 }]}>{formatSessionWhen(session)}</Text>
         </View>
         <Text style={[styles.price, session.pricePence === 0 && { color: colors.upText }]}>
-          {formatPence(session.pricePence)}
+          {session.pricePence === 0 ? 'Free' : formatMoneyShort(session.pricePence)}
         </Text>
       </Row>
 
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.995 }],
   },
   price: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: fonts.monoBold,
     fontVariant: ['tabular-nums'],
     color: colors.navy,

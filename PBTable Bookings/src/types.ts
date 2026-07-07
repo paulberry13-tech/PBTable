@@ -18,9 +18,9 @@ export interface Member {
   streak?: number;
   ratingHistory?: { date: string; rating: number }[];
   /**
-   * Prepaid wallet balance in PENCE — the single source of truth for money.
-   * "Credits" are a display layer over this (see lib/credits.ts). Kept in
-   * sync with the ledger (LedgerEntry rows) by services/data.ts.
+   * Prepaid wallet balance in PENCE — money deposited against the member,
+   * drawn down by bookings. Kept in sync with the ledger (LedgerEntry rows)
+   * by services/data.ts.
    */
   balancePence: number;
 }

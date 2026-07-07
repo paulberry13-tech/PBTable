@@ -429,26 +429,26 @@ export function buildSeed(): SeedData {
   sessions.push(...upcoming);
 
   // --- wallet ledger --------------------------------------------------------
-  // Money is stored in pence; "credits" (1 = £2) are a display layer. Paul
-  // gets a real, reconciling ledger (top-ups + the sessions he's booked) so
-  // his Wallet screen tells a story on first load. Everyone else gets a single
-  // generous opening balance — enough to book freely (demo fills, promotions).
+  // A prepaid balance in pence — money deposited against the player's name,
+  // drawn down by bookings. Paul gets a real, reconciling ledger (top-ups + the
+  // sessions he's booked) so his Wallet screen tells a story on first load.
+  // Everyone else gets a single generous opening balance — enough to book
+  // freely (demo fills, promotions).
   const ledgerSeeds: LedgerSeed[] = [
-    { memberId: 'm-paul', type: 'deposit', amountPence: 4000, description: 'Top-up · 20 credits', daysAgo: 35 },
+    { memberId: 'm-paul', type: 'deposit', amountPence: 4000, description: 'Top-up', daysAgo: 35 },
     { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Club Night Doubles', sessionId: 's-past-1', daysAgo: 19 },
     { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Thursday Club League', sessionId: 's-past-3', daysAgo: 14 },
     { memberId: 'm-paul', type: 'spend', amountPence: -500, description: 'Intermediate Ladder Night', sessionId: 's-past-4', daysAgo: 10 },
-    { memberId: 'm-paul', type: 'deposit', amountPence: 2000, description: 'Top-up · 10 credits', daysAgo: 8 },
+    { memberId: 'm-paul', type: 'deposit', amountPence: 2000, description: 'Top-up', daysAgo: 8 },
     { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Club Night Doubles', sessionId: 's-up-1', daysAgo: 4 },
     { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Thursday Club League', sessionId: 's-up-2', daysAgo: 3 },
   ];
   for (const m of members) {
     if (m.id === 'm-paul') continue;
-    const credits = randInt(15, 35); // £30–£70, whole credits
     ledgerSeeds.push({
       memberId: m.id,
       type: 'deposit',
-      amountPence: credits * 200,
+      amountPence: randInt(6, 14) * 500, // £30–£70 opening balance
       description: 'Opening balance',
       daysAgo: 30,
     });

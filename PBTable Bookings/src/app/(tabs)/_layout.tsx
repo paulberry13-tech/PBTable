@@ -44,7 +44,7 @@ export default function TabsLayout() {
           name="wallet"
           options={{
             title: 'Wallet',
-            // Members manage credits; hidden in Admin (5 tabs either way).
+            // Members manage their wallet; hidden in Admin (5 tabs either way).
             href: role === 'member' ? '/wallet' : null,
             tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={size} color={color} />,
           }}

@@ -6,6 +6,7 @@
 import { cancellationWarning, decideCancellation } from '@/domain/cancellation';
 import { applyMatch, RatingChange } from '@/domain/ratings';
 import { generateSlips } from '@/domain/slips';
+import { formatMoneyShort } from '@/lib/money';
 import { buildSeed } from '@/mock/seed';
 import {
   Booking,
@@ -139,7 +140,7 @@ function postLedger(
 export class InsufficientBalanceError extends Error {
   shortfallPence: number;
   constructor(shortfallPence: number) {
-    super('Not enough credits to book this session.');
+    super('Not enough balance to book this session.');
     this.name = 'InsufficientBalanceError';
     this.shortfallPence = shortfallPence;
   }
@@ -239,7 +240,7 @@ export async function joinWaitlist(sessionId: string, memberId: string): Promise
   return bookSession(sessionId, memberId);
 }
 
-// --- wallet / credits --------------------------------------------------------
+// --- wallet ------------------------------------------------------------------
 
 export async function getBalance(memberId: string): Promise<number> {
   await delay(80);
@@ -259,13 +260,7 @@ export async function getLedger(memberId: string): Promise<LedgerEntry[]> {
  *  services/payments.ts; this posts the resulting deposit to the balance. */
 export async function topUp(memberId: string, amountPence: number): Promise<LedgerEntry> {
   await delay();
-  const credits = Math.round(amountPence / 200);
-  const entry = postLedger(
-    memberId,
-    'deposit',
-    amountPence,
-    `Top-up · ${credits} credit${credits === 1 ? '' : 's'}`
-  );
+  const entry = postLedger(memberId, 'deposit', amountPence, 'Top-up');
   return clone(entry);
 }
 
@@ -349,7 +344,7 @@ export async function cancelBooking(sessionId: string, memberId: string): Promis
   const refundPence = refundDue ? bk.paidPence : 0;
   if (refundDue && bk.paidPence > 0) {
     bk.refundedPence = bk.paidPence;
-    // Refunds go back to the wallet as credits, not out to a card.
+    // Refunds go back to the wallet balance, not out to a card.
     postLedger(memberId, 'refund', bk.paidPence, `Refund · ${session.title}`, sessionId);
   }
 
@@ -357,9 +352,9 @@ export async function cancelBooking(sessionId: string, memberId: string): Promis
   if (bk.paidPence === 0) {
     policyNote = 'Free booking cancelled — spot released.';
   } else if (decision.refundNow) {
-    policyNote = `Cancelled more than 24 hours before start — ${formatPenceShort(refundPence)} credited to your balance.`;
+    policyNote = `Cancelled more than 24 hours before start — ${formatMoneyShort(refundPence)} returned to your balance.`;
   } else if (refundDue) {
-    policyNote = `Within 24 hours, but your spot was re-sold to the waitlist — ${formatPenceShort(refundPence)} credited to your balance.`;
+    policyNote = `Within 24 hours, but your spot was re-sold to the waitlist — ${formatMoneyShort(refundPence)} returned to your balance.`;
   } else {
     policyNote = 'Cancelled within 24 hours of start — no refund (no waitlister took the spot).';
   }
@@ -370,11 +365,6 @@ export async function cancelBooking(sessionId: string, memberId: string): Promis
     promotedMemberName: promoted?.name,
     policyNote,
   };
-}
-
-/** "£6" / "£5.50" — compact money for policy copy. */
-function formatPenceShort(pence: number): string {
-  return `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`;
 }
 
 /** Pre-cancellation warning copy for the confirm dialog. */

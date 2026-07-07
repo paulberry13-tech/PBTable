@@ -3,53 +3,51 @@ import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button, Row } from '@/components/ui';
-import { CREDIT_PENCE, formatMoney, penceFromCredits, TOPUP_BUNDLES } from '@/lib/credits';
+import { formatMoney, TOPUP_AMOUNTS } from '@/lib/money';
 import { charge } from '@/services/payments';
 import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
 /**
- * MOCK top-up sheet — buy credits in whole-number bundles with fake card
- * fields (no validation, always succeeds). 1 credit = £2.
+ * MOCK top-up sheet — add money to the wallet with fake card fields (no
+ * validation, always succeeds). This is the ONE place real money enters.
  * TODO: swap the charge for Stripe when the real backend lands.
  */
 export function TopUpSheet({
   visible,
-  minCredits = 0,
+  minPence = 0,
   reason,
   onConfirm,
   onClose,
 }: {
   visible: boolean;
-  /** Preselect the smallest bundle that covers this many credits (e.g. a booking shortfall). */
-  minCredits?: number;
-  /** Optional context line, e.g. "You need 3 credits to book Club Night Doubles". */
+  /** Preselect the smallest preset that covers this (e.g. a booking shortfall). */
+  minPence?: number;
+  /** Optional context line, e.g. "You need £2 more to book Club Night Doubles". */
   reason?: string;
   onConfirm: (amountPence: number) => Promise<void> | void;
   onClose: () => void;
 }) {
-  const defaultCredits = useMemo(
-    () => TOPUP_BUNDLES.find((c) => c >= minCredits) ?? TOPUP_BUNDLES[TOPUP_BUNDLES.length - 1],
-    [minCredits]
+  const defaultAmount = useMemo(
+    () => TOPUP_AMOUNTS.find((a) => a >= minPence) ?? TOPUP_AMOUNTS[TOPUP_AMOUNTS.length - 1],
+    [minPence]
   );
-  const [credits, setCredits] = useState<number>(defaultCredits);
+  const [amount, setAmount] = useState<number>(defaultAmount);
   const [cardNumber, setCardNumber] = useState('4242 4242 4242 4242');
   const [expiry, setExpiry] = useState('12/28');
   const [cvc, setCvc] = useState('123');
   const [paying, setPaying] = useState(false);
 
   // Re-sync the default when the sheet is reopened for a different shortfall.
-  const [lastMin, setLastMin] = useState(minCredits);
-  if (minCredits !== lastMin) {
-    setLastMin(minCredits);
-    setCredits(defaultCredits);
+  const [lastMin, setLastMin] = useState(minPence);
+  if (minPence !== lastMin) {
+    setLastMin(minPence);
+    setAmount(defaultAmount);
   }
-
-  const amountPence = penceFromCredits(credits);
 
   const pay = async () => {
     setPaying(true);
-    await charge({ amountPence, description: `Top-up · ${credits} credits`, cardNumber, expiry, cvc });
-    await onConfirm(amountPence);
+    await charge({ amountPence: amount, description: `Wallet top-up`, cardNumber, expiry, cvc });
+    await onConfirm(amount);
     setPaying(false);
   };
 
@@ -58,35 +56,29 @@ export function TopUpSheet({
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <Row style={{ justifyContent: 'space-between' }}>
-            <Text style={type.h1}>Top up credits</Text>
+            <Text style={type.h1}>Top up wallet</Text>
             <Pressable onPress={onClose} disabled={paying} hitSlop={12} accessibilityLabel="Close">
               <Ionicons name="close" size={22} color={colors.textMuted} />
             </Pressable>
           </Row>
           <Text style={[type.caption, { marginTop: 4 }]}>
-            {reason ?? `1 credit = ${formatMoney(CREDIT_PENCE)}. Credits pay for your bookings.`}
+            {reason ?? 'Add money to your balance to book sessions.'}
           </Text>
 
-          <Text style={styles.label}>Choose a bundle</Text>
+          <Text style={styles.label}>Amount</Text>
           <Row gap={spacing.sm} style={{ flexWrap: 'wrap' }}>
-            {TOPUP_BUNDLES.map((c) => {
-              const selected = c === credits;
+            {TOPUP_AMOUNTS.map((a) => {
+              const selected = a === amount;
               return (
                 <Pressable
-                  key={c}
-                  onPress={() => setCredits(c)}
+                  key={a}
+                  onPress={() => setAmount(a)}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
-                  style={[styles.bundle, selected && styles.bundleSelected]}
+                  style={[styles.amountChip, selected && styles.amountChipSelected]}
                 >
-                  <Text style={[styles.bundleCredits, selected && { color: colors.textOnDark }]}>
-                    {c}
-                  </Text>
-                  <Text style={[styles.bundleUnit, selected && { color: colors.textOnDark }]}>
-                    credits
-                  </Text>
-                  <Text style={[styles.bundlePrice, selected && { color: colors.textOnDark }]}>
-                    {formatMoney(penceFromCredits(c))}
+                  <Text style={[styles.amountText, selected && { color: colors.textOnDark }]}>
+                    {formatMoney(a)}
                   </Text>
                 </Pressable>
               );
@@ -132,7 +124,7 @@ export function TopUpSheet({
           </Row>
 
           <Button
-            title={paying ? 'Adding credits…' : `Pay ${formatMoney(amountPence)} · ${credits} credits`}
+            title={paying ? 'Adding money…' : `Pay ${formatMoney(amount)}`}
             onPress={pay}
             loading={paying}
             style={{ marginTop: spacing.lg }}
@@ -159,7 +151,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     ...shadow.raised,
   },
-  bundle: {
+  amountChip: {
     flex: 1,
     minWidth: 72,
     alignItems: 'center',
@@ -169,25 +161,14 @@ const styles = StyleSheet.create({
     borderColor: colors.borderStrong,
     backgroundColor: colors.card,
   },
-  bundleSelected: {
+  amountChipSelected: {
     backgroundColor: colors.navy,
     borderColor: colors.navy,
   },
-  bundleCredits: {
+  amountText: {
     fontFamily: fonts.monoBold,
-    fontSize: 22,
+    fontSize: 18,
     color: colors.navy,
-  },
-  bundleUnit: {
-    ...type.tiny,
-    color: colors.textFaint,
-    textTransform: 'uppercase',
-  },
-  bundlePrice: {
-    marginTop: 4,
-    fontFamily: fonts.bold,
-    fontSize: 13,
-    color: colors.textMuted,
   },
   demoNote: {
     flexDirection: 'row',
