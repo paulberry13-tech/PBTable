@@ -1,26 +1,11 @@
-// TODO: swap for Supabase Auth. Mock auth — a fixed current user plus an
-// in-memory role that the UI role switcher toggles between Member and Admin.
+// Auth seam — forwards to the mock or Supabase auth based on USE_SUPABASE.
+import { USE_SUPABASE } from '@/services/config';
+import * as mock from '@/services/auth.mock';
+import * as supa from '@/services/auth.supabase';
 
-import { getMember } from '@/services/data';
-import { Member, Role } from '@/types';
+const impl: typeof mock = USE_SUPABASE ? supa : mock;
 
-const CURRENT_USER_ID = 'm-paul';
-
-let currentRole: Role = 'member';
-
-export async function getCurrentUser(): Promise<Member> {
-  return getMember(CURRENT_USER_ID);
-}
-
-export function getCurrentUserId(): string {
-  return CURRENT_USER_ID;
-}
-
-export async function getRole(): Promise<Role> {
-  return currentRole;
-}
-
-export async function setRole(role: Role): Promise<Role> {
-  currentRole = role;
-  return currentRole;
-}
+export const getCurrentUser = impl.getCurrentUser;
+export const getCurrentUserId = impl.getCurrentUserId;
+export const getRole = impl.getRole;
+export const setRole = impl.setRole;

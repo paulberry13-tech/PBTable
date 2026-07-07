@@ -14,16 +14,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
-
-if (!url || !anonKey) {
-  // Not fatal — the app still runs on the mock seam (services/data.ts). This
-  // only bites if you switch the seam to Supabase without configuring env.
-  console.warn(
-    '[supabase] EXPO_PUBLIC_SUPABASE_URL / _ANON_KEY not set — the Supabase data seam will not work until they are.'
-  );
-}
+// Fallbacks keep createClient() from throwing when the app runs in mock mode
+// with no env set (this module is still imported by the data switcher). The
+// client is only actually used when USE_SUPABASE is true.
+const url = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
 export const supabase = createClient(url, anonKey, {
   auth: {

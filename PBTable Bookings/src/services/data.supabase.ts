@@ -1,17 +1,12 @@
-// Supabase implementation of the data seam — mapped to the backend that ALREADY
-// EXISTS in the PB Table Demo project (booking_members, credits_ledger, the
-// polymorphic bookings table, book_spot / session_spots / rdr_leaderboard, and
-// the server-side RDR engine). See supabase/BOOKING_APP_NOTES.md.
+// Supabase implementation of the data seam — mapped to the backend in the PB
+// Table Demo project (booking_members, credits_ledger, polymorphic bookings,
+// book_spot / cancel_booking / rdr_leaderboard, server-side RDR engine).
 //
-// Wired: sessions (both social_sessions + session_plans), book (book_spot),
-// balance + ledger (credits_ledger), leaderboard (rdr_leaderboard).
-// Not built server-side yet (marked TODO): cancel_booking, wallet top-up.
-//
-// IDENTITY SPLIT: leaderboard/directory use `players`; wallet/bookings use
-// `booking_members` (linked to a player via player_id). services/auth.ts must
-// resolve the login to the booking_members row; its id is the `memberId` passed
-// to the wallet/booking calls here.
+// Member flows (browse, book, cancel, wallet, leaderboard) are wired. Admin /
+// engine flows (create session, slips, enter scores) reuse the existing web
+// planner and are stubbed here.
 
+import { InsufficientBalanceError } from '@/services/contracts';
 import { supabase } from '@/services/supabaseClient';
 import type {
   Booking,
@@ -26,28 +21,21 @@ import type {
   CreateSessionInput,
   LeaderboardEntry,
   MyBooking,
-} from '@/services/data';
+} from '@/services/data.mock';
 import type { RatingChange } from '@/domain/ratings';
 
-/** Single-club app: the club whose sessions/leaderboard we show. */
+export { InsufficientBalanceError };
+
+/** Single-club app: whose sessions/leaderboard we show. */
 const CLUB_SLUG = process.env.EXPO_PUBLIC_CLUB_SLUG ?? '';
 
-export class InsufficientBalanceError extends Error {
-  shortfallPence: number;
-  constructor(shortfallPence: number) {
-    super('Not enough balance to book this session.');
-    this.name = 'InsufficientBalanceError';
-    this.shortfallPence = shortfallPence;
-  }
-}
-
 const notBuiltYet = (what: string): never => {
-  throw new Error(`${what} is not built on the backend yet (see BOOKING_APP_NOTES.md).`);
+  throw new Error(`${what} isn't wired to the backend yet (reuses the existing web planner).`);
 };
 
-// social_sessions = ungraded; session_plans = graded ladders/boxes. bookings
-// disambiguate the two via session_kind.
 type SessionKind = 'social' | 'graded';
+
+// --- row → domain mappers ----------------------------------------------------
 
 type SessionRow = {
   id: string;
@@ -57,12 +45,15 @@ type SessionRow = {
   capacity: number | null;
   price_pennies: number | null;
   booking_open: boolean;
-  name?: string | null; // social only
-  format?: string | null; // social only
-  courts?: number | null; // graded only
+  name?: string | null;
+  format?: string | null;
+  courts?: number | null;
 };
 
-function mapSession(r: SessionRow, kind: SessionKind): Session {
+function mapSession(r: SessionRow, kind: SessionKind, bookings: Booking[]): Session {
+  const waitlist = bookings
+    .filter((b) => b.status === 'waitlisted')
+    .map((b) => b.memberId);
   return {
     id: r.id,
     title: r.name ?? (kind === 'graded' ? 'Graded session' : 'Social session'),
@@ -75,18 +66,49 @@ function mapSession(r: SessionRow, kind: SessionKind): Session {
     affectsRating: kind === 'graded',
     pricePence: r.price_pennies ?? 0,
     isRecurring: false,
-    // TODO: roster/booked-count via a join or session_spots(); left empty here.
-    bookings: [],
-    waitlist: [],
+    bookings,
+    waitlist,
     status: r.booking_open ? 'upcoming' : 'completed',
   };
 }
 
-/** Which table owns this session id (needed for the polymorphic bookings). */
+type BookingRow = {
+  id: string;
+  session_id: string;
+  member_id: string;
+  status: Booking['status'];
+  price_charged_pennies: number;
+  created_at: string;
+};
+const mapBooking = (b: BookingRow): Booking => ({
+  id: b.id,
+  sessionId: b.session_id,
+  memberId: b.member_id,
+  status: b.status,
+  paidPence: b.price_charged_pennies,
+  bookedAt: b.created_at,
+});
+
+async function bookingsForSessions(ids: string[]): Promise<Map<string, Booking[]>> {
+  const map = new Map<string, Booking[]>();
+  if (ids.length === 0) return map;
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('id,session_id,member_id,status,price_charged_pennies,created_at')
+    .in('session_id', ids)
+    .in('status', ['booked', 'waitlisted', 'attended']);
+  if (error) throw error;
+  for (const b of data as BookingRow[]) {
+    const list = map.get(b.session_id) ?? [];
+    list.push(mapBooking(b));
+    map.set(b.session_id, list);
+  }
+  return map;
+}
+
 async function resolveKind(sessionId: string): Promise<SessionKind> {
   const social = await supabase.from('social_sessions').select('id').eq('id', sessionId).maybeSingle();
-  if (social.data) return 'social';
-  return 'graded';
+  return social.data ? 'social' : 'graded';
 }
 
 // --- sessions ----------------------------------------------------------------
@@ -104,11 +126,14 @@ export async function getSessions(): Promise<Session[]> {
   ]);
   if (social.error) throw social.error;
   if (graded.error) throw graded.error;
-  const out = [
-    ...(social.data as SessionRow[]).map((r) => mapSession(r, 'social')),
-    ...(graded.data as SessionRow[]).map((r) => mapSession(r, 'graded')),
+  const rows: [SessionRow, SessionKind][] = [
+    ...(social.data as SessionRow[]).map((r) => [r, 'social'] as [SessionRow, SessionKind]),
+    ...(graded.data as SessionRow[]).map((r) => [r, 'graded'] as [SessionRow, SessionKind]),
   ];
-  return out.sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
+  const bookings = await bookingsForSessions(rows.map(([r]) => r.id));
+  return rows
+    .map(([r, kind]) => mapSession(r, kind, bookings.get(r.id) ?? []))
+    .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
 }
 
 export async function getSession(id: string): Promise<Session> {
@@ -117,89 +142,102 @@ export async function getSession(id: string): Promise<Session> {
     .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open')
     .eq('id', id)
     .maybeSingle();
-  if (social.data) return mapSession(social.data as SessionRow, 'social');
-  const graded = await supabase
-    .from('session_plans')
-    .select('id,played_on,start_time,end_time,capacity,courts,price_pennies,booking_open')
-    .eq('id', id)
-    .single();
-  if (graded.error) throw graded.error;
-  return mapSession(graded.data as SessionRow, 'graded');
+  const kind: SessionKind = social.data ? 'social' : 'graded';
+  let row = social.data as SessionRow | null;
+  if (!row) {
+    const graded = await supabase
+      .from('session_plans')
+      .select('id,played_on,start_time,end_time,capacity,courts,price_pennies,booking_open')
+      .eq('id', id)
+      .single();
+    if (graded.error) throw graded.error;
+    row = graded.data as SessionRow;
+  }
+  const bookings = await bookingsForSessions([id]);
+  return mapSession(row, kind, bookings.get(id) ?? []);
 }
 
 export async function createSession(_input: CreateSessionInput): Promise<Session> {
-  // Admin session creation lives in the existing web planner (social_sessions /
-  // session_plans). Wire this to that flow rather than duplicating it.
   return notBuiltYet('Creating a session from the app');
 }
 
-// --- booking -----------------------------------------------------------------
+export async function demoFillSession(_sessionId: string): Promise<number> {
+  return notBuiltYet('Demo-filling a session');
+}
+
+// --- booking (server-authoritative RPCs) ------------------------------------
 
 export async function bookSession(sessionId: string, memberId: string): Promise<BookResult> {
   const kind = await resolveKind(sessionId);
   const { data, error } = await supabase.rpc('book_spot', {
     p_session_kind: kind,
     p_session_id: sessionId,
-    p_member_id: memberId, // booking_members.id
+    p_member_id: memberId,
   });
   if (error) {
     const m = /insufficient_credit:(\d+)/.exec(error.message);
     if (m) throw new InsufficientBalanceError(parseInt(m[1], 10));
     throw new Error(error.message);
   }
-  const r = data as { booking_id: string; price_charged: number };
+  const r = data as { booking_id: string; waitlisted: boolean; position?: number; price_charged?: number };
   return {
-    waitlisted: false, // no waitlist in this backend (book_spot raises session_full)
+    waitlisted: r.waitlisted,
+    position: r.position,
     booking: {
       id: r.booking_id,
       sessionId,
       memberId,
-      status: 'booked',
-      paidPence: r.price_charged,
+      status: r.waitlisted ? 'waitlisted' : 'booked',
+      paidPence: r.price_charged ?? 0,
       bookedAt: new Date().toISOString(),
     },
   };
 }
 
-export async function joinWaitlist(): Promise<BookResult> {
-  // No waitlist in the current DB model — decision #1 in BOOKING_APP_NOTES.md.
-  return notBuiltYet('The waitlist');
+export async function joinWaitlist(sessionId: string, memberId: string): Promise<BookResult> {
+  return bookSession(sessionId, memberId);
 }
 
-export async function cancelBooking(_sessionId: string, _memberId: string): Promise<CancellationResult> {
-  // TODO: add a cancel_booking(session_kind, session_id, member_id) function that
-  // marks the booking cancelled and posts a 'refund' credits_ledger row per the
-  // 24-hour policy, then call it here.
-  return notBuiltYet('Cancelling a booking');
+export async function cancelBooking(sessionId: string, _memberId: string): Promise<CancellationResult> {
+  const kind = await resolveKind(sessionId);
+  const { data, error } = await supabase.rpc('cancel_booking', {
+    p_session_kind: kind,
+    p_session_id: sessionId,
+    p_member_id: _memberId,
+  });
+  if (error) throw new Error(error.message);
+  const r = data as { refunded: boolean; refund_pence: number; promoted_name?: string; note: string };
+  return {
+    refunded: r.refunded,
+    refundPence: r.refund_pence,
+    promotedMemberName: r.promoted_name ?? undefined,
+    policyNote: r.note,
+  };
+}
+
+export async function getCancellationWarning(): Promise<string> {
+  return (
+    'Cancelling follows your club’s cancellation policy. If you’re outside the cutoff (or a ' +
+    'waitlister takes your spot), the money goes back to your balance.'
+  );
 }
 
 export async function getMyBookings(memberId: string): Promise<MyBooking[]> {
   const { data, error } = await supabase
     .from('bookings')
-    .select('*')
+    .select('id,session_kind,session_id,member_id,status,price_charged_pennies,created_at')
     .eq('member_id', memberId)
-    .eq('status', 'booked');
+    .in('status', ['booked', 'waitlisted', 'attended']);
   if (error) throw error;
-  const rows = data as { id: string; session_kind: SessionKind; session_id: string; price_charged_pennies: number; created_at: string }[];
+  const rows = data as (BookingRow & { session_kind: SessionKind })[];
   const out: MyBooking[] = [];
   for (const b of rows) {
-    const session = await getSession(b.session_id);
-    out.push({
-      booking: {
-        id: b.id,
-        sessionId: b.session_id,
-        memberId,
-        status: 'booked',
-        paidPence: b.price_charged_pennies,
-        bookedAt: b.created_at,
-      },
-      session,
-    });
+    out.push({ booking: mapBooking(b), session: await getSession(b.session_id) });
   }
   return out;
 }
 
-// --- wallet (credits_ledger; balance = SUM(amount_pennies)) -------------------
+// --- wallet ------------------------------------------------------------------
 
 export async function getBalance(memberId: string): Promise<number> {
   const { data, error } = await supabase
@@ -207,7 +245,7 @@ export async function getBalance(memberId: string): Promise<number> {
     .select('amount_pennies')
     .eq('member_id', memberId);
   if (error) throw error;
-  return (data as { amount_pennies: number }[]).reduce((sum, r) => sum + r.amount_pennies, 0);
+  return (data as { amount_pennies: number }[]).reduce((s, r) => s + r.amount_pennies, 0);
 }
 
 const LEDGER_KIND: Record<string, LedgerEntry['type']> = {
@@ -226,51 +264,63 @@ const LEDGER_LABEL: Record<string, string> = {
 export async function getLedger(memberId: string): Promise<LedgerEntry[]> {
   const { data, error } = await supabase
     .from('credits_ledger')
-    .select('*')
+    .select('id,member_id,amount_pennies,reason,created_at')
     .eq('member_id', memberId)
-    .order('created_at', { ascending: true }); // oldest→newest to compute running balance
+    .order('created_at', { ascending: true });
   if (error) throw error;
   let running = 0;
-  const entries = (data as any[]).map((r) => {
+  const rows = (data as { id: number; amount_pennies: number; reason: string; created_at: string }[]).map((r) => {
     running += r.amount_pennies;
     return {
       id: String(r.id),
       memberId,
       type: LEDGER_KIND[r.reason] ?? 'refund',
       amountPence: r.amount_pennies,
-      balanceAfterPence: running, // credits_ledger has no stored balance; derived
+      balanceAfterPence: running,
       description: LEDGER_LABEL[r.reason] ?? r.reason,
       sessionId: undefined,
       createdAt: r.created_at,
     } as LedgerEntry;
   });
-  return entries.reverse(); // newest first for display
+  return rows.reverse();
 }
 
 export async function topUp(_memberId: string, _amountPence: number): Promise<LedgerEntry> {
-  // TODO: real money — a create-topup-checkout Edge Function (Stripe Connect,
-  // clubs.stripe_account_id) whose webhook posts a 'topup' credits_ledger row.
-  return notBuiltYet('Wallet top-up');
+  // Real money → a Stripe Checkout Edge Function whose webhook calls
+  // wallet_topup(). Not built yet; seeded balances cover the demo for now.
+  return notBuiltYet('Wallet top-up (Stripe)');
 }
 
 // --- members & leaderboard ---------------------------------------------------
 
-export async function getMembers(): Promise<Member[]> {
-  const { data, error } = await supabase
-    .from('players')
-    .select('id,name,guest')
-    .order('name', { ascending: true });
+type StandingRow = { pos: number; name: string; rating: number; games: number };
+
+async function standings(): Promise<StandingRow[]> {
+  const { data, error } = await supabase.rpc('rdr_leaderboard', { club_slug: CLUB_SLUG });
   if (error) throw error;
-  // Ratings come from rdr_leaderboard (below); directory shows unrated until merged.
-  return (data as any[]).map((r) => ({
-    id: r.id,
-    name: r.name,
-    email: '',
-    memberType: r.guest ? 'guest' : 'member',
-    ratingState: 'unrated',
-    gradedGames: 0,
-    balancePence: 0, // wallet lives on booking_members, not players
-  }));
+  return data as StandingRow[];
+}
+
+export async function getMembers(): Promise<Member[]> {
+  const [{ data: players, error }, ranks] = await Promise.all([
+    supabase.from('players').select('id,name,guest').order('name', { ascending: true }),
+    standings(),
+  ]);
+  if (error) throw error;
+  const byName = new Map(ranks.map((r) => [r.name, r]));
+  return (players as { id: string; name: string; guest: boolean }[]).map((p) => {
+    const rank = byName.get(p.name);
+    return {
+      id: p.id,
+      name: p.name,
+      email: '',
+      memberType: p.guest ? 'guest' : 'member',
+      ratingState: rank && rank.games > 0 ? 'rated' : 'unrated',
+      rating: rank?.rating !== undefined ? Math.round(rank.rating * 100) / 100 : undefined,
+      gradedGames: rank?.games ?? 0,
+      balancePence: 0,
+    };
+  });
 }
 
 export async function getMember(id: string): Promise<Member> {
@@ -280,11 +330,29 @@ export async function getMember(id: string): Promise<Member> {
 }
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
-  const { data, error } = await supabase.rpc('rdr_leaderboard', { club_slug: CLUB_SLUG });
-  if (error) throw error;
-  // Map the standings rows → LeaderboardEntry. Shape depends on the RPC's return
-  // columns (name, rdr, games, …) — confirm against rdr_leaderboard and finish.
-  return notBuiltYet('Leaderboard row mapping (rdr_leaderboard returns standings — map its columns)');
+  const [ranks, { data: players }] = await Promise.all([
+    standings(),
+    supabase.from('players').select('id,name'),
+  ]);
+  const idByName = new Map((players as { id: string; name: string }[]).map((p) => [p.name, p.id]));
+  return ranks
+    .filter((r) => r.games > 0)
+    .map((r) => ({
+      rank: r.pos,
+      member: {
+        id: idByName.get(r.name) ?? r.name,
+        name: r.name,
+        email: '',
+        memberType: 'member' as const,
+        ratingState: 'rated' as const,
+        rating: Math.round(r.rating * 100) / 100,
+        gradedGames: r.games,
+        balancePence: 0,
+      },
+      movement: 'flat' as const, // rdr_leaderboard has no movement column yet
+      movementDelta: 0,
+      hot: false,
+    }));
 }
 
 export async function getMemberMatches(): Promise<{ match: unknown; session: Session }[]> {
@@ -294,13 +362,13 @@ export async function getMemberMatches(): Promise<{ match: unknown; session: Ses
 // --- court slips & scores (reuse the existing planner + rating engine) --------
 
 export async function generateCourtSlips(): Promise<CourtSlipRound[]> {
-  return notBuiltYet('Court slips (ability planner writes social_sessions.plan)');
+  return notBuiltYet('Court slips');
 }
 export async function getCourtSlips(): Promise<CourtSlipRound[] | null> {
   return notBuiltYet('Reading court slips');
 }
 export async function enterScores(): Promise<RatingChange[]> {
-  return notBuiltYet('Entering scores (writes matches; RDR engine recomputes)');
+  return notBuiltYet('Entering scores');
 }
 export async function recalcRatings(): Promise<void> {
   await supabase.rpc('refresh_rdr_standings');
