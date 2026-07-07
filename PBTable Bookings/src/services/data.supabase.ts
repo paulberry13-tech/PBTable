@@ -6,6 +6,9 @@
 // engine flows (create session, slips, enter scores) reuse the existing web
 // planner and are stubbed here.
 
+import { Linking, Platform } from 'react-native';
+
+import { STRIPE_TOPUP } from '@/services/config';
 import { InsufficientBalanceError } from '@/services/contracts';
 import { supabase } from '@/services/supabaseClient';
 import type {
@@ -324,22 +327,36 @@ export async function getLedger(memberId: string): Promise<LedgerEntry[]> {
 }
 
 export async function topUp(memberId: string, amountPence: number): Promise<LedgerEntry> {
-  // DEMO path: the `wallet-topup` Edge Function credits the wallet server-side
-  // (no real charge). Production swaps this for the Stripe checkout function.
-  const { data, error } = await supabase.functions.invoke('wallet-topup', {
-    body: { amount_pennies: amountPence },
-  });
-  if (error) throw new Error(error.message);
-  const balancePence = (data as { balance_pence?: number })?.balance_pence ?? 0;
-  return {
+  const synthetic: LedgerEntry = {
     id: `topup-${Date.now()}`,
     memberId,
     type: 'deposit',
     amountPence,
-    balanceAfterPence: balancePence,
+    balanceAfterPence: 0,
     description: 'Top-up',
     createdAt: new Date().toISOString(),
   };
+
+  if (STRIPE_TOPUP) {
+    // Real Stripe Checkout (test mode). Redirect to Stripe; the webhook credits
+    // the wallet on completion and the app reloads to the success_url.
+    const origin = Platform.OS === 'web' ? window.location.origin : 'https://demo.pbtable.com';
+    const { data, error } = await supabase.functions.invoke('create-topup-checkout', {
+      body: { amount_pennies: amountPence, success_url: `${origin}/`, cancel_url: `${origin}/` },
+    });
+    if (error) throw new Error(error.message);
+    const url = (data as { url?: string })?.url;
+    if (!url) throw new Error((data as { error?: string })?.error ?? 'Could not start checkout.');
+    await Linking.openURL(url);
+    return synthetic;
+  }
+
+  // DEMO path: the `wallet-topup` Edge Function credits the wallet directly.
+  const { data, error } = await supabase.functions.invoke('wallet-topup', {
+    body: { amount_pennies: amountPence },
+  });
+  if (error) throw new Error(error.message);
+  return { ...synthetic, balanceAfterPence: (data as { balance_pence?: number })?.balance_pence ?? 0 };
 }
 
 // --- members & leaderboard ---------------------------------------------------

@@ -4,13 +4,14 @@ import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 
 import { Button, Row } from '@/components/ui';
 import { formatMoney, TOPUP_AMOUNTS } from '@/lib/money';
+import { STRIPE_TOPUP } from '@/services/config';
 import { charge } from '@/services/payments';
 import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
 /**
- * MOCK top-up sheet — add money to the wallet with fake card fields (no
- * validation, always succeeds). This is the ONE place real money enters.
- * TODO: swap the charge for Stripe when the real backend lands.
+ * Top-up sheet. In Stripe mode the member picks an amount and continues to a
+ * real (test-mode) Stripe Checkout page. Otherwise it collects fake card fields
+ * (demo/mock — no real charge).
  */
 export function TopUpSheet({
   visible,
@@ -46,9 +47,15 @@ export function TopUpSheet({
 
   const pay = async () => {
     setPaying(true);
-    await charge({ amountPence: amount, description: `Wallet top-up`, cardNumber, expiry, cvc });
-    await onConfirm(amount);
-    setPaying(false);
+    try {
+      if (!STRIPE_TOPUP) {
+        await charge({ amountPence: amount, description: `Wallet top-up`, cardNumber, expiry, cvc });
+      }
+      // In Stripe mode onConfirm → topUp redirects to Stripe Checkout.
+      await onConfirm(amount);
+    } finally {
+      setPaying(false);
+    }
   };
 
   return (
@@ -62,7 +69,10 @@ export function TopUpSheet({
             </Pressable>
           </Row>
           <Text style={[type.caption, { marginTop: 4 }]}>
-            {reason ?? 'Add money to your balance to book sessions.'}
+            {reason ??
+              (STRIPE_TOPUP
+                ? 'Add money to your balance — you’ll pay securely with Stripe.'
+                : 'Add money to your balance to book sessions.')}
           </Text>
 
           <Text style={styles.label}>Amount</Text>
@@ -85,46 +95,58 @@ export function TopUpSheet({
             })}
           </Row>
 
-          <View style={styles.demoNote}>
-            <Ionicons name="flask-outline" size={14} color={colors.amberText} />
-            <Text style={styles.demoNoteText}>Demo payment — no card is charged</Text>
-          </View>
+          {!STRIPE_TOPUP ? (
+            <>
+              <View style={styles.demoNote}>
+                <Ionicons name="flask-outline" size={14} color={colors.amberText} />
+                <Text style={styles.demoNoteText}>Demo payment — no card is charged</Text>
+              </View>
 
-          <Text style={styles.label}>Card number</Text>
-          <TextInput
-            style={styles.input}
-            value={cardNumber}
-            onChangeText={setCardNumber}
-            keyboardType="number-pad"
-            placeholder="1234 5678 9012 3456"
-            placeholderTextColor={colors.textFaint}
-          />
-          <Row gap={spacing.md}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Expiry</Text>
+              <Text style={styles.label}>Card number</Text>
               <TextInput
                 style={styles.input}
-                value={expiry}
-                onChangeText={setExpiry}
-                placeholder="MM/YY"
-                placeholderTextColor={colors.textFaint}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>CVC</Text>
-              <TextInput
-                style={styles.input}
-                value={cvc}
-                onChangeText={setCvc}
+                value={cardNumber}
+                onChangeText={setCardNumber}
                 keyboardType="number-pad"
-                placeholder="123"
+                placeholder="1234 5678 9012 3456"
                 placeholderTextColor={colors.textFaint}
               />
-            </View>
-          </Row>
+              <Row gap={spacing.md}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Expiry</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={expiry}
+                    onChangeText={setExpiry}
+                    placeholder="MM/YY"
+                    placeholderTextColor={colors.textFaint}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>CVC</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={cvc}
+                    onChangeText={setCvc}
+                    keyboardType="number-pad"
+                    placeholder="123"
+                    placeholderTextColor={colors.textFaint}
+                  />
+                </View>
+              </Row>
+            </>
+          ) : null}
 
           <Button
-            title={paying ? 'Adding money…' : `Pay ${formatMoney(amount)}`}
+            title={
+              paying
+                ? STRIPE_TOPUP
+                  ? 'Opening Stripe…'
+                  : 'Adding money…'
+                : STRIPE_TOPUP
+                  ? `Continue to payment · ${formatMoney(amount)}`
+                  : `Pay ${formatMoney(amount)}`
+            }
             onPress={pay}
             loading={paying}
             style={{ marginTop: spacing.lg }}
