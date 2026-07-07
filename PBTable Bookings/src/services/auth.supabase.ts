@@ -14,6 +14,24 @@ export async function signIn(email: string, password: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+/** Create a member account (server-side, via the `signup` Edge Function), then
+ *  sign in. Links to a matching player record when the name matches. */
+export async function signUp(name: string, email: string, password: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke('signup', {
+    body: {
+      email: email.trim(),
+      password,
+      display_name: name.trim(),
+      club_slug: process.env.EXPO_PUBLIC_CLUB_SLUG,
+    },
+  });
+  if (error) throw new Error(error.message);
+  if (!(data as { ok?: boolean })?.ok) {
+    throw new Error((data as { error?: string })?.error ?? 'Sign-up failed.');
+  }
+  await signIn(email, password);
+}
+
 export async function signOut(): Promise<void> {
   cachedMemberId = '';
   await supabase.auth.signOut();

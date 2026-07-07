@@ -24,6 +24,7 @@ interface AppContextValue {
   /** True until the initial session check completes (avoids a sign-in flash). */
   authLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   role: Role;
   switchRole: (role: Role) => void;
@@ -72,6 +73,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setRoleState(await auth.getRole());
   }, []);
 
+  const signUp = useCallback(async (name: string, email: string, password: string) => {
+    await auth.signUp(name, email, password);
+    setCurrentUser(await auth.getCurrentUser());
+    setRoleState(await auth.getRole());
+  }, []);
+
   const signOut = useCallback(async () => {
     await auth.signOut();
     setCurrentUser(null);
@@ -107,6 +114,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       currentUser,
       authLoading,
       signIn,
+      signUp,
       signOut,
       role,
       switchRole,
@@ -118,7 +126,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       showBanner,
       dismissBanner,
     }),
-    [currentUser, authLoading, signIn, signOut, role, switchRole, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
+    [currentUser, authLoading, signIn, signUp, signOut, role, switchRole, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

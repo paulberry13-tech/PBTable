@@ -11,4 +11,5 @@ export const getRole = impl.getRole;
 export const setRole = impl.setRole;
 export const hasSession = impl.hasSession;
 export const signIn = impl.signIn;
+export const signUp = impl.signUp;
 export const signOut = impl.signOut;

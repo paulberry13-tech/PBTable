@@ -1,31 +1,49 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 
-/** Email/password sign-in shown when running on the live backend and no session
- *  exists. Prefilled with the demo member for convenience during the POC. */
+/** Sign in or create a member account when running on the live backend with no
+ *  session. Sign-in is prefilled with the demo member for convenience. */
 export function SignIn() {
-  const { signIn } = useApp();
+  const { signIn, signUp } = useApp();
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState(process.env.EXPO_PUBLIC_DEMO_EMAIL ?? '');
   const [password, setPassword] = useState(process.env.EXPO_PUBLIC_DEMO_PASSWORD ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
 
+  const isSignup = mode === 'signup';
+
   const submit = async () => {
     setBusy(true);
     setError(null);
     try {
-      await signIn(email, password);
+      if (isSignup) await signUp(name, email, password);
+      else await signIn(email, password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sign-in failed');
+      setError(e instanceof Error ? e.message : `${isSignup ? 'Sign-up' : 'Sign-in'} failed`);
     } finally {
       setBusy(false);
     }
+  };
+
+  const switchMode = () => {
+    setError(null);
+    setMode(isSignup ? 'signin' : 'signup');
   };
 
   return (
@@ -43,10 +61,26 @@ export function SignIn() {
         </View>
 
         <View style={styles.card}>
-          <Text style={type.h1}>Sign in</Text>
+          <Text style={type.h1}>{isSignup ? 'Create your account' : 'Sign in'}</Text>
           <Text style={[type.caption, { marginTop: 2, marginBottom: spacing.md }]}>
-            Use your club email to book sessions and manage your wallet.
+            {isSignup
+              ? 'Join the club to book sessions and manage your wallet.'
+              : 'Use your club email to book sessions and manage your wallet.'}
           </Text>
+
+          {isSignup ? (
+            <>
+              <Text style={styles.label}>Full name</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                placeholder="A N Other"
+                placeholderTextColor={colors.textFaint}
+              />
+            </>
+          ) : null}
 
           <Text style={styles.label}>Email</Text>
           <TextInput
@@ -72,11 +106,18 @@ export function SignIn() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Button
-            title={busy ? 'Signing in…' : 'Sign in'}
+            title={busy ? 'Please wait…' : isSignup ? 'Create account' : 'Sign in'}
             onPress={submit}
             loading={busy}
             style={{ marginTop: spacing.lg }}
           />
+
+          <Pressable onPress={switchMode} style={styles.switch} hitSlop={8}>
+            <Text style={styles.switchText}>
+              {isSignup ? 'Already have an account? ' : 'New here? '}
+              <Text style={styles.switchLink}>{isSignup ? 'Sign in' : 'Create an account'}</Text>
+            </Text>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -129,5 +170,18 @@ const styles = StyleSheet.create({
     color: colors.downText,
     fontFamily: fonts.medium,
     fontSize: 13,
+  },
+  switch: {
+    marginTop: spacing.lg,
+    alignItems: 'center',
+  },
+  switchText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  switchLink: {
+    fontFamily: fonts.bold,
+    color: colors.coralText,
   },
 });

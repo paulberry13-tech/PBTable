@@ -32,6 +32,9 @@ export async function hasSession(): Promise<boolean> {
 export async function signIn(_email: string, _password: string): Promise<void> {
   /* no-op */
 }
+export async function signUp(_name: string, _email: string, _password: string): Promise<void> {
+  /* no-op */
+}
 export async function signOut(): Promise<void> {
   /* no-op */
 }
