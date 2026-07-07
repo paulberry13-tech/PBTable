@@ -1,29 +1,30 @@
-// Supabase auth. For the POC it auto-signs-in the seeded demo member so there's
-// no login screen to build yet — a real sign-in flow replaces ensureSession().
-// The "current user" is the booking_members row for the authenticated auth user.
+// Supabase auth. Real email/password sign-in; the "current user" is the
+// booking_members row for the signed-in auth user. Session is persisted by the
+// Supabase client (localStorage on web, AsyncStorage on native), so a reload
+// keeps you signed in.
 
 import { getBalance } from '@/services/data.supabase';
 import { supabase } from '@/services/supabaseClient';
 import { Member, Role } from '@/types';
 
-const DEMO_EMAIL = process.env.EXPO_PUBLIC_DEMO_EMAIL ?? '';
-const DEMO_PASSWORD = process.env.EXPO_PUBLIC_DEMO_PASSWORD ?? '';
-
 let cachedMemberId = '';
 
-async function ensureSession(): Promise<void> {
+export async function signIn(email: string, password: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  if (error) throw new Error(error.message);
+}
+
+export async function signOut(): Promise<void> {
+  cachedMemberId = '';
+  await supabase.auth.signOut();
+}
+
+export async function hasSession(): Promise<boolean> {
   const { data } = await supabase.auth.getSession();
-  if (!data.session && DEMO_EMAIL && DEMO_PASSWORD) {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-    });
-    if (error) throw new Error(`Sign-in failed: ${error.message}`);
-  }
+  return !!data.session;
 }
 
 export async function getCurrentUser(): Promise<Member> {
-  await ensureSession();
   const { data: userRes } = await supabase.auth.getUser();
   const uid = userRes.user?.id;
   if (!uid) throw new Error('Not signed in.');
@@ -53,9 +54,9 @@ export function getCurrentUserId(): string {
 }
 
 export async function getRole(): Promise<Role> {
-  return 'member'; // admin is the existing web tooling; app is member-facing
+  return 'member';
 }
 
 export async function setRole(role: Role): Promise<Role> {
-  return role; // no-op in Supabase mode
+  return role;
 }

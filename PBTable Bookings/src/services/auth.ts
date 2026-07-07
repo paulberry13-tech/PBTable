@@ -9,3 +9,6 @@ export const getCurrentUser = impl.getCurrentUser;
 export const getCurrentUserId = impl.getCurrentUserId;
 export const getRole = impl.getRole;
 export const setRole = impl.setRole;
+export const hasSession = impl.hasSession;
+export const signIn = impl.signIn;
+export const signOut = impl.signOut;

@@ -24,3 +24,14 @@ export async function setRole(role: Role): Promise<Role> {
   currentRole = role;
   return currentRole;
 }
+
+// Auth-flow parity with the Supabase impl (the mock is always "signed in").
+export async function hasSession(): Promise<boolean> {
+  return true;
+}
+export async function signIn(_email: string, _password: string): Promise<void> {
+  /* no-op */
+}
+export async function signOut(): Promise<void> {
+  /* no-op */
+}

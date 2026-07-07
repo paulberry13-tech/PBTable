@@ -18,9 +18,12 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { BannerHost } from '@/components/BannerHost';
-import { AppProvider } from '@/store/AppContext';
+import { SignIn } from '@/components/SignIn';
+import { USE_SUPABASE } from '@/services/config';
+import { AppProvider, useApp } from '@/store/AppContext';
 import { colors, fonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -68,7 +71,20 @@ export default function RootLayout() {
         <Stack.Screen name="admin/manage/[id]" options={{ title: 'MANAGE SESSION' }} />
         <Stack.Screen name="admin/scores/[id]" options={{ title: 'ENTER SCORES' }} />
       </Stack>
+      <AuthGate />
       <BannerHost />
     </AppProvider>
+  );
+}
+
+/** On the live backend, overlay a sign-in screen until there's a session.
+ *  In mock mode this is always inert (there's a fixed user). */
+function AuthGate() {
+  const { authLoading, currentUser } = useApp();
+  if (!USE_SUPABASE || currentUser) return null;
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      {authLoading ? <View style={{ flex: 1, backgroundColor: colors.navy }} /> : <SignIn />}
+    </View>
   );
 }

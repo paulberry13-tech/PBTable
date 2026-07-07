@@ -21,6 +21,10 @@ export interface Banner {
 
 interface AppContextValue {
   currentUser: Member | null;
+  /** True until the initial session check completes (avoids a sign-in flash). */
+  authLoading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
   role: Role;
   switchRole: (role: Role) => void;
   sportProfile: SportProfile;
@@ -43,10 +47,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [sportProfile, setSportProfile] = useState<SportProfile>(PICKLEBALL);
   const [dataVersion, setDataVersion] = useState(0);
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    auth.getCurrentUser().then(setCurrentUser).catch(() => setCurrentUser(null));
-    auth.getRole().then(setRoleState).catch(() => undefined);
+    (async () => {
+      try {
+        if (await auth.hasSession()) {
+          setCurrentUser(await auth.getCurrentUser());
+        } else {
+          setCurrentUser(null);
+        }
+        setRoleState(await auth.getRole());
+      } catch {
+        setCurrentUser(null);
+      } finally {
+        setAuthLoading(false);
+      }
+    })();
+  }, []);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    await auth.signIn(email, password);
+    setCurrentUser(await auth.getCurrentUser());
+    setRoleState(await auth.getRole());
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await auth.signOut();
+    setCurrentUser(null);
   }, []);
 
   const switchRole = useCallback((next: Role) => {
@@ -77,6 +105,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       currentUser,
+      authLoading,
+      signIn,
+      signOut,
       role,
       switchRole,
       sportProfile,
@@ -87,7 +118,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       showBanner,
       dismissBanner,
     }),
-    [currentUser, role, switchRole, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
+    [currentUser, authLoading, signIn, signOut, role, switchRole, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -6,13 +6,14 @@ import { TopUpSheet } from '@/components/TopUpSheet';
 import { Button, Card, EmptyState, LoadingView, Row } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
+import { USE_SUPABASE } from '@/services/config';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 import { LedgerEntry } from '@/types';
 
 export default function WalletScreen() {
-  const { currentUser, refresh, showBanner } = useApp();
+  const { currentUser, refresh, showBanner, signOut } = useApp();
   const [topUpOpen, setTopUpOpen] = useState(false);
 
   const { data: balance, loading: balLoading } = useAsyncData(
@@ -64,6 +65,15 @@ export default function WalletScreen() {
           ))}
         </Card>
       )}
+
+      {USE_SUPABASE ? (
+        <Button
+          title="Sign out"
+          variant="ghost"
+          onPress={() => void signOut()}
+          style={{ marginTop: spacing.xl }}
+        />
+      ) : null}
 
       <TopUpSheet
         visible={topUpOpen}
