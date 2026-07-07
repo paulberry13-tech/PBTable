@@ -1,5 +1,14 @@
 import { expectedScore } from '@/domain/ratings';
-import { Booking, Match, Member, MemberType, RatingState, Session, SessionFormat } from '@/types';
+import {
+  Booking,
+  LedgerEntryType,
+  Match,
+  Member,
+  MemberType,
+  RatingState,
+  Session,
+  SessionFormat,
+} from '@/types';
 
 /**
  * Mock dataset for the POC. Deterministic (seeded PRNG) so every reload
@@ -74,13 +83,26 @@ function makeMember(
       rating !== undefined
         ? [{ date: isoDate(-45), rating: Math.round((rating - 0.15 + rand() * 0.3) * 100) / 100 }]
         : undefined,
+    balancePence: 0, // filled by the ledger replay in services/data.ts
   };
+}
+
+/** A raw ledger movement to be replayed into real LedgerEntry rows on init. */
+export interface LedgerSeed {
+  memberId: string;
+  type: LedgerEntryType;
+  /** Signed pence: + deposit/refund, − spend. */
+  amountPence: number;
+  description: string;
+  sessionId?: string;
+  daysAgo: number;
 }
 
 export interface SeedData {
   members: Member[];
   sessions: Session[];
   matches: Match[];
+  ledgerSeeds: LedgerSeed[];
   currentUserId: string;
 }
 
@@ -114,6 +136,7 @@ export function buildSeed(): SeedData {
     winRate: 0.58,
     streak: 2,
     ratingHistory: [{ date: isoDate(-45), rating: 3.61 }],
+    balancePence: 0, // filled by the ledger replay
   };
   members.push(paul);
 
@@ -405,5 +428,31 @@ export function buildSeed(): SeedData {
 
   sessions.push(...upcoming);
 
-  return { members, sessions, matches, currentUserId: 'm-paul' };
+  // --- wallet ledger --------------------------------------------------------
+  // Money is stored in pence; "credits" (1 = £2) are a display layer. Paul
+  // gets a real, reconciling ledger (top-ups + the sessions he's booked) so
+  // his Wallet screen tells a story on first load. Everyone else gets a single
+  // generous opening balance — enough to book freely (demo fills, promotions).
+  const ledgerSeeds: LedgerSeed[] = [
+    { memberId: 'm-paul', type: 'deposit', amountPence: 4000, description: 'Top-up · 20 credits', daysAgo: 35 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Club Night Doubles', sessionId: 's-past-1', daysAgo: 19 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Thursday Club League', sessionId: 's-past-3', daysAgo: 14 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -500, description: 'Intermediate Ladder Night', sessionId: 's-past-4', daysAgo: 10 },
+    { memberId: 'm-paul', type: 'deposit', amountPence: 2000, description: 'Top-up · 10 credits', daysAgo: 8 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Club Night Doubles', sessionId: 's-up-1', daysAgo: 4 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Thursday Club League', sessionId: 's-up-2', daysAgo: 3 },
+  ];
+  for (const m of members) {
+    if (m.id === 'm-paul') continue;
+    const credits = randInt(15, 35); // £30–£70, whole credits
+    ledgerSeeds.push({
+      memberId: m.id,
+      type: 'deposit',
+      amountPence: credits * 200,
+      description: 'Opening balance',
+      daysAgo: 30,
+    });
+  }
+
+  return { members, sessions, matches, ledgerSeeds, currentUserId: 'm-paul' };
 }

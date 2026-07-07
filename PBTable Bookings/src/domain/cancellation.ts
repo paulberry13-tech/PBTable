@@ -44,10 +44,10 @@ export function cancellationWarning(session: Session, pricePaidPence: number): s
   const d = decideCancellation(session);
   if (pricePaidPence === 0) return 'This was a free booking — your spot will be released.';
   if (!d.withinCutoff) {
-    return 'More than 24 hours before start — you will receive a full refund.';
+    return 'More than 24 hours before start — the credits will go straight back to your balance.';
   }
   return (
     'This session starts in under 24 hours, so no automatic refund applies. ' +
-    'If someone from the waitlist takes your spot, you will be refunded in full.'
+    'If someone from the waitlist takes your spot, your credits are returned to your balance in full.'
   );
 }

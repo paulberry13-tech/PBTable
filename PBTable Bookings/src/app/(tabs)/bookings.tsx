@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -5,17 +6,21 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ConfirmSheet } from '@/components/ConfirmSheet';
 import { Badge, Button, Card, EmptyState, LoadingView, Row } from '@/components/ui';
 import { sessionStart } from '@/domain/cancellation';
+import { formatCredits, formatMoney } from '@/lib/credits';
 import { formatSessionWhen } from '@/lib/format';
 import * as data from '@/services/data';
-import { formatPence } from '@/services/payments';
 import { useApp, useAsyncData } from '@/store/AppContext';
-import { colors, spacing, type } from '@/theme';
+import { colors, fonts, radius, spacing, type } from '@/theme';
 
 export default function MyBookingsScreen() {
   const router = useRouter();
   const { currentUser, refresh, showBanner } = useApp();
   const { data: bookings, loading } = useAsyncData(
     () => (currentUser ? data.getMyBookings(currentUser.id) : Promise.resolve([])),
+    [currentUser?.id]
+  );
+  const { data: balance } = useAsyncData(
+    () => (currentUser ? data.getBalance(currentUser.id) : Promise.resolve(0)),
     [currentUser?.id]
   );
 
@@ -58,6 +63,22 @@ export default function MyBookingsScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={type.display}>My bookings</Text>
 
+      <Pressable
+        onPress={() => router.push('/wallet')}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.walletStrip, pressed && { opacity: 0.9 }]}
+      >
+        <Ionicons name="wallet" size={20} color={colors.coralBright} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.walletLabel}>WALLET</Text>
+          <Text style={styles.walletBalance}>
+            {formatMoney(balance ?? 0)} · {formatCredits(balance ?? 0)}
+          </Text>
+        </View>
+        <Text style={styles.walletCta}>Top up</Text>
+        <Ionicons name="chevron-forward" size={16} color={colors.textOnDarkMuted} />
+      </Pressable>
+
       <Text style={[type.h1, { marginTop: spacing.lg, marginBottom: spacing.md }]}>Upcoming</Text>
       {upcoming.length === 0 ? (
         <EmptyState title="Nothing booked yet" hint="Head to Sessions to grab a spot." />
@@ -75,7 +96,11 @@ export default function MyBookingsScreen() {
               </Row>
               <Text style={[type.caption, { marginTop: 2 }]}>{formatSessionWhen(session)}</Text>
               <Text style={[type.caption, { marginTop: 2 }]}>
-                Paid {formatPence(booking.paidPence)}
+                {booking.paidPence === 0
+                  ? booking.status === 'waitlisted'
+                    ? 'No charge yet'
+                    : 'Free'
+                  : `Paid ${formatCredits(booking.paidPence)}`}
               </Text>
             </Pressable>
             <Button
@@ -125,4 +150,31 @@ export default function MyBookingsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 48, maxWidth: 720, width: '100%', alignSelf: 'center' },
+  walletStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.navy,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  walletLabel: {
+    fontFamily: fonts.extrabold,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: colors.coralBright,
+  },
+  walletBalance: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: colors.textOnDark,
+    marginTop: 1,
+  },
+  walletCta: {
+    fontFamily: fonts.bold,
+    fontSize: 13,
+    color: colors.textOnDark,
+  },
 });

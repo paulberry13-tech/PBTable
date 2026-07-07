@@ -11,6 +11,8 @@ import {
   Booking,
   CancellationResult,
   CourtSlipRound,
+  LedgerEntry,
+  LedgerEntryType,
   Match,
   Member,
   Session,
@@ -23,6 +25,8 @@ interface Store {
   sessions: Session[];
   matches: Match[];
   slips: Map<string, CourtSlipRound[]>;
+  /** Prepaid-wallet ledger — every deposit / spend / refund, newest last. */
+  ledger: LedgerEntry[];
   /** Pristine member states from before any match was applied — lets
    *  recalcRatings() do a genuine full replay. */
   baselineMembers: Member[];
@@ -38,9 +42,36 @@ function initStore(): Store {
     sessions: seed.sessions,
     matches: seed.matches,
     slips: new Map(),
-    baselineMembers: clone(seed.members),
+    ledger: [],
+    baselineMembers: [],
     playersPerCourt: 4,
   };
+  // Replay the seeded ledger (oldest first) so balances derive from the same
+  // running-sum logic the app uses at runtime.
+  const byId = new Map(store.members.map((m) => [m.id, m]));
+  store.members.forEach((m) => {
+    m.balancePence = 0;
+  });
+  [...seed.ledgerSeeds]
+    .sort((a, b) => b.daysAgo - a.daysAgo)
+    .forEach((s) => {
+      const m = byId.get(s.memberId);
+      if (!m) return;
+      m.balancePence += s.amountPence;
+      store.ledger.push({
+        id: nextId('l'),
+        memberId: s.memberId,
+        type: s.type,
+        amountPence: s.amountPence,
+        balanceAfterPence: m.balancePence,
+        description: s.description,
+        sessionId: s.sessionId,
+        createdAt: isoNDaysAgo(s.daysAgo),
+      });
+    });
+  // Baseline is captured AFTER balances are set (so recalc keeps wallets) but
+  // BEFORE matches move ratings.
+  store.baselineMembers = clone(store.members);
   replayAllMatches(store);
   return store;
 }
@@ -53,13 +84,19 @@ function replayAllMatches(store: Store): void {
     .forEach((m) => applyMatch(m, byId, dates.get(m.sessionId) ?? m.id));
 }
 
+function isoNDaysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+}
+
+let idSeq = 1000;
+const nextId = (prefix: string) => `${prefix}-${idSeq++}`;
+
 const store = initStore();
 
 /** Simulated network latency so screens exercise real loading states. */
 const delay = (ms = 220) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-let idSeq = 1000;
-const nextId = (prefix: string) => `${prefix}-${idSeq++}`;
 
 function findSession(id: string): Session {
   const s = store.sessions.find((x) => x.id === id);
@@ -70,6 +107,42 @@ function findMember(id: string): Member {
   const m = store.members.find((x) => x.id === id);
   if (!m) throw new Error(`Member not found: ${id}`);
   return m;
+}
+
+/** Posts a movement to a member's balance and appends the ledger row.
+ *  amountPence is signed: + credits the balance, − debits it. */
+function postLedger(
+  memberId: string,
+  type: LedgerEntryType,
+  amountPence: number,
+  description: string,
+  sessionId?: string
+): LedgerEntry {
+  const m = findMember(memberId);
+  m.balancePence += amountPence;
+  const entry: LedgerEntry = {
+    id: nextId('l'),
+    memberId,
+    type,
+    amountPence,
+    balanceAfterPence: m.balancePence,
+    description,
+    sessionId,
+    createdAt: new Date().toISOString(),
+  };
+  store.ledger.push(entry);
+  return entry;
+}
+
+/** Thrown by bookSession when the member can't cover the price from balance.
+ *  Screens catch this to open the top-up sheet pre-sized to the shortfall. */
+export class InsufficientBalanceError extends Error {
+  shortfallPence: number;
+  constructor(shortfallPence: number) {
+    super('Not enough credits to book this session.');
+    this.name = 'InsufficientBalanceError';
+    this.shortfallPence = shortfallPence;
+  }
 }
 
 const activeBookings = (s: Session) => s.bookings.filter((b) => b.status === 'booked' || b.status === 'attended');
@@ -126,31 +199,74 @@ export interface BookResult {
   position?: number;
 }
 
-/** Books a spot (payment is handled by services/payments.ts before calling this).
- *  If the session is full, the member joins the waitlist instead. */
-export async function bookSession(sessionId: string, memberId: string, paidPence: number): Promise<BookResult> {
+/**
+ * Books a spot, drawing the price down from the member's prepaid balance
+ * (posting a `spend` ledger entry). If the session is full the member joins
+ * the waitlist instead — no charge until they're promoted. Throws
+ * InsufficientBalanceError if the balance can't cover a paid session.
+ */
+export async function bookSession(sessionId: string, memberId: string): Promise<BookResult> {
   await delay();
   const session = findSession(sessionId);
-  findMember(memberId);
+  const member = findMember(memberId);
   if (session.bookings.some((b) => b.memberId === memberId && (b.status === 'booked' || b.status === 'waitlisted'))) {
     throw new Error('You already have a booking for this session.');
   }
   const full = activeBookings(session).length >= session.capacity;
+  const cost = full ? 0 : session.pricePence;
+
+  if (!full && cost > 0 && member.balancePence < cost) {
+    throw new InsufficientBalanceError(cost - member.balancePence);
+  }
+
   const booking: Booking = {
     id: nextId('b'),
     sessionId,
     memberId,
     status: full ? 'waitlisted' : 'booked',
-    paidPence,
+    paidPence: cost,
     bookedAt: new Date().toISOString(),
   };
   session.bookings.push(booking);
   if (full) session.waitlist.push(memberId);
+  if (!full && cost > 0) {
+    postLedger(memberId, 'spend', -cost, session.title, sessionId);
+  }
   return { booking: clone(booking), waitlisted: full, position: full ? session.waitlist.length : undefined };
 }
 
 export async function joinWaitlist(sessionId: string, memberId: string): Promise<BookResult> {
-  return bookSession(sessionId, memberId, 0);
+  return bookSession(sessionId, memberId);
+}
+
+// --- wallet / credits --------------------------------------------------------
+
+export async function getBalance(memberId: string): Promise<number> {
+  await delay(80);
+  return findMember(memberId).balancePence;
+}
+
+export async function getLedger(memberId: string): Promise<LedgerEntry[]> {
+  await delay(140);
+  return clone(
+    store.ledger
+      .filter((e) => e.memberId === memberId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  );
+}
+
+/** Simulated top-up — the card charge (always succeeds) happens in the UI via
+ *  services/payments.ts; this posts the resulting deposit to the balance. */
+export async function topUp(memberId: string, amountPence: number): Promise<LedgerEntry> {
+  await delay();
+  const credits = Math.round(amountPence / 200);
+  const entry = postLedger(
+    memberId,
+    'deposit',
+    amountPence,
+    `Top-up · ${credits} credit${credits === 1 ? '' : 's'}`
+  );
+  return clone(entry);
 }
 
 /** DEMO helper: books available members into free spots so the admin can run
@@ -181,12 +297,16 @@ export async function demoFillSession(sessionId: string): Promise<number> {
       paidPence: session.pricePence,
       bookedAt: new Date().toISOString(),
     });
+    if (session.pricePence > 0) {
+      postLedger(m.id, 'spend', -session.pricePence, session.title, sessionId);
+    }
     added += 1;
   }
   return added;
 }
 
-/** Promotes the first waitlister into a freed spot. Returns the member, or null. */
+/** Promotes the first waitlister into a freed spot, drawing the price from
+ *  their balance (the seat is charged on promotion). Returns the member, or null. */
 function promoteFirstWaitlister(session: Session): Member | null {
   while (session.waitlist.length > 0) {
     const nextMemberId = session.waitlist.shift() as string;
@@ -195,7 +315,10 @@ function promoteFirstWaitlister(session: Session): Member | null {
     );
     if (wlBooking) {
       wlBooking.status = 'booked';
-      wlBooking.paidPence = session.pricePence; // simulated charge on promotion
+      wlBooking.paidPence = session.pricePence;
+      if (session.pricePence > 0) {
+        postLedger(nextMemberId, 'spend', -session.pricePence, `${session.title} (from waitlist)`, session.id);
+      }
       return findMember(nextMemberId);
     }
   }
@@ -224,15 +347,19 @@ export async function cancelBooking(sessionId: string, memberId: string): Promis
 
   const refundDue = decision.refundNow || (decision.refundIfResold && promoted !== null);
   const refundPence = refundDue ? bk.paidPence : 0;
-  if (refundDue && bk.paidPence > 0) bk.refundedPence = bk.paidPence;
+  if (refundDue && bk.paidPence > 0) {
+    bk.refundedPence = bk.paidPence;
+    // Refunds go back to the wallet as credits, not out to a card.
+    postLedger(memberId, 'refund', bk.paidPence, `Refund · ${session.title}`, sessionId);
+  }
 
   let policyNote: string;
   if (bk.paidPence === 0) {
     policyNote = 'Free booking cancelled — spot released.';
   } else if (decision.refundNow) {
-    policyNote = 'Cancelled more than 24 hours before start — full refund issued.';
+    policyNote = `Cancelled more than 24 hours before start — ${formatPenceShort(refundPence)} credited to your balance.`;
   } else if (refundDue) {
-    policyNote = 'Within 24 hours, but your spot was re-sold to the waitlist — full refund issued.';
+    policyNote = `Within 24 hours, but your spot was re-sold to the waitlist — ${formatPenceShort(refundPence)} credited to your balance.`;
   } else {
     policyNote = 'Cancelled within 24 hours of start — no refund (no waitlister took the spot).';
   }
@@ -243,6 +370,11 @@ export async function cancelBooking(sessionId: string, memberId: string): Promis
     promotedMemberName: promoted?.name,
     policyNote,
   };
+}
+
+/** "£6" / "£5.50" — compact money for policy copy. */
+function formatPenceShort(pence: number): string {
+  return `£${(pence / 100).toFixed(pence % 100 === 0 ? 0 : 2)}`;
 }
 
 /** Pre-cancellation warning copy for the confirm dialog. */
@@ -392,9 +524,14 @@ export async function enterScores(sessionId: string, entries: ScoreEntry[]): Pro
 }
 
 /** Full deterministic replay of every match from the pristine baseline —
- *  the "recompute the world" escape hatch a real backend would run in a job. */
+ *  the "recompute the world" escape hatch a real backend would run in a job.
+ *  Preserves live wallet balances (only ratings are recomputed). */
 export async function recalcRatings(): Promise<void> {
   await delay(500);
+  const balances = new Map(store.members.map((m) => [m.id, m.balancePence]));
   store.members = clone(store.baselineMembers);
+  store.members.forEach((m) => {
+    m.balancePence = balances.get(m.id) ?? m.balancePence;
+  });
   replayAllMatches(store);
 }

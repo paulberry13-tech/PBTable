@@ -17,6 +17,33 @@ export interface Member {
   /** Positive = win streak, negative = losing streak. */
   streak?: number;
   ratingHistory?: { date: string; rating: number }[];
+  /**
+   * Prepaid wallet balance in PENCE — the single source of truth for money.
+   * "Credits" are a display layer over this (see lib/credits.ts). Kept in
+   * sync with the ledger (LedgerEntry rows) by services/data.ts.
+   */
+  balancePence: number;
+}
+
+/**
+ * A movement on a member's prepaid balance. Deposits/refunds are positive,
+ * spends negative, so the balance is the running sum. This is the audit
+ * trail — money is drawn down "against the player's name" here.
+ */
+export type LedgerEntryType = 'deposit' | 'spend' | 'refund';
+
+export interface LedgerEntry {
+  id: string;
+  memberId: string;
+  type: LedgerEntryType;
+  /** Signed pence: + credits the balance (deposit/refund), − debits it (spend). */
+  amountPence: number;
+  /** Balance in pence immediately after this entry was applied. */
+  balanceAfterPence: number;
+  description: string;
+  /** Set when the entry relates to a session booking/cancellation. */
+  sessionId?: string;
+  createdAt: string;
 }
 
 export type SessionFormat = 'social' | 'round_robin' | 'ladder' | 'box_league' | 'coached';

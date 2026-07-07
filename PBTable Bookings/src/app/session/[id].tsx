@@ -3,12 +3,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { PaymentSheet } from '@/components/PaymentSheet';
+import { TopUpSheet } from '@/components/TopUpSheet';
 import { Badge, Button, Card, ErrorState, LoadingView, Row } from '@/components/ui';
 import { FORMAT_LABELS } from '@/domain/sportProfile';
+import { creditsFromPence, formatCredits, formatMoney } from '@/lib/credits';
 import { formatDateLong, formatTimeRange, skillBandLabel, spotsLeft } from '@/lib/format';
 import * as data from '@/services/data';
-import { formatPence } from '@/services/payments';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, spacing, type } from '@/theme';
 
@@ -16,11 +16,16 @@ export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { currentUser, role, sportProfile, refresh, showBanner } = useApp();
-  const [payOpen, setPayOpen] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [shortfallCredits, setShortfallCredits] = useState(0);
   const [booking, setBooking] = useState(false);
 
   const { data: session, error } = useAsyncData(() => data.getSession(id), [id]);
   const { data: members } = useAsyncData(() => data.getMembers());
+  const { data: balance } = useAsyncData(
+    () => (currentUser ? data.getBalance(currentUser.id) : Promise.resolve(0)),
+    [currentUser?.id]
+  );
 
   const membersById = useMemo(() => new Map((members ?? []).map((m) => [m.id, m])), [members]);
 
@@ -39,33 +44,54 @@ export default function SessionDetailScreen() {
     currentUser.rating !== undefined &&
     (currentUser.rating < (session.skillMin ?? 0) || currentUser.rating > (session.skillMax ?? 99));
 
+  const balancePence = balance ?? 0;
+  const cost = session.pricePence;
+  const canAfford = balancePence >= cost;
+
   const completeBooking = async () => {
     setBooking(true);
     try {
-      const result = await data.bookSession(session.id, currentUser.id, session.pricePence);
+      const result = await data.bookSession(session.id, currentUser.id);
       refresh();
-      showBanner(
-        result.waitlisted
-          ? `You're #${result.position} on the waitlist for ${session.title}.`
-          : `Booked! See you at ${session.title}.`,
-        result.waitlisted ? 'info' : 'success'
-      );
-      router.back();
+      if (result.waitlisted) {
+        showBanner(`You're #${result.position} on the waitlist for ${session.title}.`, 'info');
+      } else if (cost > 0) {
+        showBanner(
+          `Booked! ${formatMoney(cost)} (${formatCredits(cost)}) drawn from your balance.`,
+          'success'
+        );
+      } else {
+        showBanner(`Booked! See you at ${session.title}.`, 'success');
+      }
+      if (router.canGoBack()) router.back();
+      else router.replace('/bookings');
     } catch (e) {
-      showBanner(e instanceof Error ? e.message : 'Booking failed', 'warning');
+      if (e instanceof data.InsufficientBalanceError) {
+        // Balance moved under us (e.g. concurrent booking) — send to top-up.
+        setShortfallCredits(Math.ceil(creditsFromPence(e.shortfallPence)));
+        setTopUpOpen(true);
+      } else {
+        showBanner(e instanceof Error ? e.message : 'Booking failed', 'warning');
+      }
     } finally {
       setBooking(false);
-      setPayOpen(false);
     }
   };
 
   const onBookPress = () => {
-    if (full || session.pricePence === 0) {
-      // Waitlist joins and free sessions skip payment.
+    if (full || cost === 0 || canAfford) {
       void completeBooking();
     } else {
-      setPayOpen(true);
+      setShortfallCredits(Math.ceil(creditsFromPence(cost - balancePence)));
+      setTopUpOpen(true);
     }
+  };
+
+  const onTopUp = async (amountPence: number) => {
+    await data.topUp(currentUser.id, amountPence);
+    refresh();
+    setTopUpOpen(false);
+    await completeBooking();
   };
 
   return (
@@ -87,7 +113,10 @@ export default function SessionDetailScreen() {
           icon="grid-outline"
           text={`${session.courts} ${sportProfile.terms.court.toLowerCase()}s · capacity ${session.capacity}`}
         />
-        <InfoRow icon="pricetag-outline" text={formatPence(session.pricePence)} />
+        <InfoRow
+          icon="pricetag-outline"
+          text={cost === 0 ? 'Free' : `${formatMoney(cost)} · ${formatCredits(cost)}`}
+        />
         {session.affectsRating ? (
           <InfoRow
             icon="trending-up-outline"
@@ -142,12 +171,28 @@ export default function SessionDetailScreen() {
             </Text>
           </Card>
         ) : (
-          <Button
-            title={full ? 'Join waitlist' : session.pricePence === 0 ? 'Book — free' : `Book · ${formatPence(session.pricePence)}`}
-            onPress={onBookPress}
-            loading={booking}
-            variant={full ? 'secondary' : 'primary'}
-          />
+          <>
+            <Button
+              title={
+                full
+                  ? 'Join waitlist'
+                  : cost === 0
+                    ? 'Book — free'
+                    : canAfford
+                      ? `Book · ${formatCredits(cost)}`
+                      : `Top up & book · ${formatCredits(cost)}`
+              }
+              onPress={onBookPress}
+              loading={booking}
+              variant={full ? 'secondary' : 'primary'}
+            />
+            {!full && cost > 0 ? (
+              <Text style={styles.balanceLine}>
+                Balance {formatMoney(balancePence)} · {formatCredits(balancePence)}
+                {canAfford ? '' : ' — top up to book'}
+              </Text>
+            ) : null}
+          </>
         )}
         {role === 'admin' ? (
           <Button
@@ -158,12 +203,12 @@ export default function SessionDetailScreen() {
         ) : null}
       </View>
 
-      <PaymentSheet
-        visible={payOpen}
-        amountPence={session.pricePence}
-        description={`${session.title} · ${formatDateLong(session.date)}`}
-        onSuccess={completeBooking}
-        onClose={() => setPayOpen(false)}
+      <TopUpSheet
+        visible={topUpOpen}
+        minCredits={shortfallCredits}
+        reason={`This session costs ${formatCredits(cost)}. Top up to book ${session.title}.`}
+        onConfirm={onTopUp}
+        onClose={() => setTopUpOpen(false)}
       />
     </ScrollView>
   );
@@ -181,4 +226,8 @@ function InfoRow({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>['
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 48, maxWidth: 720, width: '100%', alignSelf: 'center' },
+  balanceLine: {
+    ...type.caption,
+    textAlign: 'center',
+  },
 });

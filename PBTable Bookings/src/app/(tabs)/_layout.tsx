@@ -41,6 +41,15 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="wallet"
+          options={{
+            title: 'Wallet',
+            // Members manage credits; hidden in Admin (5 tabs either way).
+            href: role === 'member' ? '/wallet' : null,
+            tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
           name="leaderboard"
           options={{
             title: 'Leaderboard',
