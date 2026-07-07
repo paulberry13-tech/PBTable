@@ -1,81 +1,81 @@
 # Booking app — backend integration notes
 
-How the Expo booking app (`PBTable Bookings/`) plugs into the existing PBTable
-Supabase platform. Companion to the three migrations in `supabase/migrations/`.
+How the Expo booking app (`PBTable Bookings/`) maps onto the PBTable Supabase
+backend. **Most of this backend already exists** — see below. This file is the
+map + the remaining gap, not a from-scratch design.
 
-## What already exists (the engine — we reuse it)
+## What already exists (discovered in the PB Table Demo project)
 
-The Production DB (`kxvtqsmjlhlajkoyejwk`) already runs the rating + session engine:
+Demo project `ezfpoyuebqjebxdcxyzy` already has the booking backend, built via
+tracked migrations up to `booking_foundations` (2026-07-06):
 
-- `clubs`, `club_admins` (admins linked to `auth.users`), `players` (per-club, no
-  login), `matches` (doubles results, `p1..p4` are player **names** as text,
-  scores `s1/s2`), `activity`.
-- `social_sessions` and `session_plans` — session planning, each with a `plan`
-  jsonb (the **balanced court slips**, `court_mode = 'ability'`) and scoring.
-- `subscriptions` — Stripe billing; `clubs.active` / `subscription_status` gate access.
+- **`booking_members`** — the app account: `auth_user_id → auth.users`, `email`,
+  `display_name`, optional `player_id → players`, `club_id`. (Kept separate from
+  `players` so the rating engine's data stays clean.)
+- **`credits_ledger`** — the wallet, in `amount_pennies` (money; the name is
+  legacy). `reason` ∈ topup | booking | refund | adjustment; links to `bookings`
+  and stripe checkout session. A member's **balance = SUM(amount_pennies)**.
+- **`bookings`** — **polymorphic**: `session_kind` ∈ social | graded +
+  `session_id`. So BOTH `social_sessions` and `session_plans` are bookable —
+  this answers the "which session table" question: **both**. `status` ∈ booked |
+  cancelled (no waitlist).
+- **`social_sessions`** and **`session_plans`** both已 have `price_pennies` and
+  `booking_open`.
+- Server functions:
+  - `public.book_spot(session_kind, session_id, member_id)` — checks club,
+    capacity, booking_open; inserts booking; if `clubs.settings->>'booking_mode'
+    = 'paid'` and price > 0, checks balance (raises `insufficient_credit:<pence>`)
+    and posts a `-price` `booking` ledger row.
+  - `public.session_spots(session_kind, session_id)` — capacity / booked / available.
+  - `public.rdr_leaderboard(club_slug)` — the standings (RDR engine +
+    `refresh_rdr_standings` cache already exist in `private`).
+- `clubs` has `stripe_account_id` / `stripe_charges_enabled` → **Stripe Connect**
+  (top-ups pay into each club's connected account).
 
-RDR ratings are **derived from `matches`**, not stored on players — which is exactly
-how the POC works (it replays matches through the rating engine).
+## The remaining gap (what's NOT built yet)
 
-## What the migrations add (the member-facing layer)
+1. **`cancel_booking` function** — mark booking cancelled + apply the 24-hour
+   policy + refund via a `credits_ledger` `refund` row. (No waitlist in the DB
+   model, so no promotion branch — simpler than the POC.)
+2. **Wallet top-up** — a `create-topup-checkout` Edge Function (Stripe Connect
+   Checkout) + a webhook branch that posts a `topup` ledger row on success.
+3. **A balance helper** — trivial (`select sum(amount_pennies)`), or a small RPC.
+4. **Member auth + player claim** — sign-in, create the `booking_members` row,
+   and link it to the right `players` row (by email/name). See #2 in decisions.
+5. **App wiring** — point `services/data.ts` at `services/data.supabase.ts`
+   (below), and swap `services/auth.ts` to Supabase Auth.
 
-1. `..._schema.sql` — additive only:
-   - `players` gains `email`, `user_id → auth.users`, `member_type`, `wallet_pence`.
-   - `social_sessions` gains `price_pence`, `affects_rating`, `skill_min/max`,
-     `courts`, `booking_status`.
-   - new tables `bookings` and `wallet_ledger`.
-2. `..._rls.sql` — members read their own club; all money/booking writes are
-   blocked at the table level and only happen through the functions.
-3. `..._functions.sql` — the trust boundary: `app_book_session`,
-   `app_cancel_booking` (24h policy + waitlist promotion), `app_wallet_topup`
-   (service-role only, called after Stripe confirms).
+## App side
 
-## The app swap
+- `src/services/supabaseClient.ts` — the client (env vars).
+- `src/services/data.supabase.ts` — adapter to the **real** schema/RPCs above.
+  Reads (sessions from both tables, leaderboard via `rdr_leaderboard`, balance +
+  ledger from `credits_ledger`, bookings) and `book_spot` are wired; `cancel` and
+  `topUp` call the not-yet-built RPC/function and are marked TODO.
 
-- `src/services/supabaseClient.ts` — the client (env: `EXPO_PUBLIC_SUPABASE_URL`,
-  `EXPO_PUBLIC_SUPABASE_ANON_KEY`).
-- `src/services/data.supabase.ts` — implements the same interface as the mock
-  `services/data.ts`. Booking/wallet reads and the money RPCs are wired; the
-  engine parts (leaderboard, slips, scores) are marked TODO to reuse the existing
-  planner/rating code rather than reimplement.
-- To go live, point screens at the Supabase module (re-export it from
-  `services/data.ts`, or switch the import) once the TODOs below are done.
-- `services/auth.ts` still needs swapping to Supabase Auth (the role switcher
-  becomes real `club_admins` membership).
+## Identity note (important)
 
-## Decisions to confirm before applying
+The app's single "Member" concept spans two tables here:
+- **Rated player / leaderboard / directory** = `players` (+ RDR standings).
+- **Bookable account / wallet / bookings** = `booking_members` (linked to a
+  player via `player_id`).
+`services/auth.ts` should resolve the signed-in user to a `booking_members` row;
+wallet/booking calls use that id, leaderboard/profile use `players`.
 
-1. **`social_sessions` vs `session_plans`** as the bookable session table. We
-   assumed `social_sessions`. If it's `session_plans`, repoint the two FKs and
-   the functions — small change.
-2. **Linking players to logins.** The 88 existing players have no `user_id`.
-   Members need an invite/claim flow (magic link → set `players.user_id`), or
-   admins link them. This is the auth piece.
-3. **Wallet non-negative invariant / unfunded waitlist promotion.** Current
-   functions skip a waitlister who can't afford the seat. Confirm that's the
-   desired behaviour.
-4. **Payments model.** Wallet top-up only (via a `wallet-topup` Edge Function
-   that charges Stripe, then calls `app_wallet_topup` server-side). No
-   per-session card charge. Confirm.
+## Decisions to confirm
 
-## Remaining TODOs to reach a working single club
+1. **Waitlist.** The existing DB model has none (booked | cancelled only). The
+   POC has a waitlist + auto-promotion. Keep it out for v1, or add it?
+2. **Member ↔ player linking.** How does a booking account attach to an existing
+   player? By email match, admin assignment, or a claim code? (Ties to your
+   "email address" question — yes, each member signs in by email and we link
+   their `booking_members` row to their `players` row.)
+3. **Refund policy in `cancel_booking`** — mirror the POC's 24-hour rule
+   (full refund > 24h; none within 24h) as the club default?
 
-- Expose the club RDR leaderboard as a Postgres view/function and map it in
-  `getLeaderboard` / `getMembers` (rating, games, streak, movement).
-- Wire `generateCourtSlips` / `getCourtSlips` to the ability planner
-  (`social_sessions.plan`), and `enterScores` to write `matches`.
-- Build the `wallet-topup` Edge Function (mirror the `create-checkout-session`
-  pattern) and a Stripe webhook branch that calls `app_wallet_topup`.
-- Supabase Auth: sign-in + player claim; swap `services/auth.ts`.
+## How to apply the remaining gap — SAFELY
 
-## How to apply — SAFELY
-
-Do **not** run these on Production first. Options, in order of preference:
-
-1. **PB Table Demo project** (`ezfpoyuebqjebxdcxyzy`) — apply there, point the app's
-   env at it, exercise the flows end-to-end.
-2. **A Supabase branch** off Production (via the dashboard / MCP `create_branch`) —
-   gets the schema without the data.
-3. Only after review, apply to Production. The migrations are additive and use
-   `if not exists`, but a real review + a backup/snapshot first is the rule for
-   anything touching the live billing DB.
+The base backend is migration-managed, so a branch off Demo replays it cleanly.
+Plan: write the `cancel_booking` + balance + top-up pieces as a new migration,
+apply to a **Demo branch**, exercise the flows, then merge to Demo. Never
+Production until reviewed.
