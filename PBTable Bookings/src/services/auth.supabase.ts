@@ -25,8 +25,10 @@ export async function hasSession(): Promise<boolean> {
 }
 
 export async function getCurrentUser(): Promise<Member> {
-  const { data: userRes } = await supabase.auth.getUser();
-  const uid = userRes.user?.id;
+  // getSession reads the locally-stored session (no network round-trip), so it's
+  // reliable immediately after signIn and during token refreshes.
+  const { data: sessionRes } = await supabase.auth.getSession();
+  const uid = sessionRes.session?.user?.id;
   if (!uid) throw new Error('Not signed in.');
 
   const { data: bm, error } = await supabase

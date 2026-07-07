@@ -50,10 +50,24 @@ type SessionRow = {
   courts?: number | null;
 };
 
-function mapSession(r: SessionRow, kind: SessionKind, bookings: Booking[]): Session {
-  const waitlist = bookings
-    .filter((b) => b.status === 'waitlisted')
-    .map((b) => b.memberId);
+function mapSession(r: SessionRow, kind: SessionKind, bookedCount: number, mine: Booking[]): Session {
+  // The caller's own bookings are real (so "you're booked" detection works);
+  // the rest of the roster is anonymous placeholders up to the true booked
+  // count (RLS hides other members' rows).
+  const mineBooked = mine.filter((b) => b.status === 'booked' || b.status === 'attended');
+  const placeholders = Math.max(0, bookedCount - mineBooked.length);
+  const bookings: Booking[] = [...mine];
+  for (let i = 0; i < placeholders; i += 1) {
+    bookings.push({
+      id: `ph-${r.id}-${i}`,
+      sessionId: r.id,
+      memberId: '__other__',
+      status: 'booked',
+      paidPence: 0,
+      bookedAt: '',
+    });
+  }
+  const waitlist = mine.filter((b) => b.status === 'waitlisted').map((b) => b.memberId);
   return {
     id: r.id,
     title: r.name ?? (kind === 'graded' ? 'Graded session' : 'Social session'),
@@ -89,7 +103,11 @@ const mapBooking = (b: BookingRow): Booking => ({
   bookedAt: b.created_at,
 });
 
-async function bookingsForSessions(ids: string[]): Promise<Map<string, Booking[]>> {
+/** Bookings the caller is allowed to see (their own, per RLS). Used to know
+ *  which sessions the current member is already on; NOT for spot counts (those
+ *  come from session_spots, which counts everyone). Degrades to empty rather
+ *  than throwing when unreadable (e.g. signed out). */
+async function myBookingsForSessions(ids: string[]): Promise<Map<string, Booking[]>> {
   const map = new Map<string, Booking[]>();
   if (ids.length === 0) return map;
   const { data, error } = await supabase
@@ -97,13 +115,27 @@ async function bookingsForSessions(ids: string[]): Promise<Map<string, Booking[]
     .select('id,session_id,member_id,status,price_charged_pennies,created_at')
     .in('session_id', ids)
     .in('status', ['booked', 'waitlisted', 'attended']);
-  if (error) throw error;
+  if (error || !data) return map;
   for (const b of data as BookingRow[]) {
     const list = map.get(b.session_id) ?? [];
     list.push(mapBooking(b));
     map.set(b.session_id, list);
   }
   return map;
+}
+
+/** Accurate booked-count per session via the SECURITY DEFINER RPC (counts all
+ *  bookings, not just the caller's). Returns session_id → booked count. */
+async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  await Promise.all(
+    sessions.map(async ({ id, kind }) => {
+      const { data } = await supabase.rpc('session_spots', { p_session_kind: kind, p_session_id: id });
+      const booked = (data as { booked?: number } | null)?.booked ?? 0;
+      counts.set(id, booked);
+    })
+  );
+  return counts;
 }
 
 async function resolveKind(sessionId: string): Promise<SessionKind> {
@@ -130,9 +162,12 @@ export async function getSessions(): Promise<Session[]> {
     ...(social.data as SessionRow[]).map((r) => [r, 'social'] as [SessionRow, SessionKind]),
     ...(graded.data as SessionRow[]).map((r) => [r, 'graded'] as [SessionRow, SessionKind]),
   ];
-  const bookings = await bookingsForSessions(rows.map(([r]) => r.id));
+  const [counts, mine] = await Promise.all([
+    bookedCounts(rows.map(([r, kind]) => ({ id: r.id, kind }))),
+    myBookingsForSessions(rows.map(([r]) => r.id)),
+  ]);
   return rows
-    .map(([r, kind]) => mapSession(r, kind, bookings.get(r.id) ?? []))
+    .map(([r, kind]) => mapSession(r, kind, counts.get(r.id) ?? 0, mine.get(r.id) ?? []))
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
 }
 
@@ -153,8 +188,11 @@ export async function getSession(id: string): Promise<Session> {
     if (graded.error) throw graded.error;
     row = graded.data as SessionRow;
   }
-  const bookings = await bookingsForSessions([id]);
-  return mapSession(row, kind, bookings.get(id) ?? []);
+  const [counts, mine] = await Promise.all([
+    bookedCounts([{ id, kind }]),
+    myBookingsForSessions([id]),
+  ]);
+  return mapSession(row, kind, counts.get(id) ?? 0, mine.get(id) ?? []);
 }
 
 export async function createSession(_input: CreateSessionInput): Promise<Session> {
@@ -285,10 +323,23 @@ export async function getLedger(memberId: string): Promise<LedgerEntry[]> {
   return rows.reverse();
 }
 
-export async function topUp(_memberId: string, _amountPence: number): Promise<LedgerEntry> {
-  // Real money → a Stripe Checkout Edge Function whose webhook calls
-  // wallet_topup(). Not built yet; seeded balances cover the demo for now.
-  return notBuiltYet('Wallet top-up (Stripe)');
+export async function topUp(memberId: string, amountPence: number): Promise<LedgerEntry> {
+  // DEMO path: the `wallet-topup` Edge Function credits the wallet server-side
+  // (no real charge). Production swaps this for the Stripe checkout function.
+  const { data, error } = await supabase.functions.invoke('wallet-topup', {
+    body: { amount_pennies: amountPence },
+  });
+  if (error) throw new Error(error.message);
+  const balancePence = (data as { balance_pence?: number })?.balance_pence ?? 0;
+  return {
+    id: `topup-${Date.now()}`,
+    memberId,
+    type: 'deposit',
+    amountPence,
+    balanceAfterPence: balancePence,
+    description: 'Top-up',
+    createdAt: new Date().toISOString(),
+  };
 }
 
 // --- members & leaderboard ---------------------------------------------------

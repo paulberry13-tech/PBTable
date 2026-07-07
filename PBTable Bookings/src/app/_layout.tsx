@@ -21,6 +21,7 @@ import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { BannerHost } from '@/components/BannerHost';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SignIn } from '@/components/SignIn';
 import { USE_SUPABASE } from '@/services/config';
 import { AppProvider, useApp } from '@/store/AppContext';
@@ -52,6 +53,7 @@ export default function RootLayout() {
   return (
     <AppProvider>
       <StatusBar style="light" />
+      <ErrorBoundary>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.navy },
@@ -71,6 +73,7 @@ export default function RootLayout() {
         <Stack.Screen name="admin/manage/[id]" options={{ title: 'MANAGE SESSION' }} />
         <Stack.Screen name="admin/scores/[id]" options={{ title: 'ENTER SCORES' }} />
       </Stack>
+      </ErrorBoundary>
       <AuthGate />
       <BannerHost />
     </AppProvider>
