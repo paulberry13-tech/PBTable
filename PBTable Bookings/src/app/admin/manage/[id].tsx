@@ -1,10 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Badge, Button, Card, ErrorState, LoadingView, Row } from '@/components/ui';
 import { slipRating } from '@/domain/slips';
 import { formatSessionWhen, spotsLeft } from '@/lib/format';
+import { formatMoney } from '@/lib/money';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
@@ -17,9 +18,14 @@ export default function ManageSessionScreen() {
   const [slips, setSlips] = useState<CourtSlipRound[] | null>(null);
   const [generating, setGenerating] = useState(false);
   const [filling, setFilling] = useState(false);
+  const [rosterKey, setRosterKey] = useState(0);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   const { data: session, error } = useAsyncData(() => data.getSession(id), [id]);
   const { data: members } = useAsyncData(() => data.getMembers());
+  const { data: roster } = useAsyncData(() => data.getSessionRoster(id), [id, rosterKey]);
   useAsyncData(async () => {
     const existing = await data.getCourtSlips(id);
     if (existing) setSlips(existing);
@@ -28,12 +34,51 @@ export default function ManageSessionScreen() {
 
   const membersById = useMemo(() => new Map((members ?? []).map((m) => [m.id, m])), [members]);
 
+  const removePlayer = async (memberId: string, name: string) => {
+    if (!session) return;
+    setRemovingId(memberId);
+    try {
+      const res = await data.adminRemoveBooking(session.id, memberId);
+      setRosterKey((k) => k + 1);
+      refresh();
+      const money = res.refundPence > 0 ? ` ${formatMoney(res.refundPence)} refunded.` : '';
+      const promo = res.promotedName ? ` ${res.promotedName} promoted from the waitlist.` : '';
+      showBanner(`${name} removed.${money}${promo}`);
+    } catch (e) {
+      showBanner(e instanceof Error ? e.message : 'Could not remove player', 'warning');
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  const cancelSession = async () => {
+    if (!session) return;
+    setCancelling(true);
+    try {
+      const res = await data.adminCancelSession(session.id);
+      refresh();
+      const money =
+        res.totalRefundPence > 0
+          ? ` ${formatMoney(res.totalRefundPence)} refunded to ${res.attendeesRefunded} ${
+              res.attendeesRefunded === 1 ? 'player' : 'players'
+            }.`
+          : '';
+      showBanner(`Session cancelled.${money}`);
+      router.back();
+    } catch (e) {
+      showBanner(e instanceof Error ? e.message : 'Could not cancel session', 'warning');
+      setCancelling(false);
+      setConfirmingCancel(false);
+    }
+  };
+
   if (error) return <ErrorState message={error} />;
   if (!session || !members) return <LoadingView />;
 
-  const roster = session.bookings.filter((b) => b.status === 'booked' || b.status === 'attended');
+  const bookedRoster = session.bookings.filter((b) => b.status === 'booked' || b.status === 'attended');
   const left = spotsLeft(session);
   const slipTerm = sportProfile.terms.slip.toLowerCase();
+  const isUpcoming = session.status === 'upcoming';
 
   const generate = async () => {
     setGenerating(true);
@@ -67,7 +112,7 @@ export default function ManageSessionScreen() {
       <Text style={[type.caption, { marginTop: 2 }]}>{formatSessionWhen(session)}</Text>
       <Row gap={6} style={{ marginTop: spacing.sm }}>
         {session.affectsRating ? <Badge label="Graded" tone="coral" /> : <Badge label="Social" tone="green" />}
-        <Badge label={`${roster.length}/${session.capacity} booked`} tone={left === 0 ? 'amber' : 'grey'} />
+        <Badge label={`${bookedRoster.length}/${session.capacity} booked`} tone={left === 0 ? 'amber' : 'grey'} />
       </Row>
 
       {/* ★ The differentiator: balanced court slips */}
@@ -127,26 +172,37 @@ export default function ManageSessionScreen() {
 
       <Text style={[type.h1, { marginTop: spacing.xl, marginBottom: spacing.md }]}>Roster</Text>
       <Card>
-        {roster.length === 0 ? (
+        {roster == null ? (
+          <Text style={type.caption}>Loading roster…</Text>
+        ) : roster.length === 0 ? (
           <Text style={type.caption}>No bookings yet.</Text>
         ) : (
-          roster.map((b) => {
-            const m = membersById.get(b.memberId);
-            return (
-              <Row key={b.id} style={{ justifyContent: 'space-between', marginBottom: 6 }}>
-                <Text style={type.body}>{m?.name ?? '…'}</Text>
-                <Text style={[type.caption, type.mono]}>
-                  {m?.rating !== undefined
-                    ? m.rating.toFixed(2)
-                    : m
-                      ? `est ${slipRating(m, session).toFixed(1)}`
-                      : ''}
-                </Text>
-              </Row>
-            );
-          })
+          roster.map((r) => (
+            <Row key={r.memberId} style={{ justifyContent: 'space-between', marginBottom: 8, alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={type.body}>{r.name}</Text>
+              </View>
+              <Text style={[type.caption, type.mono, { marginRight: spacing.md }]}>
+                {r.rating != null ? r.rating.toFixed(2) : `est ${r.slipRating.toFixed(1)}`}
+              </Text>
+              {isUpcoming ? (
+                removingId === r.memberId ? (
+                  <ActivityIndicator size="small" color={colors.textMuted} />
+                ) : (
+                  <Pressable
+                    onPress={() => void removePlayer(r.memberId, r.name)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${r.name}`}
+                  >
+                    <Text style={styles.removeLink}>Remove</Text>
+                  </Pressable>
+                )
+              ) : null}
+            </Row>
+          ))
         )}
-        {left > 0 && session.status === 'upcoming' ? (
+        {left > 0 && isUpcoming ? (
           <Button
             title={filling ? 'Booking players…' : '＋ Add demo players'}
             variant="ghost"
@@ -169,6 +225,40 @@ export default function ManageSessionScreen() {
             ))}
           </Card>
         </>
+      ) : null}
+
+      {isUpcoming ? (
+        <View style={styles.dangerZone}>
+          {!confirmingCancel ? (
+            <Button
+              title="Cancel session"
+              variant="ghost"
+              onPress={() => setConfirmingCancel(true)}
+            />
+          ) : (
+            <Card style={{ borderColor: colors.down }}>
+              <Text style={type.bodyBold}>Cancel this session?</Text>
+              <Text style={[type.caption, { marginTop: 4 }]}>
+                Every booked player is refunded their fee to their wallet. This can’t be undone.
+              </Text>
+              <Row gap={spacing.sm} style={{ marginTop: spacing.md }}>
+                <Button
+                  title="Keep session"
+                  variant="ghost"
+                  onPress={() => setConfirmingCancel(false)}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  title={cancelling ? 'Cancelling…' : 'Cancel & refund all'}
+                  variant="danger"
+                  onPress={() => void cancelSession()}
+                  loading={cancelling}
+                  style={{ flex: 1 }}
+                />
+              </Row>
+            </Card>
+          )}
+        </View>
       ) : null}
     </ScrollView>
   );
@@ -222,6 +312,14 @@ function SlipCourt({
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 48, maxWidth: 720, width: '100%', alignSelf: 'center' },
+  removeLink: {
+    ...type.caption,
+    color: colors.down,
+    fontFamily: fonts.bold,
+  },
+  dangerZone: {
+    marginTop: spacing.xl,
+  },
   slipCourt: {
     marginTop: spacing.md,
     backgroundColor: colors.background,

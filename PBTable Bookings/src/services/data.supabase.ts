@@ -21,9 +21,12 @@ import type {
 } from '@/types';
 import type {
   BookResult,
+  CancelSessionResult,
   CreateSessionInput,
   LeaderboardEntry,
   MyBooking,
+  RemoveBookingResult,
+  RosterEntry,
 } from '@/services/data.mock';
 import type { RatingChange } from '@/domain/ratings';
 
@@ -198,12 +201,94 @@ export async function getSession(id: string): Promise<Session> {
   return mapSession(row, kind, counts.get(id) ?? 0, mine.get(id) ?? []);
 }
 
-export async function createSession(_input: CreateSessionInput): Promise<Session> {
-  return notBuiltYet('Creating a session from the app');
+export async function createSession(input: CreateSessionInput): Promise<Session> {
+  const kind: SessionKind = input.affectsRating ? 'graded' : 'social';
+  const { data, error } = await supabase.rpc('admin_create_session', {
+    p_session_kind: kind,
+    p_name: input.title,
+    p_played_on: input.date,
+    p_start: input.startTime,
+    p_end: input.endTime,
+    p_capacity: input.capacity,
+    p_price_pennies: input.pricePence,
+    p_courts: input.courts,
+    p_format: input.format,
+    p_recurrence: input.isRecurring ? 'weekly' : 'none',
+    p_weeks: input.recurrenceWeeks ?? 8,
+  });
+  if (error) throw error;
+  const firstId = (data as { session_ids?: string[] } | null)?.session_ids?.[0];
+  if (!firstId) throw new Error('The session could not be created.');
+  return getSession(firstId);
 }
 
 export async function demoFillSession(_sessionId: string): Promise<number> {
   return notBuiltYet('Demo-filling a session');
+}
+
+// --- admin session management (SECURITY DEFINER RPCs, club_admin only) --------
+
+/** The balanced-planner roster: a session's paid attendees resolved to their
+ *  linked player + live RDR rating (via the session_roster bridge), strongest
+ *  first. Works for social and graded sessions. */
+export async function getSessionRoster(sessionId: string): Promise<RosterEntry[]> {
+  const kind = await resolveKind(sessionId);
+  const { data, error } = await supabase.rpc('session_roster', {
+    p_session_kind: kind,
+    p_session_id: sessionId,
+  });
+  if (error) throw error;
+  type RosterRow = {
+    member_id: string;
+    name: string;
+    rating: number | null;
+    slip_rating: number;
+    status: RosterEntry['status'];
+  };
+  return ((data as RosterRow[] | null) ?? []).map((r) => ({
+    memberId: r.member_id,
+    name: r.name,
+    rating: r.rating ?? null,
+    slipRating: r.slip_rating,
+    status: r.status,
+  }));
+}
+
+/** Cancel a session and refund every booked attendee to their wallet. */
+export async function adminCancelSession(sessionId: string): Promise<CancelSessionResult> {
+  const kind = await resolveKind(sessionId);
+  const { data, error } = await supabase.rpc('admin_cancel_session', {
+    p_session_kind: kind,
+    p_session_id: sessionId,
+  });
+  if (error) throw error;
+  const r = (data as { attendees_refunded?: number; total_refund_pennies?: number } | null) ?? {};
+  return {
+    attendeesRefunded: r.attendees_refunded ?? 0,
+    totalRefundPence: r.total_refund_pennies ?? 0,
+  };
+}
+
+/** Remove one player from a session, refund them, and promote the first
+ *  affordable waitlister into the freed spot. */
+export async function adminRemoveBooking(
+  sessionId: string,
+  memberId: string
+): Promise<RemoveBookingResult> {
+  const kind = await resolveKind(sessionId);
+  const { data, error } = await supabase.rpc('admin_remove_booking', {
+    p_session_kind: kind,
+    p_session_id: sessionId,
+    p_member_id: memberId,
+  });
+  if (error) throw error;
+  const r =
+    (data as { removed?: boolean; refund_pennies?: number; promoted_name?: string | null } | null) ?? {};
+  return {
+    removed: r.removed ?? false,
+    refundPence: r.refund_pennies ?? 0,
+    promotedName: r.promoted_name ?? null,
+  };
 }
 
 // --- booking (server-authoritative RPCs) ------------------------------------

@@ -11,6 +11,7 @@ import { buildSeed } from '@/mock/seed';
 import { InsufficientBalanceError } from '@/services/contracts';
 import {
   Booking,
+  BookingStatus,
   CancellationResult,
   CourtSlipRound,
   LedgerEntry,
@@ -169,19 +170,144 @@ export interface CreateSessionInput {
   skillMax?: number;
   pricePence: number;
   isRecurring: boolean;
+  /** When isRecurring, how many weekly instances to create (default 8). */
+  recurrenceWeeks?: number;
+}
+
+/** One paid attendee resolved to their player + rating, for the ability planner.
+ *  slipRating falls back to a default for unrated players so teams can balance. */
+export interface RosterEntry {
+  memberId: string;
+  name: string;
+  rating: number | null;
+  slipRating: number;
+  status: BookingStatus;
+}
+
+export interface CancelSessionResult {
+  attendeesRefunded: number;
+  totalRefundPence: number;
+}
+
+export interface RemoveBookingResult {
+  removed: boolean;
+  refundPence: number;
+  /** Name of the waitlister promoted into the freed spot, if any. */
+  promotedName: string | null;
+}
+
+/** '2026-07-09' + 7*n days, staying on the same weekday. */
+function addWeeksIso(iso: string, weeks: number): string {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + weeks * 7);
+  return d.toISOString().slice(0, 10);
 }
 
 export async function createSession(input: CreateSessionInput): Promise<Session> {
   await delay();
-  const session: Session = {
-    ...input,
-    id: nextId('s'),
-    bookings: [],
-    waitlist: [],
-    status: 'upcoming',
-  };
-  store.sessions.push(session);
-  return clone(session);
+  const { recurrenceWeeks, ...base } = input;
+  const weeks = input.isRecurring ? Math.max(1, recurrenceWeeks ?? 8) : 1;
+  let first: Session | null = null;
+  for (let i = 0; i < weeks; i += 1) {
+    const session: Session = {
+      ...base,
+      date: addWeeksIso(input.date, i),
+      id: nextId('s'),
+      bookings: [],
+      waitlist: [],
+      status: 'upcoming',
+    };
+    store.sessions.push(session);
+    if (!first) first = session;
+  }
+  return clone(first as Session);
+}
+
+/** Admin: the balanced-planner roster — paid attendees with their ratings,
+ *  strongest first. Mirrors the server's session_roster bridge. */
+export async function getSessionRoster(sessionId: string): Promise<RosterEntry[]> {
+  await delay(120);
+  const session = findSession(sessionId);
+  return session.bookings
+    .filter((b) => b.status === 'booked' || b.status === 'attended')
+    .map((b) => {
+      const m = store.members.find((x) => x.id === b.memberId);
+      const rating = m?.rating ?? null;
+      return {
+        memberId: b.memberId,
+        name: m?.name ?? '…',
+        rating,
+        slipRating: rating ?? 3.0,
+        status: b.status,
+      };
+    })
+    .sort((a, b) => b.slipRating - a.slipRating);
+}
+
+/** Admin: cancel a session and refund every booked attendee to their wallet. */
+export async function adminCancelSession(sessionId: string): Promise<CancelSessionResult> {
+  await delay();
+  const session = findSession(sessionId);
+  let attendeesRefunded = 0;
+  let totalRefundPence = 0;
+  for (const b of session.bookings) {
+    if (b.status === 'booked') {
+      if (b.paidPence > 0) {
+        b.refundedPence = b.paidPence;
+        postLedger(b.memberId, 'refund', b.paidPence, `Refund · ${session.title}`, sessionId);
+        totalRefundPence += b.paidPence;
+      }
+      attendeesRefunded += 1;
+    }
+    if (b.status === 'booked' || b.status === 'waitlisted') b.status = 'cancelled';
+  }
+  session.waitlist = [];
+  session.status = 'cancelled';
+  return { attendeesRefunded, totalRefundPence };
+}
+
+/** Admin: remove one player from a session, refund them, and promote the first
+ *  waitlister who can afford the fee. */
+export async function adminRemoveBooking(
+  sessionId: string,
+  memberId: string
+): Promise<RemoveBookingResult> {
+  await delay();
+  const session = findSession(sessionId);
+  const bk = session.bookings.find(
+    (b) => b.memberId === memberId && (b.status === 'booked' || b.status === 'waitlisted')
+  );
+  if (!bk) throw new Error('No active booking for that member.');
+
+  const wasBooked = bk.status === 'booked';
+  bk.status = 'cancelled';
+  session.waitlist = session.waitlist.filter((id) => id !== memberId);
+
+  let refundPence = 0;
+  if (wasBooked && bk.paidPence > 0) {
+    bk.refundedPence = bk.paidPence;
+    refundPence = bk.paidPence;
+    postLedger(memberId, 'refund', refundPence, `Refund · ${session.title}`, sessionId);
+  }
+
+  let promotedName: string | null = null;
+  if (wasBooked) {
+    for (const wid of [...session.waitlist]) {
+      const wm = findMember(wid);
+      if (session.pricePence === 0 || wm.balancePence >= session.pricePence) {
+        const wbk = session.bookings.find((b) => b.memberId === wid && b.status === 'waitlisted');
+        if (wbk) {
+          wbk.status = 'booked';
+          wbk.paidPence = session.pricePence;
+        }
+        if (session.pricePence > 0) postLedger(wid, 'spend', -session.pricePence, session.title, sessionId);
+        session.waitlist = session.waitlist.filter((id) => id !== wid);
+        promotedName = wm.name;
+        break;
+      }
+    }
+  }
+  return { removed: true, refundPence, promotedName };
 }
 
 // --- booking ---------------------------------------------------------------------

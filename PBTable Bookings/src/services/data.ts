@@ -14,6 +14,9 @@ export type {
   MyBooking,
   LeaderboardEntry,
   ScoreEntry,
+  RosterEntry,
+  CancelSessionResult,
+  RemoveBookingResult,
 } from '@/services/data.mock';
 
 // Both modules export the same function names; the Supabase one has a couple of
@@ -23,6 +26,9 @@ const impl: typeof mock = USE_SUPABASE ? (supa as unknown as typeof mock) : mock
 export const getSessions = impl.getSessions;
 export const getSession = impl.getSession;
 export const createSession = impl.createSession;
+export const getSessionRoster = impl.getSessionRoster;
+export const adminCancelSession = impl.adminCancelSession;
+export const adminRemoveBooking = impl.adminRemoveBooking;
 export const bookSession = impl.bookSession;
 export const joinWaitlist = impl.joinWaitlist;
 export const demoFillSession = impl.demoFillSession;

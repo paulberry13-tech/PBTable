@@ -33,6 +33,7 @@ export default function CreateSessionScreen() {
   const [skillMax, setSkillMax] = useState('4.0');
   const [pricePounds, setPricePounds] = useState('6');
   const [recurring, setRecurring] = useState(false);
+  const [weeks, setWeeks] = useState('8');
   const [saving, setSaving] = useState(false);
 
   const onCourtsChange = (v: string) => {
@@ -51,6 +52,7 @@ export default function CreateSessionScreen() {
       showBanner('Please fill in a title, courts and capacity.', 'warning');
       return;
     }
+    const weeksN = Math.max(1, parseInt(weeks, 10) || 8);
     setSaving(true);
     try {
       await data.createSession({
@@ -66,9 +68,14 @@ export default function CreateSessionScreen() {
         skillMax: banded ? parseFloat(skillMax) : undefined,
         pricePence: Number.isNaN(priceN) ? 0 : priceN,
         isRecurring: recurring,
+        recurrenceWeeks: recurring ? weeksN : undefined,
       });
       refresh();
-      showBanner(`${title.trim()} created${recurring ? ' (recurring: POC creates one instance)' : ''}.`);
+      showBanner(
+        recurring
+          ? `${title.trim()} created — ${weeksN} weekly sessions.`
+          : `${title.trim()} created.`
+      );
       router.back();
     } catch (e) {
       showBanner(e instanceof Error ? e.message : 'Could not create session', 'warning');
@@ -167,12 +174,27 @@ export default function CreateSessionScreen() {
 
         <ToggleRow
           label="Recurring weekly"
-          hint="POC: creates a single instance with a weekly note"
+          hint="Creates the same session every week, on this weekday and time"
           value={recurring}
           onChange={setRecurring}
         />
+        {recurring ? (
+          <Field label="How many weeks">
+            <TextInput
+              style={styles.input}
+              value={weeks}
+              onChangeText={setWeeks}
+              keyboardType="number-pad"
+            />
+          </Field>
+        ) : null}
 
-        <Button title="Create session" onPress={() => void save()} loading={saving} style={{ marginTop: spacing.lg }} />
+        <Button
+          title={recurring ? 'Create weekly sessions' : 'Create session'}
+          onPress={() => void save()}
+          loading={saving}
+          style={{ marginTop: spacing.lg }}
+        />
       </Card>
     </ScrollView>
   );
