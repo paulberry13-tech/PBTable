@@ -10,6 +10,11 @@
 //   URL:  https://kxvtqsmjlhlajkoyejwk.supabase.co
 // Use the DEMO project (ezfpoyuebqjebxdcxyzy) while developing.
 
+// Must be first: polyfills the global URL/URLSearchParams API that
+// @supabase/supabase-js relies on but React Native's engine doesn't fully
+// implement. Web already has URL, so this is a no-op there.
+import 'react-native-url-polyfill/auto';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
