@@ -118,6 +118,12 @@ function booking(sessionId: string, memberId: string, pricePence: number, daysAg
   };
 }
 
+/**
+ * The club's standard session fee. No per-session prices are invented — every
+ * session costs this. £6 is a typical fee a player pays. Change in one place.
+ */
+export const SESSION_FEE = 600; // £6
+
 export function buildSeed(): SeedData {
   seedState = 42;
   bookingSeq = 1;
@@ -166,13 +172,13 @@ export function buildSeed(): SeedData {
   const matches: Match[] = [];
   let matchSeq = 1;
 
-  const completedSpecs: { daysAgo: number; title: string; format: SessionFormat; courts: number; price: number }[] = [
-    { daysAgo: 21, title: 'Club Night Doubles', format: 'round_robin', courts: 3, price: 600 },
-    { daysAgo: 17, title: 'Box League Round 1', format: 'box_league', courts: 2, price: 500 },
-    { daysAgo: 14, title: 'Thursday Club League', format: 'round_robin', courts: 3, price: 600 },
-    { daysAgo: 10, title: 'Intermediate Ladder Night', format: 'ladder', courts: 3, price: 500 },
-    { daysAgo: 7, title: 'Box League Round 2', format: 'box_league', courts: 2, price: 500 },
-    { daysAgo: 3, title: 'Club Night Doubles', format: 'round_robin', courts: 3, price: 600 },
+  const completedSpecs: { daysAgo: number; title: string; format: SessionFormat; courts: number }[] = [
+    { daysAgo: 21, title: 'Club Night Doubles', format: 'round_robin', courts: 3 },
+    { daysAgo: 17, title: 'Box League Round 1', format: 'box_league', courts: 2 },
+    { daysAgo: 14, title: 'Thursday Club League', format: 'round_robin', courts: 3 },
+    { daysAgo: 10, title: 'Intermediate Ladder Night', format: 'ladder', courts: 3 },
+    { daysAgo: 7, title: 'Box League Round 2', format: 'box_league', courts: 2 },
+    { daysAgo: 3, title: 'Club Night Doubles', format: 'round_robin', courts: 3 },
   ];
 
   completedSpecs.forEach((spec, si) => {
@@ -193,9 +199,9 @@ export function buildSeed(): SeedData {
       capacity,
       format: spec.format,
       affectsRating: true,
-      pricePence: spec.price,
+      pricePence: SESSION_FEE,
       isRecurring: false,
-      bookings: players.map((p) => booking(id, p.id, spec.price, spec.daysAgo + randInt(2, 6), 'attended')),
+      bookings: players.map((p) => booking(id, p.id, SESSION_FEE, spec.daysAgo + randInt(2, 6), 'attended')),
       waitlist: [],
       status: 'completed',
     };
@@ -249,7 +255,7 @@ export function buildSeed(): SeedData {
   // 1. TONIGHT, full, waitlist, Paul booked — demos the within-24h cancel + resold refund.
   {
     const id = 's-up-1';
-    const price = 600;
+    const price = SESSION_FEE;
     const pool = [...ratedOthers].sort(() => rand() - 0.5);
     const s: Session = {
       id,
@@ -274,7 +280,7 @@ export function buildSeed(): SeedData {
   // 2. Thursday league in 3 days, FULL with waitlist, Paul booked — demos >24h cancel with promotion.
   {
     const id = 's-up-2';
-    const price = 600;
+    const price = SESSION_FEE;
     const pool = [...ratedOthers].sort(() => rand() - 0.5);
     const s: Session = {
       id,
@@ -307,17 +313,17 @@ export function buildSeed(): SeedData {
     capacity: 16,
     format: 'social',
     affectsRating: false,
-    pricePence: 400,
+    pricePence: SESSION_FEE,
     isRecurring: true,
-    bookings: fill('s-up-3', anyOthers, 9, 400),
+    bookings: fill('s-up-3', anyOthers, 9, SESSION_FEE),
     waitlist: [],
     status: 'upcoming',
   });
 
-  // 4. Friday Free Play — FREE.
+  // 4. Friday Evening Social — ungraded, relaxed.
   upcoming.push({
     id: 's-up-4',
-    title: 'Friday Free Play',
+    title: 'Friday Evening Social',
     date: isoDate(daysToNext(5, 1)),
     startTime: '17:30',
     endTime: '19:00',
@@ -325,9 +331,9 @@ export function buildSeed(): SeedData {
     capacity: 8,
     format: 'social',
     affectsRating: false,
-    pricePence: 0,
+    pricePence: SESSION_FEE,
     isRecurring: false,
-    bookings: fill('s-up-4', [...anyOthers].reverse(), 5, 0),
+    bookings: fill('s-up-4', [...anyOthers].reverse(), 5, SESSION_FEE),
     waitlist: [],
     status: 'upcoming',
   });
@@ -345,9 +351,9 @@ export function buildSeed(): SeedData {
     affectsRating: true,
     skillMin: 3.0,
     skillMax: 4.0,
-    pricePence: 500,
+    pricePence: SESSION_FEE,
     isRecurring: true,
-    bookings: fill('s-up-5', ratedOthers.filter((m) => (m.rating ?? 0) >= 3.0 && (m.rating ?? 0) <= 4.0), 7, 500),
+    bookings: fill('s-up-5', ratedOthers.filter((m) => (m.rating ?? 0) >= 3.0 && (m.rating ?? 0) <= 4.0), 7, SESSION_FEE),
     waitlist: [],
     status: 'upcoming',
   });
@@ -363,9 +369,9 @@ export function buildSeed(): SeedData {
     capacity: 8,
     format: 'coached',
     affectsRating: false,
-    pricePence: 800,
+    pricePence: SESSION_FEE,
     isRecurring: false,
-    bookings: fill('s-up-6', others.filter((m) => m.ratingState === 'unrated'), 4, 800),
+    bookings: fill('s-up-6', others.filter((m) => m.ratingState === 'unrated'), 4, SESSION_FEE),
     waitlist: [],
     status: 'upcoming',
   });
@@ -383,9 +389,9 @@ export function buildSeed(): SeedData {
     affectsRating: true,
     skillMin: 3.8,
     skillMax: 5.0,
-    pricePence: 700,
+    pricePence: SESSION_FEE,
     isRecurring: false,
-    bookings: fill('s-up-7', ratedOthers.filter((m) => (m.rating ?? 0) >= 3.8), 5, 700),
+    bookings: fill('s-up-7', ratedOthers.filter((m) => (m.rating ?? 0) >= 3.8), 5, SESSION_FEE),
     waitlist: [],
     status: 'upcoming',
   });
@@ -401,9 +407,9 @@ export function buildSeed(): SeedData {
     capacity: 8,
     format: 'box_league',
     affectsRating: true,
-    pricePence: 500,
+    pricePence: SESSION_FEE,
     isRecurring: true,
-    bookings: fill('s-up-8', [...ratedOthers].sort(() => rand() - 0.5), 6, 500),
+    bookings: fill('s-up-8', [...ratedOthers].sort(() => rand() - 0.5), 6, SESSION_FEE),
     waitlist: [],
     status: 'upcoming',
   });
@@ -419,9 +425,9 @@ export function buildSeed(): SeedData {
     capacity: 16,
     format: 'round_robin',
     affectsRating: true,
-    pricePence: 600,
+    pricePence: SESSION_FEE,
     isRecurring: true,
-    bookings: fill('s-up-9', [...anyOthers].sort(() => rand() - 0.5), 8, 600),
+    bookings: fill('s-up-9', [...anyOthers].sort(() => rand() - 0.5), 8, SESSION_FEE),
     waitlist: [],
     status: 'upcoming',
   });
@@ -436,12 +442,12 @@ export function buildSeed(): SeedData {
   // freely (demo fills, promotions).
   const ledgerSeeds: LedgerSeed[] = [
     { memberId: 'm-paul', type: 'deposit', amountPence: 4000, description: 'Top-up', daysAgo: 35 },
-    { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Club Night Doubles', sessionId: 's-past-1', daysAgo: 19 },
-    { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Thursday Club League', sessionId: 's-past-3', daysAgo: 14 },
-    { memberId: 'm-paul', type: 'spend', amountPence: -500, description: 'Intermediate Ladder Night', sessionId: 's-past-4', daysAgo: 10 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -SESSION_FEE, description: 'Club Night Doubles', sessionId: 's-past-1', daysAgo: 19 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -SESSION_FEE, description: 'Thursday Club League', sessionId: 's-past-3', daysAgo: 14 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -SESSION_FEE, description: 'Intermediate Ladder Night', sessionId: 's-past-4', daysAgo: 10 },
     { memberId: 'm-paul', type: 'deposit', amountPence: 2000, description: 'Top-up', daysAgo: 8 },
-    { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Club Night Doubles', sessionId: 's-up-1', daysAgo: 4 },
-    { memberId: 'm-paul', type: 'spend', amountPence: -600, description: 'Thursday Club League', sessionId: 's-up-2', daysAgo: 3 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -SESSION_FEE, description: 'Club Night Doubles', sessionId: 's-up-1', daysAgo: 4 },
+    { memberId: 'm-paul', type: 'spend', amountPence: -SESSION_FEE, description: 'Thursday Club League', sessionId: 's-up-2', daysAgo: 3 },
   ];
   for (const m of members) {
     if (m.id === 'm-paul') continue;
