@@ -88,7 +88,8 @@ There is deliberately **no `game_players` table**: a tournament pair IS the entr
 ## Player self-service (phase 2, brought forward 2026-08-10)
 
 Paul asked for the player-facing side early: signup, online entry, payment, partner
-changes. Decisions locked while building — all in `005_player_self_service.sql`:
+changes. Decisions locked while building — migrations `005a`–`005i` (reconstructed to
+disk from the applied ledger 2026-08-12; each byte-identical to what ran):
 
 1. **A player account is cross-tournament** (one profile, many tournaments — the
    Pickleball Brackets model). `players` stays tournament-scoped and gained
@@ -618,6 +619,22 @@ changes. Decisions locked while building — all in `005_player_self_service.sql
   helper removed. **Lesson for this codebase: any `.in()` read can silently truncate at
   1000 rows — always page. And a guard/revoke that's fine for service-role + SECURITY
   DEFINER RPCs can still break the plain signed-in-admin path; test as a real admin.**
+- 2026-08-12: **migrations folder made an authoritative rebuild source.** Only `001`–`005`
+  (combined) and `010` were on disk; `006`–`009` (slugs, `invitation_context`,
+  `payment_method`, `my_fees`, phone sync, overlap clashes, `my_schedule`) had been applied
+  via MCP and never filed, AND the on-disk combined `005` was my original draft **missing
+  `005e`–`005i`** (the `my_event_options`/`my_invitations` RPCs the entry page needs,
+  `leave_entry`, the drawn-event eligibility close, and the PUBLIC revokes that stop the
+  helpers leaking ratings). A rebuild from disk would have broken the entry page and
+  regressed security. Reconstructed every missing/incomplete migration verbatim from
+  `supabase_migrations.schema_migrations` (the applied ledger) and **md5-verified all 16
+  files byte-identical to what ran**: `005a`–`005i`, `006`, `006b`, `007`, `007b`, `008`,
+  `009`, `009b`. Replaced the combined `005` with the nine split files. `010_stress_test_fixes.sql`
+  stays as the consolidation of the ledger's `010`–`013` (functionally the same end state,
+  skips the dead-end `011`). `001`–`004` aren't in the ledger (Paul applied them via the
+  dashboard, not MCP) so they're the as-authored files, verified by column checks at the
+  time. On-disk apply order now reproduces the live DB exactly: `001 002 003 004 005a…005i
+  006 006b 007 007b 008 009 009b 010`.
 - **Next:** Paul sets `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` in Edge Function
   secrets, points a Stripe webhook at `/functions/v1/entry-webhook`
   (`checkout.session.completed`, `charge.refunded`, `checkout.session.expired`) and
