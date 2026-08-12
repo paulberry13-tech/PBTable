@@ -1,0 +1,1662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tournament Manager — organiser admin</title>
+<link rel="icon" type="image/png" href="pbtable-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wine:#46101c; --crimson:#7d1527; --crimson-soft:#a02a3d;
+    --gold:#d9a441; --gold-deep:#b07f22; --gold-soft:#f2ddab;
+    --cream:#fbf6ee; --mid:#f2e9db; --ink:#2b171b; --muted:#806a63;
+    --hairline:rgba(43,23,27,.14); --card:#fff; --ok:#2c7a4b; --err:#b3261e; --warn:#a86a00;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Barlow',sans-serif; color:var(--ink); background:var(--cream);
+    font-size:15px; line-height:1.45; }
+  h1,h2,h3,h4,.condensed{ font-family:'Barlow Condensed',sans-serif; }
+
+  header{ background:linear-gradient(160deg,var(--crimson),var(--wine)); color:#fff;
+    display:flex; align-items:center; gap:12px; padding:10px 18px; }
+  header img{ height:36px; }
+  header .product{ font-family:'Barlow Condensed'; font-weight:600; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--gold-soft); }
+  header .grow{ flex:1; }
+  header a{ color:#fff; text-decoration:none; font-weight:600; font-size:.9rem; }
+  header button{ font:inherit; font-weight:600; font-size:.85rem; color:#fff;
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3);
+    border-radius:999px; padding:5px 13px; cursor:pointer; }
+
+  main{ max-width:1150px; margin:0 auto; padding:22px 18px 60px; }
+  h2{ font-size:1.7rem; color:var(--crimson); margin:8px 0 2px; }
+  h3{ font-size:1.25rem; color:var(--crimson); margin-bottom:8px; }
+  .sub{ color:var(--muted); margin-bottom:16px; }
+
+  .card{ background:var(--card); border:1px solid var(--hairline); border-radius:12px;
+    padding:16px 18px; box-shadow:0 1px 2px rgba(43,23,27,.05); margin-bottom:16px; }
+
+  /* every input: a label saying what it IS and a hint saying what it's FOR */
+  label.f{ display:block; margin-bottom:12px; font-weight:600; }
+  label.f .hint{ display:block; font-weight:400; font-size:.8rem; color:var(--muted); margin-bottom:3px; }
+  input[type=text],input[type=email],input[type=date],input[type=time],input[type=number],
+  input[type=password],input[type=datetime-local],select,textarea{
+    font:inherit; width:100%; max-width:420px; padding:7px 10px; border-radius:8px;
+    border:1px solid var(--hairline); background:#fff; color:var(--ink); }
+  input:focus,select:focus{ outline:2px solid var(--gold); outline-offset:0; border-color:var(--gold); }
+  /* Equal columns give every box the same width; stretching each cell and pushing the
+     input to the bottom keeps the boxes level even when one field's hint wraps to two
+     lines and its neighbour's does not. */
+  .frow{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:4px 18px; align-items:stretch; }
+  .frow > label.f{ display:flex; flex-direction:column; margin-bottom:14px; }
+  .frow > label.f .hint{ margin-bottom:6px; }
+  /* select and input[type=date/datetime-local] differ by a few px from a text input,
+     which is enough to knock a bottom-aligned row out. Pin one height. */
+  .frow > label.f input, .frow > label.f select{
+    margin-top:auto; max-width:none; height:40px; }
+  fieldset{ border:1px solid var(--hairline); border-radius:10px; padding:10px 14px 2px; margin-bottom:12px; }
+  legend{ font-family:'Barlow Condensed'; font-weight:600; color:var(--gold-deep);
+    text-transform:uppercase; letter-spacing:.06em; font-size:.85rem; padding:0 6px; }
+
+  button.btn{ font:inherit; font-weight:600; cursor:pointer; border-radius:999px;
+    padding:8px 18px; border:1px solid var(--crimson); background:var(--crimson); color:#fff; }
+  button.btn:hover{ background:var(--crimson-soft); }
+  button.btn.ghost{ background:transparent; color:var(--crimson); }
+  button.btn.gold{ background:var(--gold); border-color:var(--gold); color:var(--wine); }
+  button.btn.small{ padding:4px 12px; font-size:.85rem; }
+  button.btn.danger{ background:transparent; border-color:var(--err); color:var(--err); }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+
+  table{ width:100%; border-collapse:collapse; font-size:.92rem; }
+  th{ font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
+    letter-spacing:.06em; font-size:.78rem; color:var(--muted); text-align:left;
+    padding:7px 8px; border-bottom:2px solid var(--hairline); }
+  td{ padding:7px 8px; border-bottom:1px solid var(--hairline); vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  td.num,th.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .table-scroll{ overflow-x:auto; }
+  td input[type=number]{ width:64px; padding:5px 7px; vertical-align:middle; }
+  /* Score entry: a best-of-3 row has three pairs of boxes, a single-game row has one.
+     Fixed-width game slots keep game 1 in the same column on every row, so the boxes
+     read as a straight grid instead of drifting with the row's format. */
+  td.games{ white-space:nowrap; }
+  .game-slot{ display:inline-block; width:152px; text-align:left; }
+  .game-slot .sep{ display:inline-block; width:14px; text-align:center; color:var(--muted); }
+  td input[type=text].short{ width:80px; }
+  td input[type=datetime-local]{ width:190px; }
+  td select{ width:auto; }
+
+  .pill{ display:inline-block; font-size:.75rem; font-weight:600; padding:2px 9px;
+    border-radius:999px; border:1px solid var(--hairline); color:var(--muted);
+    background:var(--cream); white-space:nowrap; }
+  .pill.gold{ background:var(--gold); border-color:var(--gold); color:var(--wine); }
+  .pill.ok{ color:var(--ok); border-color:var(--ok); background:#eef7f1; }
+  .pill.warn{ color:var(--warn); border-color:var(--warn); background:#fdf4e3; }
+  .pill.err{ color:var(--err); border-color:var(--err); background:#fdeeee; }
+
+  .chiprow{ display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px; }
+  .chip{ font:inherit; font-weight:600; font-size:.9rem; cursor:pointer; padding:6px 14px;
+    border-radius:999px; border:1px solid var(--hairline); background:var(--card); }
+  .chip.active{ background:var(--crimson); border-color:var(--crimson); color:#fff; }
+
+  .tabs{ display:flex; gap:2px; flex-wrap:wrap; border-bottom:2px solid var(--hairline);
+    margin:14px 0 18px; }
+  .tabs button{ font:inherit; font-family:'Barlow Condensed'; font-weight:600;
+    text-transform:uppercase; letter-spacing:.05em; font-size:.95rem; cursor:pointer;
+    border:none; background:none; color:var(--muted); padding:8px 14px;
+    border-bottom:3px solid transparent; margin-bottom:-2px; }
+  .tabs button.active{ color:var(--crimson); border-bottom-color:var(--gold); }
+
+  .dot{ display:inline-block; width:11px; height:11px; border-radius:50%;
+    background:#c9bdb4; vertical-align:middle; }
+  .dot.amber{ background:#e0a93e; } .dot.green{ background:var(--ok); }
+  .dot.red{ background:var(--err); }
+
+  .sharebox{ background:var(--cream); border:1px solid var(--gold); border-radius:10px;
+    padding:13px 15px; margin-bottom:14px; }
+  .sharebox .lbl{ font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
+    letter-spacing:.06em; font-size:.82rem; color:var(--gold-deep); }
+  .sharebox .hint{ font-size:.82rem; color:var(--muted); margin:2px 0 9px; }
+  .sharebox input[readonly]{ background:#fff; font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:.86rem; max-width:430px; }
+  .sharewrap{ display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
+  .sharewrap .left{ flex:1 1 380px; min-width:0; }
+  .qrbox{ flex:0 0 auto; text-align:center; }
+  .qrbox svg{ display:block; border:1px solid var(--hairline); border-radius:8px; background:#fff; }
+  .qrbox .cap{ font-size:.76rem; color:var(--muted); margin:6px 0 4px; }
+  .msg{ border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:.92rem; }
+  .msg.err{ background:#fdeeee; border:1px solid var(--err); color:var(--err); }
+  .msg.ok{ background:#eef7f1; border:1px solid var(--ok); color:var(--ok); }
+  .msg.warn{ background:#fdf4e3; border:1px solid var(--warn); color:var(--warn); }
+  .rowerr{ color:var(--err); font-size:.8rem; }
+
+  .empty{ background:var(--card); border:1px dashed var(--hairline); border-radius:12px;
+    padding:22px; text-align:center; color:var(--muted); }
+  .empty .word{ font-family:'Barlow Condensed'; font-weight:600; font-size:1.1rem;
+    color:var(--gold-deep); text-transform:uppercase; letter-spacing:.1em; display:block; }
+
+  #signin{ max-width:400px; margin:60px auto; }
+  .muted{ color:var(--muted); } .small{ font-size:.85rem; }
+  .flexrow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .grow{ flex:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="pbtable-logo.png" alt="PBTable logo">
+  <span class="product">Tournament Manager · Admin</span>
+  <span class="grow"></span>
+  <a href="index.html">← Public site</a>
+  <a href="enter.html" style="margin-left:14px">Entry page →</a>
+  <button id="signOutBtn" hidden>Sign out</button>
+</header>
+
+<main id="main"></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- QR encoder (organiser-side only). Small, well-worn, and we render the matrix to our
+     own inline SVG so the code stays crisp and on-palette. If the CDN is unreachable the
+     share link still works and the QR block simply hides itself. -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+'use strict';
+
+/* ------------------------------------------------------------------ config
+   Same publishable key as index.html — RLS + admin policies do the protecting. */
+const SUPABASE_URL = 'https://fvyjvoimezsfrndydzkt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_k80t7cu9oPN9Q5r8OO3Y-w_Wk3c_mOV';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+  (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let client = null;
+
+/* Tournament-wide state; names ALWAYS resolve through maps loaded once per reload. */
+const S = {
+  tournaments: [], tournament: null, settings: null,
+  events: [], playersById: new Map(), entries: [], entryPlayers: new Map(),
+  pools: [], poolEntries: new Map(), matches: [], gamesByMatch: new Map(),
+  standings: [], ratings: [],   // player_current_ratings rows
+  payments: new Map(), invitations: new Map(),
+  tab: 'setup', activeEventId: null, dirty: 0,
+};
+
+window.addEventListener('beforeunload', (e) => {
+  if (S.dirty > 0){ e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ------------------------------------------------------------------ helpers */
+
+function entryName(entryId){
+  if (!entryId) return null;
+  const ids = S.entryPlayers.get(entryId) || [];
+  const names = ids.map(pid => S.playersById.get(pid)?.name || '?');
+  return names.length ? names.join(' & ') : 'Unnamed entry';
+}
+function eventById(id){ return S.events.find(e => e.id === id); }
+function entriesOf(eventId, includeWithdrawn = false){
+  return S.entries.filter(e => e.event_id === eventId
+    && (includeWithdrawn || e.status !== 'withdrawn'));
+}
+function categoryLabel(ev){
+  const cat = { mens:"Men's", womens:"Women's", mixed:'Mixed', open:'Open' }[ev.category] || ev.category;
+  return `${cat} ${ev.discipline === 'singles' ? 'Singles' : 'Doubles'}`;
+}
+function ratingOf(playerId, source){
+  const r = S.ratings.find(r => r.player_id === playerId && (!source || r.source === source));
+  return r ? Number(r.value) : null;
+}
+function entryRating(entryId, source){
+  const ids = S.entryPlayers.get(entryId) || [];
+  const vals = ids.map(pid => ratingOf(pid, source)).filter(v => v !== null);
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+function roundLabel(round, maxRound){
+  const back = maxRound - round;
+  return back === 0 ? 'Final' : back === 1 ? 'Semi-final' : back === 2 ? 'Quarter-final'
+    : back === 3 ? 'Round of 16' : `Round ${round}`;
+}
+function matchLabel(m){
+  if (m.stage === 'pool'){
+    const p = S.pools.find(p => p.id === m.pool_id);
+    return p ? p.name : 'Pool';
+  }
+  const maxRound = Math.max(...S.matches
+    .filter(x => x.event_id === m.event_id && x.stage === 'bracket' && x.bracket_kind === m.bracket_kind)
+    .map(x => x.round));
+  return (m.bracket_kind === 'consolation' ? 'Cons. ' : '') + roundLabel(m.round, maxRound);
+}
+function seedSlots(size){
+  // standard seeded bracket order: index = slot, value = seed (1-based)
+  let arr = [1];
+  while (arr.length < size){
+    const m = arr.length * 2 + 1;
+    const next = [];
+    for (const s of arr) next.push(s, m - s);
+    arr = next;
+  }
+  return arr;
+}
+function msg(kind, text){
+  return `<div class="msg ${kind}">${esc(text)}</div>`;
+}
+function toLocalInput(ts){
+  if (!ts) return '';
+  const d = new Date(ts), pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fromLocalInput(v){ return v ? new Date(v).toISOString() : null; }
+// The address an organiser actually shares. Absolute, so it survives being pasted
+// anywhere; slug-based, so it can be read out loud.
+function entryUrl(t){
+  return new URL(`enter.html?t=${encodeURIComponent(t.slug || t.id)}`, location.href).href;
+}
+
+// Render the QR matrix to our own inline SVG: crisp at any size, on-palette, and no
+// canvas needed for the on-screen copy. Returns null if the encoder did not load.
+function qrSvg(text, px){
+  if (typeof qrcode !== 'function') return null;
+  try {
+    const qr = qrcode(0, 'M');           // auto version, medium error correction
+    qr.addData(text);
+    qr.make();
+    const n = qr.getModuleCount(), quiet = 2, dim = n + quiet * 2;
+    let d = '';
+    for (let r = 0; r < n; r++)
+      for (let c = 0; c < n; c++)
+        if (qr.isDark(r, c)) d += `M${c + quiet} ${r + quiet}h1v1h-1z`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}"`
+      + ` width="${px}" height="${px}" shape-rendering="crispEdges">`
+      + `<rect width="${dim}" height="${dim}" fill="#ffffff"/>`
+      + `<path d="${d}" fill="#46101c"/></svg>`;
+  } catch { return null; }
+}
+
+// Poster-sized PNG, rasterised from the same SVG so what prints matches what is shown.
+function downloadQrPng(text, filename, px = 1024){
+  const svg = qrSvg(text, px);
+  if (!svg) return;
+  const url = URL.createObjectURL(new Blob([svg], { type:'image/svg+xml;charset=utf-8' }));
+  const img = new Image();
+  img.onload = () => {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = px;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, px, px);
+    ctx.drawImage(img, 0, 0, px, px);
+    URL.revokeObjectURL(url);
+    cv.toBlob((b) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    });
+  };
+  img.src = url;
+}
+function money(pence, cur){
+  if (!pence) return 'Free';
+  return new Intl.NumberFormat('en-GB',
+    { style:'currency', currency:(cur || 'gbp').toUpperCase() }).format(pence / 100);
+}
+function flash(el, kind, text){
+  el.insertAdjacentHTML('afterbegin', msg(kind, text));
+  setTimeout(() => el.querySelector('.msg')?.remove(), 5000);
+}
+
+/* ------------------------------------------------------------------ auth + boot */
+
+async function boot(){
+  const main = $('main');
+  if (SUPABASE_URL.startsWith('REPLACE') || SUPABASE_KEY.startsWith('REPLACE')){
+    main.innerHTML = msg('warn', 'Not connected yet — fill in SUPABASE_URL and SUPABASE_KEY at the top of this file once the Supabase project exists (see SETUP.md).');
+    return;
+  }
+  client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { data: { session } } = await client.auth.getSession();
+  if (!session){ renderSignIn(); return; }
+  await afterSignIn();
+}
+
+function renderSignIn(err){
+  $('signOutBtn').hidden = true;
+  $('main').innerHTML = `
+    <div id="signin" class="card">
+      <h2>Organiser sign in</h2>
+      <p class="sub small">Admin accounts are created by PBTable — this page only signs in.</p>
+      ${err ? msg('err', err) : ''}
+      <label class="f">Email
+        <span class="hint">The address your admin account was created with.</span>
+        <input type="email" id="siEmail" autocomplete="username">
+      </label>
+      <label class="f">Password
+        <span class="hint">Set via the invite / reset email.</span>
+        <input type="password" id="siPass" autocomplete="current-password">
+      </label>
+      <button class="btn" id="siBtn">Sign in</button>
+    </div>`;
+  $('siBtn').onclick = signIn;
+  $('siPass').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
+}
+
+async function signIn(){
+  const { error } = await client.auth.signInWithPassword({
+    email: $('siEmail').value.trim(), password: $('siPass').value });
+  if (error){ renderSignIn(error.message); return; }
+  await afterSignIn();
+}
+
+async function afterSignIn(){
+  const { data: isAdmin, error } = await client.rpc('is_tournament_admin');
+  if (error || !isAdmin){
+    await client.auth.signOut();
+    renderSignIn('This account is not a tournament admin.');
+    return;
+  }
+  $('signOutBtn').hidden = false;
+  $('signOutBtn').onclick = async () => { await client.auth.signOut(); location.reload(); };
+  await loadTournaments();
+  renderHome();
+}
+
+/* ------------------------------------------------------------------ data loading */
+
+async function loadTournaments(){
+  const { data, error } = await client.from('tournaments')
+    .select('*').order('start_date', { ascending: false });
+  if (error) throw error;
+  S.tournaments = data || [];
+}
+
+/* PostgREST silently caps a response at 1000 rows. A big best-of-3 tournament has more
+   than 1000 games, so a plain select would leave the admin working from a truncated games
+   map — and saving a match reads that map. Page through every row, chunking the id list
+   too (a huge ?in=(...) overflows the URL). Every large read here goes through it. */
+async function fetchAllIn(table, selectCols, col, ids, orderCol){
+  const out = [];
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += 200) chunks.push(ids.slice(i, i + 200));
+  for (const chunk of chunks){
+    let from = 0;
+    for (;;){
+      let q = client.from(table).select(selectCols).in(col, chunk).range(from, from + 999);
+      if (orderCol) q = q.order(orderCol);
+      const { data, error } = await q;
+      if (error) throw error;
+      out.push(...(data || []));
+      if (!data || data.length < 1000) break;
+      from += 1000;
+    }
+  }
+  return out;
+}
+
+async function loadTournament(id){
+  const t = S.tournaments.find(x => x.id === id);
+  S.tournament = t;
+  const c = client;
+  const [settings, events, players] = await Promise.all([
+    c.from('tournament_settings').select('*').eq('tournament_id', id).maybeSingle(),
+    c.from('events').select('*').eq('tournament_id', id).order('display_order').order('name'),
+    c.from('players').select('*').eq('tournament_id', id).order('name'),
+  ]);
+  S.settings = settings.data;
+  S.events = events.data || [];
+  S.playersById = new Map((players.data || []).map(p => [p.id, p]));
+
+  const playerIds = [...S.playersById.keys()];
+  S.ratings = playerIds.length
+    ? await fetchAllIn('player_current_ratings', '*', 'player_id', playerIds) : [];
+
+  const eventIds = S.events.map(e => e.id);
+  S.entries = []; S.pools = []; S.matches = []; S.standings = [];
+  if (eventIds.length){
+    [S.entries, S.pools, S.matches, S.standings] = await Promise.all([
+      fetchAllIn('entries', '*', 'event_id', eventIds, 'created_at'),
+      fetchAllIn('pools', '*', 'event_id', eventIds, 'display_order'),
+      fetchAllIn('matches', '*', 'event_id', eventIds),
+      fetchAllIn('pool_standings', '*', 'event_id', eventIds),
+    ]);
+  }
+  S.entryPlayers = new Map();
+  S.payments = new Map();      // entry_id -> [payment rows]
+  S.invitations = new Map();   // entry_id -> latest invitation
+  if (S.entries.length){
+    const ids = S.entries.map(e => e.id);
+    const [eps, pays, invs] = await Promise.all([
+      fetchAllIn('entry_players', '*', 'entry_id', ids),
+      fetchAllIn('entry_payments', '*', 'entry_id', ids),
+      fetchAllIn('entry_invitations', '*', 'entry_id', ids, 'created_at'),
+    ]);
+    for (const ep of eps){
+      if (!S.entryPlayers.has(ep.entry_id)) S.entryPlayers.set(ep.entry_id, []);
+      S.entryPlayers.get(ep.entry_id).push(ep.player_id);
+    }
+    for (const p of pays){
+      if (!S.payments.has(p.entry_id)) S.payments.set(p.entry_id, []);
+      S.payments.get(p.entry_id).push(p);
+    }
+    for (const i of invs) S.invitations.set(i.entry_id, i);
+  }
+  S.poolEntries = new Map();
+  if (S.pools.length){
+    const pes = await fetchAllIn('pool_entries', '*', 'pool_id', S.pools.map(p => p.id));
+    for (const pe of pes){
+      if (!S.poolEntries.has(pe.pool_id)) S.poolEntries.set(pe.pool_id, []);
+      S.poolEntries.get(pe.pool_id).push(pe.entry_id);
+    }
+  }
+  S.gamesByMatch = new Map();
+  if (S.matches.length){
+    const gs = await fetchAllIn('games', '*', 'match_id', S.matches.map(m => m.id), 'game_no');
+    for (const g of gs){
+      if (!S.gamesByMatch.has(g.match_id)) S.gamesByMatch.set(g.match_id, []);
+      S.gamesByMatch.get(g.match_id).push(g);
+    }
+  }
+  if (!S.activeEventId || !S.events.some(e => e.id === S.activeEventId)){
+    S.activeEventId = S.events[0]?.id || null;
+  }
+}
+
+async function refresh(){
+  await loadTournament(S.tournament.id);
+  renderTournament();
+}
+
+/* ------------------------------------------------------------------ home: tournament list */
+
+function renderHome(){
+  S.tournament = null;
+  const rows = S.tournaments.map(t => `<tr>
+    <td><a href="#" data-open="${t.id}"><strong>${esc(t.name)}</strong></a></td>
+    <td>${esc(t.start_date)}${t.end_date && t.end_date !== t.start_date ? ' – ' + esc(t.end_date) : ''}</td>
+    <td>${esc(t.venue || '')}</td>
+  </tr>`).join('');
+  $('main').innerHTML = `
+    <h2>Tournaments</h2>
+    <p class="sub">Pick a tournament to manage, or create a new one.</p>
+    <div class="card">
+      ${S.tournaments.length
+        ? `<div class="table-scroll"><table>
+             <thead><tr><th>Name</th><th>Dates</th><th>Venue</th></tr></thead>
+             <tbody>${rows}</tbody></table></div>`
+        : `<div class="empty"><span class="word">Pending</span>No tournaments yet — create the first below.</div>`}
+    </div>
+    <div class="card">
+      <h3>New tournament</h3>
+      <div class="frow">
+        <label class="f">Name
+          <span class="hint">Shown as the public page headline.</span>
+          <input type="text" id="ntName"></label>
+        <label class="f">Venue
+          <span class="hint">Free text — where the event is played.</span>
+          <input type="text" id="ntVenue"></label>
+        <label class="f">Start date
+          <span class="hint">First (or only) day of play.</span>
+          <input type="date" id="ntStart"></label>
+        <label class="f">End date
+          <span class="hint">Leave blank for a single-day event.</span>
+          <input type="date" id="ntEnd"></label>
+      </div>
+      <button class="btn" id="ntCreate">Create tournament</button>
+    </div>`;
+  $('main').querySelectorAll('[data-open]').forEach(a => a.onclick = async (e) => {
+    e.preventDefault();
+    await loadTournament(a.dataset.open);
+    renderTournament();
+  });
+  $('ntCreate').onclick = async () => {
+    const name = $('ntName').value.trim();
+    const start = $('ntStart').value;
+    if (!name || !start){ flash($('main'), 'err', 'Name and start date are required.'); return; }
+    const { error } = await client.from('tournaments').insert({
+      name, venue: $('ntVenue').value.trim() || null,
+      start_date: start, end_date: $('ntEnd').value || null });
+    if (error){ flash($('main'), 'err', error.message); return; }
+    await loadTournaments();
+    renderHome();
+  };
+}
+
+/* ------------------------------------------------------------------ tournament shell */
+
+const TABS = [
+  ['setup', 'Setup'], ['events', 'Events'], ['players', 'Players'],
+  ['entries', 'Entries'], ['draw', 'Draw'], ['schedule', 'Schedule'], ['scores', 'Scores'],
+];
+
+function renderTournament(){
+  const t = S.tournament;
+  $('main').innerHTML = `
+    <div class="flexrow">
+      <div class="grow">
+        <h2>${esc(t.name)}</h2>
+        <p class="sub">${esc(t.start_date)}${t.end_date && t.end_date !== t.start_date ? ' – ' + esc(t.end_date) : ''}
+          ${t.venue ? ' · ' + esc(t.venue) : ''}</p>
+      </div>
+      <button class="btn ghost small" id="backBtn">← All tournaments</button>
+    </div>
+    <div class="tabs">${TABS.map(([k, label]) =>
+      `<button data-tab="${k}" class="${S.tab === k ? 'active' : ''}">${label}</button>`).join('')}</div>
+    <div id="tabBody"></div>`;
+  $('backBtn').onclick = () => {
+    if (S.dirty > 0 && !confirm('There are unsaved scores. Leave anyway?')) return;
+    S.dirty = 0; renderHome();
+  };
+  $('main').querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
+    if (S.dirty > 0 && !confirm('There are unsaved scores. Leave anyway?')) return;
+    S.dirty = 0; S.tab = b.dataset.tab; renderTournament();
+  });
+  const render = {
+    setup: renderSetup, events: renderEventsTab, players: renderPlayersTab,
+    entries: renderEntriesTab, draw: renderDrawTab, schedule: renderScheduleTab,
+    scores: renderScoresTab,
+  }[S.tab];
+  render($('tabBody'));
+}
+
+function eventChips(body, onPick){
+  if (!S.events.length) return false;
+  const row = document.createElement('div');
+  row.className = 'chiprow';
+  row.innerHTML = S.events.map(ev =>
+    `<button class="chip${ev.id === S.activeEventId ? ' active' : ''}" data-ev="${ev.id}">${esc(ev.name)}</button>`).join('');
+  body.appendChild(row);
+  row.querySelectorAll('.chip').forEach(b => b.onclick = () => {
+    S.activeEventId = b.dataset.ev; onPick();
+  });
+  return true;
+}
+
+/* ------------------------------------------------------------------ setup tab */
+
+function renderSetup(body){
+  const t = S.tournament, s = S.settings || {};
+  body.innerHTML = `
+    <div class="card">
+      <h3>Tournament details</h3>
+      <div class="frow">
+        <label class="f">Name
+          <span class="hint">Shown as the public page headline.</span>
+          <input type="text" id="tName" value="${esc(t.name)}"></label>
+        <label class="f">Venue
+          <span class="hint">Free text — where the event is played.</span>
+          <input type="text" id="tVenue" value="${esc(t.venue || '')}"></label>
+        <label class="f">Start date
+          <span class="hint">First (or only) day of play.</span>
+          <input type="date" id="tStart" value="${esc(t.start_date)}"></label>
+        <label class="f">End date
+          <span class="hint">Leave blank for a single-day event.</span>
+          <input type="date" id="tEnd" value="${esc(t.end_date || '')}"></label>
+      </div>
+      <button class="btn" id="tSave">Save details</button>
+    </div>
+    <div class="card">
+      <h3>Settings</h3>
+      <div class="frow">
+        <label class="f">Courts available
+          <span class="hint">Drives the schedule grid and the day-length estimate only — never selection or results.</span>
+          <input type="number" id="sCourts" min="1" max="32" value="${s.courts_count ?? 4}"></label>
+        <label class="f">Minutes per game slot
+          <span class="hint">Used for time estimates (≈20 min per game held up in the league).</span>
+          <input type="number" id="sSlot" min="5" max="120" value="${s.slot_minutes ?? 20}"></label>
+        <label class="f">Check-in required for scoring
+          <span class="hint">When on, the database refuses scores for any match whose players are not checked in.</span>
+          <select id="sCheckin">
+            <option value="true" ${s.checkin_required_for_scoring !== false ? 'selected' : ''}>On</option>
+            <option value="false" ${s.checkin_required_for_scoring === false ? 'selected' : ''}>Off</option>
+          </select></label>
+        <label class="f">Ratings shown publicly
+          <span class="hint">When off, ratings stay an organiser-only seeding tool.</span>
+          <select id="sRatings">
+            <option value="false" ${!s.ratings_public ? 'selected' : ''}>Off</option>
+            <option value="true" ${s.ratings_public ? 'selected' : ''}>On</option>
+          </select></label>
+      </div>
+      <button class="btn" id="sSave">Save settings</button>
+    </div>
+    <div class="card">
+      <h3>Online entry</h3>
+      <p class="sub small">Turn this on to let players enter themselves. While it is off, only you
+        can add entries and the player page says so plainly.</p>
+      <div class="sharebox">
+        <div class="lbl">The link to advertise</div>
+        <div class="sharewrap">
+          <div class="left">
+            <p class="hint">Put this on your poster, in the club WhatsApp or in your entry email.
+              It opens straight into <strong>${esc(t.name)}</strong> — players never have to pick
+              from a list, so nobody enters the wrong event.</p>
+            <div class="flexrow">
+              <input type="text" id="shareUrl" readonly value="${esc(entryUrl(t))}">
+              <button class="btn small" id="copyShare">Copy link</button>
+              <a class="btn ghost small" href="${esc(entryUrl(t))}" target="_blank">Open it</a>
+            </div>
+            <label class="f" style="margin-top:12px;max-width:340px">Link name
+              <span class="hint">The readable part of the address. Keep it short — it is what people
+                read out. Changing it breaks links you have already shared.</span>
+              <input type="text" id="tSlug" value="${esc(t.slug || '')}"></label>
+            <button class="btn ghost small" id="slugSave">Save link name</button>
+          </div>
+          <div class="qrbox" id="qrBox" hidden>
+            <div style="margin-bottom:9px">
+              <a class="btn gold small" id="tvLink" href="display.html?t=${esc(t.slug || t.id)}"
+                 target="_blank" title="Open on the screen at the venue">📺 Court-side display</a>
+            </div>
+            <div id="qrHere"></div>
+            <div class="cap">Scan to enter</div>
+            <button class="btn ghost small" id="qrDownload">Download for a poster</button>
+          </div>
+        </div>
+      </div>
+      <div class="frow">
+        <label class="f">Players may enter online
+          <span class="hint">The master switch. Off = you take entries yourself, as now.</span>
+          <select id="rSelf">
+            <option value="false" ${!s.self_service_entries ? 'selected' : ''}>Off</option>
+            <option value="true"  ${s.self_service_entries ? 'selected' : ''}>On</option>
+          </select></label>
+        <label class="f">Allow "partner to be confirmed"
+          <span class="hint">On = a player may enter a doubles event before they have found a partner.</span>
+          <select id="rTbc">
+            <option value="true"  ${s.allow_partner_tbc !== false ? 'selected' : ''}>On</option>
+            <option value="false" ${s.allow_partner_tbc === false ? 'selected' : ''}>Off</option>
+          </select></label>
+        <label class="f">Entries open
+          <span class="hint">Before this moment the entry page is closed. Blank = open as soon as the switch is on.</span>
+          <input type="datetime-local" id="rOpens" value="${esc(toLocalInput(t.registration_opens_at))}"></label>
+        <label class="f">Entries close
+          <span class="hint">After this, no new entries or partner changes online. Blank = until you switch it off.</span>
+          <input type="datetime-local" id="rCloses" value="${esc(toLocalInput(t.registration_closes_at))}"></label>
+        <label class="f">Free-withdrawal deadline
+          <span class="hint">Withdraw before this and the player is told their fee is refundable; after it, not.</span>
+          <input type="datetime-local" id="rWith" value="${esc(toLocalInput(t.withdrawal_deadline))}"></label>
+        <label class="f">Currency
+          <span class="hint">Three-letter code used for every entry fee in this tournament.</span>
+          <input type="text" id="rCurr" value="${esc(t.currency || 'gbp')}"></label>
+      </div>
+      <label class="f">Refund policy
+        <span class="hint">Shown to players on the entry page. Plain English — e.g. "Full refund up to 14 days before."</span>
+        <input type="text" id="rPolicy" value="${esc(t.refund_policy || '')}"></label>
+      <fieldset><legend>Entry fees</legend>
+        <div class="frow">
+          <label class="f">How fees are collected
+            <span class="hint">"Card online" sends players to Stripe and marks them paid automatically.
+              "I collect them" shows your instructions instead, and you tick players off on the Entries tab.</span>
+            <select id="rPayMethod">
+              <option value="organiser" ${t.payment_method !== 'online' ? 'selected' : ''}>I collect them in advance (bank transfer / cash before the day)</option>
+              <option value="online" ${t.payment_method === 'online' ? 'selected' : ''}>Card online (Stripe)</option>
+            </select></label>
+          <label class="f">Payment instructions
+            <span class="hint">Only used when you collect fees yourself — tell players exactly how to pay
+              you <strong>before</strong> the event. Fees must be settled to make the draw.</span>
+            <input type="text" id="rPayInstr" value="${esc(t.payment_instructions || '')}"
+              placeholder="e.g. Bank transfer to Severn Vale PC, sort 00-00-00, acc 12345678"></label>
+        </div>
+        <p class="small muted" style="margin:0 0 10px">Card online needs
+          <code>STRIPE_SECRET_KEY</code> and <code>STRIPE_WEBHOOK_SECRET</code> in Edge Function
+          secrets. Until they are set, players are told plainly that card payment is not on yet
+          and their place is still held — nothing breaks.</p>
+      </fieldset>
+      <button class="btn" id="rSave">Save online-entry settings</button>
+    </div>
+    <div class="card">
+      <h3>Danger zone</h3>
+      <p class="sub small">Deleting the tournament removes everything in it — events, players,
+        entries, draws and scores. This cannot be undone.</p>
+      <button class="btn danger" id="tDelete">Delete this tournament…</button>
+    </div>`;
+  $('tDelete').onclick = async () => {
+    const typed = prompt(`This permanently deletes "${t.name}" and ALL its data.\nType the tournament name to confirm:`);
+    if (typed === null) return;
+    if (typed.trim() !== t.name){ flash(body, 'err', 'Name did not match — nothing was deleted.'); return; }
+    // rpc wrapper sets the draw-guard bypass for the cascade, so a tournament that has
+    // reached the draw stage still deletes (a plain delete trips guard_entry_players_after_draw)
+    const { error } = await client.rpc('admin_delete_tournament', { p_tournament: t.id });
+    if (error){ flash(body, 'err', error.message); return; }
+    S.dirty = 0;
+    await loadTournaments();
+    renderHome();
+  };
+  $('tSave').onclick = async () => {
+    const { error } = await client.from('tournaments').update({
+      name: $('tName').value.trim(), venue: $('tVenue').value.trim() || null,
+      start_date: $('tStart').value, end_date: $('tEnd').value || null,
+    }).eq('id', t.id);
+    if (error){ flash(body, 'err', error.message); return; }
+    await loadTournaments(); await refresh();
+  };
+  $('sSave').onclick = async () => {
+    const { error } = await client.from('tournament_settings').update({
+      courts_count: Number($('sCourts').value),
+      slot_minutes: Number($('sSlot').value),
+      checkin_required_for_scoring: $('sCheckin').value === 'true',
+      ratings_public: $('sRatings').value === 'true',
+    }).eq('tournament_id', t.id);
+    if (error){ flash(body, 'err', error.message); return; }
+    flash(body, 'ok', 'Settings saved.');
+    S.settings = null; await refresh();
+  };
+  // QR for posters and the club noticeboard — hidden entirely if the encoder did not load
+  const svg = qrSvg(entryUrl(t), 132);
+  if (svg){
+    $('qrHere').innerHTML = svg;
+    $('qrBox').hidden = false;
+    $('qrDownload').onclick = () =>
+      downloadQrPng(entryUrl(t), `${t.slug || 'tournament'}-entry-qr.png`, 1024);
+  }
+  $('copyShare').onclick = async () => {
+    const box = $('shareUrl');
+    box.select();
+    try { await navigator.clipboard.writeText(box.value); }
+    catch { document.execCommand('copy'); }        // fallback for non-secure contexts
+    $('copyShare').textContent = 'Copied ✓';
+    setTimeout(() => { $('copyShare').textContent = 'Copy link'; }, 1800);
+  };
+  $('slugSave').onclick = async () => {
+    const v = $('tSlug').value.trim();
+    if (!v){ flash(body, 'err', 'The link name cannot be blank.'); return; }
+    const { error } = await client.from('tournaments').update({ slug: v }).eq('id', t.id);
+    if (error){ flash(body, 'err', error.message); return; }
+    await loadTournaments(); await refresh();
+    flash($('tabBody'), 'ok', 'Link name saved — re-share the link if you had already sent the old one.');
+  };
+  $('rSave').onclick = async () => {
+    const r1 = await client.from('tournament_settings').update({
+      self_service_entries: $('rSelf').value === 'true',
+      allow_partner_tbc: $('rTbc').value === 'true',
+    }).eq('tournament_id', t.id);
+    if (r1.error){ flash(body, 'err', r1.error.message); return; }
+    const r2 = await client.from('tournaments').update({
+      registration_opens_at: fromLocalInput($('rOpens').value),
+      registration_closes_at: fromLocalInput($('rCloses').value),
+      withdrawal_deadline: fromLocalInput($('rWith').value),
+      currency: $('rCurr').value.trim().toLowerCase() || 'gbp',
+      refund_policy: $('rPolicy').value.trim() || null,
+      payment_method: $('rPayMethod').value,
+      payment_instructions: $('rPayInstr').value.trim() || null,
+    }).eq('id', t.id);
+    if (r2.error){ flash(body, 'err', r2.error.message); return; }
+    flash(body, 'ok', 'Online-entry settings saved.');
+    await loadTournaments(); await refresh();
+  };
+}
+
+/* ------------------------------------------------------------------ events tab */
+
+function formatFields(prefix, ev){
+  const v = (k, d) => ev ? ev[k] : d;
+  const bestOf = (id, val) => `<select id="${id}">
+    ${[1,3,5].map(n => `<option value="${n}" ${val === n ? 'selected' : ''}>${n === 1 ? 'Single game' : 'Best of ' + n}</option>`).join('')}
+  </select>`;
+  const winBy = (id, val) => `<select id="${id}">
+    <option value="2" ${val !== 1 ? 'selected' : ''}>Win by 2</option>
+    <option value="1" ${val === 1 ? 'selected' : ''}>Win by 1</option>
+  </select>`;
+  const block = (leg, key, hint) => `<fieldset><legend>${leg}</legend>
+    <div class="frow">
+      <label class="f">Games <span class="hint">${hint}</span>
+        ${bestOf(prefix + key + 'BestOf', v(key + '_best_of', key === 'final' ? 3 : 1))}</label>
+      <label class="f">Points to <span class="hint">Target score per game.</span>
+        <input type="number" id="${prefix}${key}To" min="5" max="51"
+          value="${v(key + '_points_to', key === 'bracket' ? 15 : 11)}"></label>
+      <label class="f">Win by <span class="hint">Margin needed to close a game.</span>
+        ${winBy(prefix + key + 'WinBy', v(key + '_win_by', 2))}</label>
+    </div></fieldset>`;
+  return block('Pool games', 'pool', 'Format for every pool match.')
+    + block('Knockout rounds', 'bracket', 'Rounds before the final — often shorter to keep the day moving.')
+    + block('The final', 'final', 'The final usually gets the full format.');
+}
+function readFormats(prefix){
+  const n = (id) => Number($(prefix + id).value);
+  return {
+    pool_best_of: n('poolBestOf'), pool_points_to: n('poolTo'), pool_win_by: n('poolWinBy'),
+    bracket_best_of: n('bracketBestOf'), bracket_points_to: n('bracketTo'), bracket_win_by: n('bracketWinBy'),
+    final_best_of: n('finalBestOf'), final_points_to: n('finalTo'), final_win_by: n('finalWinBy'),
+  };
+}
+
+function renderEventsTab(body){
+  const rows = S.events.map(ev => `<tr>
+    <td><strong>${esc(ev.name)}</strong></td>
+    <td>${esc(categoryLabel(ev))}</td>
+    <td>${ev.band_label ? `<span class="pill gold">${esc(ev.band_label)}</span>` : '<span class="muted">Open</span>'}</td>
+    <td class="num">${entriesOf(ev.id).length}</td>
+    <td><button class="btn ghost small" data-edit="${ev.id}">Edit</button></td>
+  </tr>`).join('');
+  body.innerHTML = `
+    <div class="card">
+      <h3>Events</h3>
+      ${S.events.length
+        ? `<div class="table-scroll"><table>
+            <thead><tr><th>Name</th><th>Type</th><th>Band</th><th class="num">Entries</th><th></th></tr></thead>
+            <tbody>${rows}</tbody></table></div>`
+        : '<div class="empty"><span class="word">Pending</span>No events yet — add the first below.</div>'}
+    </div>
+    <div class="card" id="evForm"></div>`;
+  body.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => renderEventForm($('evForm'), eventById(b.dataset.edit)));
+  renderEventForm($('evForm'), null);
+}
+
+function renderEventForm(el, ev){
+  el.innerHTML = `
+    <h3>${ev ? 'Edit event — ' + esc(ev.name) : 'New event'}</h3>
+    <div class="frow">
+      <label class="f">Event name
+        <span class="hint">Public name — include the band, e.g. "Mixed Doubles 3.0–3.5".</span>
+        <input type="text" id="evName" value="${esc(ev?.name || '')}"></label>
+      <label class="f">Discipline
+        <span class="hint">Singles entries take one player, doubles take a pair.</span>
+        <select id="evDisc">
+          <option value="doubles" ${ev?.discipline !== 'singles' ? 'selected' : ''}>Doubles</option>
+          <option value="singles" ${ev?.discipline === 'singles' ? 'selected' : ''}>Singles</option>
+        </select></label>
+      <label class="f">Category
+        <span class="hint">Controls who may enter — the database blocks unambiguous violations.</span>
+        <select id="evCat">
+          ${['mens','womens','mixed','open'].map(c =>
+            `<option value="${c}" ${ev?.category === c ? 'selected' : ''}>${{ mens:"Men's", womens:"Women's", mixed:'Mixed', open:'Open' }[c]}</option>`).join('')}
+        </select></label>
+      <label class="f">Band label
+        <span class="hint">Optional skill/age band, free text — "3.0–3.5", "50+". Blank = open.</span>
+        <input type="text" id="evBand" value="${esc(ev?.band_label || '')}"></label>
+      <label class="f">Seeding rating source
+        <span class="hint">Which ratings source orders the seeds ("Auto-seed" on the Entries tab). Blank = organiser-ordered.</span>
+        <input type="text" id="evSeedSrc" value="${esc(ev?.seeding_rating_source || '')}" list="srcList">
+        <datalist id="srcList">${[...new Set(S.ratings.map(r => r.source))].map(s => `<option value="${esc(s)}">`).join('')}</datalist></label>
+      <label class="f">Display order
+        <span class="hint">Lower numbers list first on the public site.</span>
+        <input type="number" id="evOrder" value="${ev?.display_order ?? 0}"></label>
+    </div>
+    ${formatFields('ev', ev)}
+    <fieldset><legend>Entry rules &amp; fee</legend>
+      <div class="frow">
+        <label class="f">Entry fee per player
+          <span class="hint">In pounds, per person — each half of a pair pays their own. 0 = free.</span>
+          <input type="number" id="evFee" step="0.01" min="0"
+            value="${ev?.entry_fee_pence ? (ev.entry_fee_pence / 100).toFixed(2) : '0'}"></label>
+        <label class="f">Maximum entries
+          <span class="hint">Once full, further entries are waitlisted automatically. Blank = no cap.</span>
+          <input type="number" id="evMax" min="1" value="${ev?.max_entries ?? ''}"></label>
+        <label class="f">Rating ceiling
+          <span class="hint">Players at or below this may enter — playing up is allowed, playing down is not. Blank = open.</span>
+          <input type="number" id="evMaxR" step="0.01" min="0" max="8" value="${ev?.max_rating ?? ''}"></label>
+        <label class="f">Rating floor
+          <span class="hint">Advisory lower end of the band, recorded for the listing. Blank = none.</span>
+          <input type="number" id="evMinR" step="0.01" min="0" max="8" value="${ev?.min_rating ?? ''}"></label>
+        <label class="f">Combined pair rating cap
+          <span class="hint">Doubles only — the pair's two ratings added together may not exceed this. Blank = none.</span>
+          <input type="number" id="evComb" step="0.01" min="0" max="16" value="${ev?.combined_rating_max ?? ''}"></label>
+        <label class="f">Minimum age
+          <span class="hint">Age counts as of 31 December of the tournament year (the usual pickleball rule). Blank = open.</span>
+          <input type="number" id="evMinA" min="0" max="100" value="${ev?.min_age ?? ''}"></label>
+        <label class="f">Maximum age
+          <span class="hint">For junior events. Blank = open.</span>
+          <input type="number" id="evMaxA" min="0" max="100" value="${ev?.max_age ?? ''}"></label>
+      </div>
+    </fieldset>
+    <div class="flexrow">
+      <button class="btn" id="evSave">${ev ? 'Save changes' : 'Add event'}</button>
+      ${ev ? '<button class="btn ghost" id="evCancel">Cancel</button>' : ''}
+      ${ev ? '<span class="grow"></span><button class="btn danger small" id="evDelete">Delete event</button>' : ''}
+    </div>`;
+  $('evSave').onclick = async () => {
+    const payload = {
+      tournament_id: S.tournament.id,
+      name: $('evName').value.trim(),
+      discipline: $('evDisc').value,
+      category: $('evCat').value,
+      band_label: $('evBand').value.trim() || null,
+      seeding_rating_source: $('evSeedSrc').value.trim() || null,
+      display_order: Number($('evOrder').value) || 0,
+      ...readFormats('ev'),
+      entry_fee_pence: Math.round(Number($('evFee').value || 0) * 100),
+      max_entries: $('evMax').value === '' ? null : Number($('evMax').value),
+      max_rating:  $('evMaxR').value === '' ? null : Number($('evMaxR').value),
+      min_rating:  $('evMinR').value === '' ? null : Number($('evMinR').value),
+      combined_rating_max: $('evComb').value === '' ? null : Number($('evComb').value),
+      min_age: $('evMinA').value === '' ? null : Number($('evMinA').value),
+      max_age: $('evMaxA').value === '' ? null : Number($('evMaxA').value),
+    };
+    if (!payload.name){ flash(el, 'err', 'Event name is required.'); return; }
+    if (payload.discipline === 'singles' && payload.category === 'mixed'){
+      flash(el, 'err', 'Mixed only applies to doubles.'); return;
+    }
+    const q = ev
+      ? client.from('events').update(payload).eq('id', ev.id)
+      : client.from('events').insert(payload);
+    const { error } = await q;
+    if (error){ flash(el, 'err', error.message); return; }
+    await refresh();
+  };
+  if (ev){
+    $('evCancel').onclick = () => renderEventForm(el, null);
+    $('evDelete').onclick = async () => {
+      if (!confirm(`Delete "${ev.name}" and ALL its entries, pools, matches and scores? This cannot be undone.`)) return;
+      // rpc wrapper bypasses the post-draw guard for the cascade, so a drawn event deletes too
+      const { error } = await client.rpc('admin_delete_event', { p_event: ev.id });
+      if (error){ flash(el, 'err', error.message); return; }
+      await refresh();
+    };
+  }
+}
+
+/* ------------------------------------------------------------------ players tab */
+
+function renderPlayersTab(body){
+  const players = [...S.playersById.values()];
+  const checkedIn = players.filter(p => p.checked_in).length;
+  const rows = players.map(p => {
+    const rs = S.ratings.filter(r => r.player_id === p.id)
+      .map(r => `${esc(r.source)} ${Number(r.value).toFixed(2)}`).join(' · ');
+    const contact = [
+      p.email ? `<a href="mailto:${esc(p.email)}">${esc(p.email)}</a>` : null,
+      p.phone ? `<a href="tel:${esc(p.phone.replace(/\s/g,''))}">${esc(p.phone)}</a>` : null,
+    ].filter(Boolean).join('<br>');
+    return `<tr>
+      <td><strong>${esc(p.name)}</strong>${p.account_id
+        ? ' <span class="pill" title="Entered online — keeps their own details up to date">online</span>' : ''}</td>
+      <td>${esc(p.gender)}</td>
+      <td class="small">${contact || '<span class="muted">—</span>'}</td>
+      <td class="small">${rs || '<span class="muted">Pending</span>'}</td>
+      <td>${p.checked_in ? '<span class="pill ok">Checked in</span>' : '<span class="pill">Not yet</span>'}</td>
+      <td class="flexrow">
+        <button class="btn ghost small" data-checkin="${p.id}">${p.checked_in ? 'Undo check-in' : 'Check in'}</button>
+        <button class="btn ghost small" data-rate="${p.id}">+ Rating</button>
+        <button class="btn danger small" data-delplayer="${p.id}">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+  body.innerHTML = `
+    <div class="card">
+      <div class="flexrow"><h3 class="grow">Players</h3>
+        <span class="pill ${checkedIn === players.length && players.length ? 'ok' : ''}">${checkedIn}/${players.length} checked in</span></div>
+      <p class="sub small">Check-in is the day-of flag: with the setting on, the database refuses scores for matches whose players aren't checked in.</p>
+      ${players.length
+        ? `<div class="table-scroll"><table>
+            <thead><tr><th>Name</th><th>Gender</th><th>Contact</th><th>Ratings</th><th>Check-in</th><th></th></tr></thead>
+            <tbody>${rows}</tbody></table></div>`
+        : '<div class="empty"><span class="word">Pending</span>No players yet — add them below.</div>'}
+      <div id="rateForm"></div>
+    </div>
+    <div class="card">
+      <h3>Add player</h3>
+      <div class="frow">
+        <label class="f">Name
+          <span class="hint">Display name — duplicates are allowed, IDs tell them apart.</span>
+          <input type="text" id="plName"></label>
+        <label class="f">Gender
+          <span class="hint">Structural — controls which events they may enter.</span>
+          <select id="plGender">
+            <option value="male">male</option><option value="female">female</option>
+            <option value="other">other</option>
+          </select></label>
+        <label class="f">Email
+          <span class="hint">Optional — contact only, never identity.</span>
+          <input type="email" id="plEmail"></label>
+        <label class="f">Phone
+          <span class="hint">Optional — how you reach them about their entry, or on the day.
+            Players who enter online keep this up to date themselves.</span>
+          <input type="tel" id="plPhone"></label>
+        <label class="f">Rating
+          <span class="hint">Optional starting rating — value and where it came from.</span>
+          <div class="flexrow">
+            <input type="number" id="plRating" step="0.01" min="0" max="8" style="width:90px">
+            <input type="text" id="plSource" placeholder="source e.g. DUPR" style="width:140px">
+          </div></label>
+      </div>
+      <button class="btn" id="plAdd">Add player</button>
+    </div>`;
+  body.querySelectorAll('[data-checkin]').forEach(b => b.onclick = async () => {
+    const p = S.playersById.get(b.dataset.checkin);
+    const { error } = await client.from('players').update({
+      checked_in: !p.checked_in,
+      checked_in_at: !p.checked_in ? new Date().toISOString() : null,
+    }).eq('id', p.id);
+    if (error){ flash(body, 'err', error.message); return; }
+    await refresh();
+  });
+  body.querySelectorAll('[data-delplayer]').forEach(b => b.onclick = async () => {
+    const p = S.playersById.get(b.dataset.delplayer);
+    const entryIds = [...S.entryPlayers.entries()]
+      .filter(([, pids]) => pids.includes(p.id)).map(([id]) => id);
+    const warn = entryIds.length
+      ? `Delete ${p.name}? Their ${entryIds.length} ${entryIds.length === 1 ? 'entry' : 'entries'} — including any doubles partnerships — and their ratings will be deleted too.`
+      : `Delete ${p.name}? Their ratings will be deleted too.`;
+    if (!confirm(warn)) return;
+    if (entryIds.length){
+      const { error } = await client.from('entries').delete().in('id', entryIds);
+      if (error){
+        flash(body, 'err', 'Not deleted: this player has entries in a generated draw. Delete the draw first (Draw tab), or mark the entry withdrawn instead. DB said: ' + error.message);
+        return;
+      }
+    }
+    const { error } = await client.from('players').delete().eq('id', p.id);
+    if (error){ flash(body, 'err', error.message); return; }
+    await refresh();
+  });
+  body.querySelectorAll('[data-rate]').forEach(b => b.onclick = async () => {
+    const p = S.playersById.get(b.dataset.rate);
+    const { data: existing } = await client.from('player_ratings')
+      .select('*').eq('player_id', p.id).order('captured_on', { ascending: false });
+    const list = (existing || []).map(r =>
+      `<span class="pill">${esc(r.source)} ${Number(r.value).toFixed(2)} · ${esc(r.captured_on)}
+        <button class="btn danger small" data-delrating="${r.id}" title="Delete this rating"
+          style="padding:0 7px;margin-left:4px">×</button></span>`).join(' ');
+    $('rateForm').innerHTML = `
+      <fieldset><legend>Ratings — ${esc(p.name)}</legend>
+      ${list ? `<div class="small" style="margin-bottom:10px">Existing: ${list}</div>` : ''}
+      <div class="frow">
+        <label class="f">Source
+          <span class="hint">Where the number comes from — a DUPR 4.0 and a self-assessed 4.0 are different claims.</span>
+          <input type="text" id="nrSource" placeholder="DUPR / self / organiser"></label>
+        <label class="f">Value
+          <span class="hint">The rating itself, e.g. 3.75.</span>
+          <input type="number" id="nrValue" step="0.01" min="0" max="8"></label>
+        <label class="f">Captured on
+          <span class="hint">The date this value was true.</span>
+          <input type="date" id="nrDate" value="${new Date().toISOString().slice(0, 10)}"></label>
+      </div>
+      <button class="btn small" id="nrSave">Save rating</button></fieldset>`;
+    $('nrSave').onclick = async () => {
+      const { error } = await client.from('player_ratings').insert({
+        player_id: p.id, source: $('nrSource').value.trim(),
+        value: Number($('nrValue').value), captured_on: $('nrDate').value });
+      if (error){ flash(body, 'err', error.message); return; }
+      await refresh();
+    };
+    $('rateForm').querySelectorAll('[data-delrating]').forEach(x => x.onclick = async () => {
+      if (!confirm('Delete this rating? Seeding falls back to their other ratings (or none).')) return;
+      const { error } = await client.from('player_ratings').delete().eq('id', x.dataset.delrating);
+      if (error){ flash(body, 'err', error.message); return; }
+      await refresh();
+    });
+  });
+  $('plAdd').onclick = async () => {
+    const name = $('plName').value.trim();
+    if (!name){ flash(body, 'err', 'Name is required.'); return; }
+    const { data, error } = await client.from('players').insert({
+      tournament_id: S.tournament.id, name, gender: $('plGender').value,
+      email: $('plEmail').value.trim() || null,
+      phone: $('plPhone').value.trim() || null }).select().single();
+    if (error){ flash(body, 'err', error.message); return; }
+    const rv = $('plRating').value, rsrc = $('plSource').value.trim();
+    if (rv && rsrc){
+      const { error: e2 } = await client.from('player_ratings').insert({
+        player_id: data.id, source: rsrc, value: Number(rv),
+        captured_on: new Date().toISOString().slice(0, 10) });
+      if (e2){ flash(body, 'err', 'Player added but rating failed: ' + e2.message); }
+    }
+    await refresh();
+  };
+}
+
+/* ------------------------------------------------------------------ entries tab */
+
+const PAY_PILL = { paid:'ok', waived:'ok', pending:'warn', refunded:'', failed:'err' };
+
+function paymentCell(en, ev){
+  if (!ev.entry_fee_pence) return '<span class="muted small">Free</span>';
+  const rows = S.payments.get(en.id) || [];
+  if (!rows.length) return '<span class="muted small">—</span>';
+  return rows.map(p => {
+    const who = S.playersById.get(p.player_id)?.name || 'player';
+    const settled = p.status === 'paid' || p.status === 'waived';
+    return `<div class="flexrow" style="gap:5px;margin:1px 0">
+      <span class="pill ${PAY_PILL[p.status] || ''}">${esc(p.status)}</span>
+      <span class="small muted">${esc(who.split(' ')[0])}</span>
+      ${!settled ? `<button class="btn ghost small" data-markpaid="${p.id}"
+        title="Record a payment you took by cash or bank transfer">Mark paid</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderEntriesTab(body){
+  body.innerHTML = '';
+  if (!eventChips(body, () => renderEntriesTab(body))){
+    body.innerHTML = '<div class="empty"><span class="word">Pending</span>Create an event first.</div>';
+    return;
+  }
+  const ev = eventById(S.activeEventId);
+  const list = entriesOf(ev.id, true);
+  const drawn = S.matches.some(m => m.event_id === ev.id);
+  const rows = list.map(en => `<tr>
+    <td class="num"><input type="number" min="1" value="${en.seed ?? ''}" data-seed="${en.id}" ${drawn ? 'disabled' : ''}></td>
+    <td><strong>${esc(entryName(en.id))}</strong></td>
+    <td class="num">${(() => { const r = entryRating(en.id, ev.seeding_rating_source || null); return r === null ? '<span class="muted">–</span>' : r.toFixed(2); })()}</td>
+    <td><select data-status="${en.id}">
+      ${['incomplete','entered','waitlisted','withdrawn'].map(s => `<option value="${s}" ${en.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+    </select>${(() => {
+      const inv = S.invitations.get(en.id);
+      const need = ev.discipline === 'singles' ? 1 : 2;
+      const have = (S.entryPlayers.get(en.id) || []).length;
+      if (have < need && inv && inv.status === 'pending')
+        return `<div class="small muted">invited ${esc(inv.invited_email)}</div>`;
+      if (have < need) return `<div class="small muted">partner TBC</div>`;
+      return '';
+    })()}</td>
+    <td>${paymentCell(en, ev)}</td>
+    <td><button class="btn danger small" data-delentry="${en.id}">Delete</button></td>
+  </tr>`).join('');
+  const pickers = ev.discipline === 'doubles' ? [1, 2] : [1];
+  const eligible = [...S.playersById.values()].filter(p => {
+    if (ev.category === 'mens' && p.gender === 'female') return false;
+    if (ev.category === 'womens' && p.gender === 'male') return false;
+    const already = list.some(en => en.status !== 'withdrawn' && (S.entryPlayers.get(en.id) || []).includes(p.id));
+    return !already;
+  });
+  const opts = eligible.map(p => `<option value="${p.id}">${esc(p.name)} (${p.gender})</option>`).join('');
+  body.insertAdjacentHTML('beforeend', `
+    <div class="card">
+      <div class="flexrow"><h3 class="grow">Entries — ${esc(ev.name)}</h3>
+        <span class="pill">${entriesOf(ev.id).length} active</span>
+        ${drawn ? '<span class="pill warn">Draw exists — seeds locked</span>' : ''}</div>
+      ${list.length
+        ? `<div class="table-scroll"><table>
+            <thead><tr><th>Seed</th><th>Entry</th><th class="num">Rating${ev.seeding_rating_source ? ' (' + esc(ev.seeding_rating_source) + ')' : ''}</th><th>Status</th><th>Fees</th><th></th></tr></thead>
+            <tbody>${rows}</tbody></table></div>`
+        : '<div class="empty"><span class="word">Pending</span>No entries yet.</div>'}
+      ${!drawn && list.length ? `<div class="flexrow" style="margin-top:10px">
+        <button class="btn ghost small" id="autoSeed">Auto-seed by rating</button>
+        <span class="small muted">Orders seeds by ${ev.seeding_rating_source ? 'the ' + esc(ev.seeding_rating_source) + ' rating' : 'rating (set a seeding source on the event to pin one)'} — you can still edit any seed by hand.</span>
+      </div>` : ''}
+    </div>
+    <div class="card">
+      <h3>Add entry</h3>
+      <p class="sub small">Pick ${ev.discipline === 'doubles' ? 'the pair' : 'the player'} — players already entered in this event aren't listed. The database backstops gender and size rules.</p>
+      <div class="frow">
+        ${pickers.map(i => `<label class="f">Player ${i}
+          <span class="hint">${i === 1 ? 'First member of the entry.' : 'Their partner.'}</span>
+          <select id="np${i}"><option value="">— choose —</option>${opts}</select></label>`).join('')}
+        <label class="f">Status
+          <span class="hint">Waitlisted entries stay out of draws until promoted.</span>
+          <select id="npStatus"><option value="entered">entered</option><option value="waitlisted">waitlisted</option></select></label>
+      </div>
+      <button class="btn" id="npAdd">Add entry</button>
+    </div>`);
+  body.querySelectorAll('[data-seed]').forEach(inp => inp.onchange = async () => {
+    const { error } = await client.from('entries').update({
+      seed: inp.value ? Number(inp.value) : null }).eq('id', inp.dataset.seed);
+    if (error){ flash(body, 'err', error.message); return; }
+    await refresh();
+  });
+  body.querySelectorAll('[data-status]').forEach(sel => sel.onchange = async () => {
+    const { error } = await client.from('entries').update({ status: sel.value }).eq('id', sel.dataset.status);
+    if (error){ flash(body, 'err', error.message); return; }
+    await refresh();
+  });
+  body.querySelectorAll('[data-markpaid]').forEach(b => b.onclick = async () => {
+    const { error } = await client.from('entry_payments')
+      .update({ status: 'paid', paid_at: new Date().toISOString() })
+      .eq('id', b.dataset.markpaid);
+    if (error){ flash(body, 'err', error.message); return; }
+    await refresh();
+  });
+  body.querySelectorAll('[data-delentry]').forEach(b => b.onclick = async () => {
+    if (!confirm(`Delete the entry for ${entryName(b.dataset.delentry)}? If they pulled out after the draw was made, set the status to withdrawn instead.`)) return;
+    const { error } = await client.from('entries').delete().eq('id', b.dataset.delentry);
+    if (error){
+      flash(body, 'err', 'Not deleted: this entry is in a generated draw. Delete the draw first (Draw tab), or mark it withdrawn instead. DB said: ' + error.message);
+      return;
+    }
+    await refresh();
+  });
+  const autoSeedBtn = $('autoSeed');
+  if (autoSeedBtn) autoSeedBtn.onclick = async () => {
+    const src = ev.seeding_rating_source || null;
+    const active = entriesOf(ev.id);
+    const ranked = active.map(en => ({ en, r: entryRating(en.id, src) }))
+      .sort((a, b) => (b.r ?? -1) - (a.r ?? -1));
+    for (let i = 0; i < ranked.length; i++){
+      const { error } = await client.from('entries').update({ seed: i + 1 }).eq('id', ranked[i].en.id);
+      if (error){ flash(body, 'err', error.message); return; }
+    }
+    await refresh();
+  };
+  $('npAdd').onclick = async () => {
+    const ids = pickers.map(i => $('np' + i).value).filter(Boolean);
+    if (ids.length !== pickers.length){ flash(body, 'err', 'Choose every player for the entry.'); return; }
+    if (new Set(ids).size !== ids.length){ flash(body, 'err', 'The same player is picked twice.'); return; }
+    const { data: entry, error } = await client.from('entries').insert({
+      event_id: ev.id, status: $('npStatus').value }).select().single();
+    if (error){ flash(body, 'err', error.message); return; }
+    const { error: e2 } = await client.from('entry_players').insert(
+      ids.map(pid => ({ entry_id: entry.id, player_id: pid })));
+    if (e2){
+      await client.from('entries').delete().eq('id', entry.id);
+      flash(body, 'err', e2.message); return;
+    }
+    await refresh();
+  };
+}
+
+/* ------------------------------------------------------------------ draw tab */
+
+function renderDrawTab(body){
+  body.innerHTML = '';
+  if (!eventChips(body, () => renderDrawTab(body))){
+    body.innerHTML = '<div class="empty"><span class="word">Pending</span>Create an event first.</div>';
+    return;
+  }
+  const ev = eventById(S.activeEventId);
+  const evPools = S.pools.filter(p => p.event_id === ev.id);
+  const evMatches = S.matches.filter(m => m.event_id === ev.id);
+  const active = entriesOf(ev.id).filter(e => e.status === 'entered');
+
+  if (!evMatches.length && !evPools.length){
+    const defPools = Math.max(1, Math.min(4, Math.floor(active.length / 4) || 1));
+    body.insertAdjacentHTML('beforeend', `
+      <div class="card">
+        <h3>Generate draw — ${esc(ev.name)}</h3>
+        <p class="sub small">${active.length} entered ${active.length === 1 ? 'entry' : 'entries'}.
+          Snake-seeded into pools (seed order from the Entries tab — unseeded entries follow in entry order),
+          then a knockout bracket sized for the qualifiers. Every match and game row is created up front
+          so score day is pure fill-in.</p>
+        <div class="frow">
+          <label class="f">Number of pools
+            <span class="hint">Round-robin groups — 4–5 entries per pool keeps the day moving.</span>
+            <input type="number" id="gdPools" min="1" max="16" value="${defPools}"></label>
+          <label class="f">Qualifiers per pool
+            <span class="hint">How many advance from each pool into the knockout.</span>
+            <input type="number" id="gdQuals" min="1" max="4" value="2"></label>
+        </div>
+        <div id="gdEstimate" class="small muted" style="margin-bottom:10px"></div>
+        <button class="btn gold" id="gdGo">Generate pools &amp; bracket</button>
+      </div>`);
+    const estimate = () => {
+      const np = Number($('gdPools').value) || 1;
+      const nq = Math.min(Number($('gdQuals').value) || 1, Math.ceil(active.length / np));
+      const per = Math.floor(active.length / np);
+      const rem = active.length % np;
+      const poolGames = [...Array(np)].reduce((sum, _, i) => {
+        const n = per + (i < rem ? 1 : 0); return sum + n * (n - 1) / 2; }, 0);
+      const Q = Math.min(nq * np, active.length);
+      const bracketGames = Math.max(0, Q - 1);
+      const total = poolGames + bracketGames;
+      const courts = S.settings?.courts_count ?? 4;
+      const mins = Math.ceil((poolGames * (ev.pool_best_of === 1 ? 1 : 2) + bracketGames * (ev.bracket_best_of === 1 ? 1 : 2))
+        / courts) * (S.settings?.slot_minutes ?? 20);
+      const hrs = (mins / 60).toFixed(1);
+      $('gdEstimate').innerHTML = `≈ ${poolGames} pool matches + ${bracketGames} knockout matches`
+        + ` · rough day length on ${courts} courts: <strong${mins > 360 ? ' style="color:var(--err)"' : ''}>${hrs} h</strong>`
+        + ` <span class="muted">(typical-games estimate at ${S.settings?.slot_minutes ?? 20} min/game — every player is assumed available all day)</span>`;
+    };
+    $('gdPools').oninput = estimate; $('gdQuals').oninput = estimate; estimate();
+    $('gdGo').onclick = () => generateDraw(ev, body);
+    return;
+  }
+
+  // draw exists — summary + bracket fill + delete
+  const bracket = evMatches.filter(m => m.stage === 'bracket');
+  const poolMatches = evMatches.filter(m => m.stage === 'pool');
+  const decided = poolMatches.filter(m => m.winner_entry_id).length;
+  const bracketFilled = bracket.some(m => m.home_entry_id || m.away_entry_id);
+  body.insertAdjacentHTML('beforeend', `
+    <div class="card">
+      <div class="flexrow"><h3 class="grow">Draw — ${esc(ev.name)}</h3>
+        <span class="pill">${evPools.length} pools</span>
+        <span class="pill">${poolMatches.length} pool matches (${decided} decided)</span>
+        <span class="pill">${bracket.length} knockout matches</span></div>
+      ${evPools.map(p => {
+        const ids = S.poolEntries.get(p.id) || [];
+        return `<div class="small" style="margin:4px 0"><strong>${esc(p.name)}:</strong>
+          ${ids.map(id => esc(entryName(id))).join(' · ') || '<span class="muted">Pending</span>'}</div>`;
+      }).join('')}
+      <div class="flexrow" style="margin-top:12px">
+        ${bracket.length && !bracketFilled ? `<button class="btn gold" id="fillBracket" ${decided < poolMatches.length ? 'disabled' : ''}>
+          Fill bracket from pool standings</button>
+          ${decided < poolMatches.length ? '<span class="small muted">Unlocks when every pool match is decided.</span>' : ''}` : ''}
+        <span class="grow"></span>
+        <button class="btn danger small" id="delDraw">Delete draw</button>
+      </div>
+      <p class="small muted" style="margin-top:8px">Court and time assignment lives on the Schedule tab; scores on the Scores tab.
+        Setting a knockout match's result advances the winner automatically.</p>
+    </div>`);
+  const fillBtn = $('fillBracket');
+  if (fillBtn) fillBtn.onclick = () => fillBracketFromPools(ev, body);
+  $('delDraw').onclick = async () => {
+    if (!confirm(`Delete the entire draw for "${ev.name}" — pools, matches and ALL recorded scores? This cannot be undone.`)) return;
+    let r = await client.from('matches').delete().eq('event_id', ev.id);
+    if (r.error){ flash(body, 'err', r.error.message); return; }
+    r = await client.from('pools').delete().eq('event_id', ev.id);
+    if (r.error){ flash(body, 'err', r.error.message); return; }
+    await refresh();
+  };
+}
+
+async function generateDraw(ev, body){
+  const nPools = Number($('gdPools').value) || 1;
+  const nQuals = Number($('gdQuals').value) || 1;
+  const active = entriesOf(ev.id).filter(e => e.status === 'entered');
+  if (active.length < 2){ flash(body, 'err', 'Need at least two entered entries.'); return; }
+  if (nPools > active.length){ flash(body, 'err', 'More pools than entries.'); return; }
+
+  // seed order: explicit seeds first (ascending), then unseeded in entry order
+  const ordered = [...active].sort((a, b) =>
+    (a.seed ?? 9999) - (b.seed ?? 9999) || a.created_at.localeCompare(b.created_at));
+
+  try {
+    // pools + snake distribution
+    const poolRows = [...Array(nPools)].map((_, i) => ({
+      event_id: ev.id, name: 'Pool ' + String.fromCharCode(65 + i), display_order: i }));
+    const { data: pools, error: pErr } = await client.from('pools').insert(poolRows).select();
+    if (pErr) throw pErr;
+    pools.sort((a, b) => a.display_order - b.display_order);
+    const buckets = pools.map(() => []);
+    ordered.forEach((en, i) => {
+      const lap = Math.floor(i / nPools);
+      const idx = lap % 2 === 0 ? i % nPools : nPools - 1 - (i % nPools);
+      buckets[idx].push(en);
+    });
+    const peRows = [];
+    buckets.forEach((b, i) => b.forEach(en => peRows.push({ pool_id: pools[i].id, entry_id: en.id })));
+    { const { error } = await client.from('pool_entries').insert(peRows); if (error) throw error; }
+
+    // pool matches: every pair, all game rows up front
+    const poolMatchRows = [];
+    buckets.forEach((b, i) => {
+      let slot = 1;
+      for (let x = 0; x < b.length; x++) for (let y = x + 1; y < b.length; y++){
+        poolMatchRows.push({
+          event_id: ev.id, stage: 'pool', pool_id: pools[i].id, slot: slot++,
+          home_entry_id: b[x].id, away_entry_id: b[y].id,
+          best_of: ev.pool_best_of, points_to: ev.pool_points_to, win_by: ev.pool_win_by });
+      }
+    });
+    let poolMatches = [];
+    if (poolMatchRows.length){
+      const { data, error } = await client.from('matches').insert(poolMatchRows).select();
+      if (error) throw error;
+      poolMatches = data;
+    }
+
+    // bracket: size = next power of two ≥ qualifiers; insert final-first so
+    // winner_advances_to ids exist when the earlier round is inserted
+    const Q = Math.min(nQuals * nPools, active.length);
+    let bracketMatches = [];
+    if (Q >= 2){
+      let size = 1; while (size < Q) size *= 2;
+      const nRounds = Math.log2(size);
+      let nextRound = null; // matches of round r+1, ordered by slot
+      for (let r = nRounds; r >= 1; r--){
+        const matchesInRound = Math.pow(2, nRounds - r);
+        const isFinal = r === nRounds;
+        const fmt = isFinal
+          ? { best_of: ev.final_best_of, points_to: ev.final_points_to, win_by: ev.final_win_by }
+          : { best_of: ev.bracket_best_of, points_to: ev.bracket_points_to, win_by: ev.bracket_win_by };
+        const rows = [...Array(matchesInRound)].map((_, i) => ({
+          event_id: ev.id, stage: 'bracket', bracket_kind: 'main',
+          round: r, slot: i + 1, ...fmt,
+          winner_advances_to: nextRound ? nextRound[Math.floor(i / 2)].id : null,
+          winner_advances_side: nextRound ? (i % 2 === 0 ? 'home' : 'away') : null,
+        }));
+        const { data, error } = await client.from('matches').insert(rows).select();
+        if (error) throw error;
+        data.sort((a, b) => a.slot - b.slot);
+        nextRound = data;
+        bracketMatches = bracketMatches.concat(data);
+      }
+    }
+
+    // all game rows up front (score day is pure fill-in)
+    const gameRows = [];
+    for (const m of [...poolMatches, ...bracketMatches]){
+      for (let g = 1; g <= m.best_of; g++) gameRows.push({ match_id: m.id, game_no: g });
+    }
+    if (gameRows.length){
+      const { error } = await client.from('games').insert(gameRows);
+      if (error) throw error;
+    }
+    await refresh();
+  } catch (err){
+    flash(body, 'err', 'Draw generation failed: ' + err.message + ' — use "Delete draw" to clear any partial draw, then retry.');
+  }
+}
+
+async function fillBracketFromPools(ev, body){
+  const nQuals = Number(prompt('Qualifiers per pool?', '2')) || 0;
+  if (nQuals < 1) return;
+  const pools = S.pools.filter(p => p.event_id === ev.id)
+    .sort((a, b) => a.display_order - b.display_order);
+  // qualifier seed order: all pool winners (pool order), then runners-up (reverse), etc.
+  const quals = [];
+  for (let rank = 1; rank <= nQuals; rank++){
+    const layer = pools.map(p => {
+      const rows = S.standings.filter(r => r.pool_id === p.id).sort((a, b) => a.pool_rank - b.pool_rank);
+      return rows[rank - 1]?.entry_id || null;
+    }).filter(Boolean);
+    if (rank % 2 === 0) layer.reverse();  // avoid same-pool rematches until late
+    quals.push(...layer);
+  }
+  const round1 = S.matches
+    .filter(m => m.event_id === ev.id && m.stage === 'bracket' && m.bracket_kind === 'main' && m.round === 1)
+    .sort((a, b) => a.slot - b.slot);
+  const size = round1.length * 2;
+  const slots = seedSlots(size);      // slot index -> seed number
+  try {
+    const byes = [];
+    for (let i = 0; i < round1.length; i++){
+      const m = round1[i];
+      const homeSeed = slots[i * 2], awaySeed = slots[i * 2 + 1];
+      const home = homeSeed <= quals.length ? quals[homeSeed - 1] : null;
+      const away = awaySeed <= quals.length ? quals[awaySeed - 1] : null;
+      const { error } = await client.from('matches').update({
+        home_entry_id: home, away_entry_id: away,
+        notes: (home && !away) || (!home && away) ? 'Bye' : null,
+      }).eq('id', m.id);
+      if (error) throw error;
+      if (home && !away) byes.push({ id: m.id, winner: home });
+      if (!home && away) byes.push({ id: m.id, winner: away });
+    }
+    // byes advance immediately — the DB trigger pushes them into round 2
+    for (const b of byes){
+      const { error } = await client.from('matches').update({ winner_entry_id: b.winner }).eq('id', b.id);
+      if (error) throw error;
+    }
+    await refresh();
+  } catch (err){
+    flash(body, 'err', 'Bracket fill failed: ' + err.message);
+  }
+}
+
+/* ------------------------------------------------------------------ schedule tab */
+
+function renderScheduleTab(body){
+  const all = [...S.matches].sort((a, b) =>
+    (a.scheduled_at || '9999').localeCompare(b.scheduled_at || '9999')
+    || (eventById(a.event_id)?.display_order ?? 0) - (eventById(b.event_id)?.display_order ?? 0)
+    || (a.round ?? 0) - (b.round ?? 0) || (a.slot ?? 0) - (b.slot ?? 0));
+  if (!all.length){
+    body.innerHTML = '<div class="empty"><span class="word">Pending</span>Generate a draw first — matches appear here for court and time assignment.</div>';
+    return;
+  }
+  const toLocal = (ts) => {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const rows = all.map(m => `<tr data-mid="${m.id}">
+    <td class="small">${esc(eventById(m.event_id)?.name || '')}</td>
+    <td class="small">${esc(matchLabel(m))}</td>
+    <td>${esc(entryName(m.home_entry_id) || 'TBC')} v ${esc(entryName(m.away_entry_id) || 'TBC')}</td>
+    <td><input type="text" class="short" value="${esc(m.court || '')}" data-court="${m.id}" placeholder="court"></td>
+    <td><input type="datetime-local" value="${toLocal(m.scheduled_at)}" data-time="${m.id}"></td>
+    <td><span class="dot" id="sd-${m.id}"></span> <span class="rowerr" id="se-${m.id}"></span></td>
+  </tr>`).join('');
+  body.innerHTML = `
+    <div id="clashPanel"></div>
+    <div class="card">
+      <h3>Schedule</h3>
+      <p class="sub small">Assign each match a court (free text) and a time slot. Saves on change.
+        Clashes — a player on two courts at once (across ALL events) or a double-booked court — are flagged above; the save still goes through so you can fix in any order.</p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Event</th><th>Round</th><th>Match</th><th>Court</th><th>Time</th><th></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+    </div>`;
+  const save = async (id, patch) => {
+    const dot = $('sd-' + id), err = $('se-' + id);
+    const { error } = await client.from('matches').update(patch).eq('id', id);
+    if (error){ dot.className = 'dot red'; err.textContent = error.message; return; }
+    dot.className = 'dot green'; err.textContent = '';
+    const m = S.matches.find(x => x.id === id);
+    Object.assign(m, patch);
+    await renderClashes();
+  };
+  body.querySelectorAll('[data-court]').forEach(inp => inp.onchange = () =>
+    save(inp.dataset.court, { court: inp.value.trim() || null }));
+  body.querySelectorAll('[data-time]').forEach(inp => inp.onchange = () =>
+    save(inp.dataset.time, { scheduled_at: inp.value ? new Date(inp.value).toISOString() : null }));
+  renderClashes();
+}
+
+async function renderClashes(){
+  const panel = $('clashPanel');
+  if (!panel) return;
+  const { data, error } = await client.from('schedule_clashes')
+    .select('*').eq('tournament_id', S.tournament.id);
+  if (error){ panel.innerHTML = msg('err', 'Clash check failed: ' + error.message); return; }
+  if (!data.length){ panel.innerHTML = msg('ok', 'No clashes in the current schedule.'); return; }
+  const line = (c) => {
+    const ma = S.matches.find(m => m.id === c.match_a);
+    const mb = S.matches.find(m => m.id === c.match_b);
+    const when = new Date(c.scheduled_at).toLocaleString('en-GB', { weekday:'short', hour:'2-digit', minute:'2-digit' });
+    const what = c.clash_type === 'court'
+      ? `court ${c.court} double-booked`
+      : `${S.playersById.get(c.player_id)?.name || 'a player'} on two courts`;
+    const mm = (m) => m ? `${eventById(m.event_id)?.name || ''} ${matchLabel(m)}` : '?';
+    return `<li><strong>${esc(when)}</strong> — ${esc(what)}: ${esc(mm(ma))} vs ${esc(mm(mb))}</li>`;
+  };
+  panel.innerHTML = `<div class="msg warn"><strong>${data.length} clash${data.length > 1 ? 'es' : ''}:</strong>
+    <ul style="margin:6px 0 0 18px">${data.map(line).join('')}</ul></div>`;
+}
+
+/* ------------------------------------------------------------------ scores tab */
+
+function renderScoresTab(body){
+  body.innerHTML = '';
+  if (!eventChips(body, () => renderScoresTab(body))){
+    body.innerHTML = '<div class="empty"><span class="word">Pending</span>Create an event first.</div>';
+    return;
+  }
+  const ev = eventById(S.activeEventId);
+  const ms = S.matches.filter(m => m.event_id === ev.id && m.home_entry_id && m.away_entry_id)
+    .sort((a, b) => (a.stage === b.stage ? 0 : a.stage === 'pool' ? -1 : 1)
+      || (a.pool_id || '').localeCompare(b.pool_id || '')
+      || (a.round ?? 0) - (b.round ?? 0) || (a.slot ?? 0) - (b.slot ?? 0));
+  if (!ms.length){
+    body.insertAdjacentHTML('beforeend',
+      '<div class="empty"><span class="word">Pending</span>No scoreable matches yet — both sides of a match must be known.</div>');
+    return;
+  }
+  const done = ms.filter(m => m.winner_entry_id).length;
+  const rows = ms.map(m => {
+    const games = S.gamesByMatch.get(m.id) || [];
+    const inputs = games.map(g => `<span class="game-slot"
+        ><input type="number" min="0" data-g="${g.id}" data-side="h" data-m="${m.id}" value="${g.home_score ?? ''}"
+          aria-label="game ${g.game_no} home score"
+        ><span class="sep">–</span><input type="number" min="0" data-g="${g.id}" data-side="a" data-m="${m.id}" value="${g.away_score ?? ''}"
+          aria-label="game ${g.game_no} away score"></span>`).join('');
+    const side = (id) => {
+      const n = esc(entryName(id));
+      return m.winner_entry_id && m.winner_entry_id === id
+        ? `<strong style="color:var(--gold-deep)">${n}</strong>` : n;
+    };
+    return `<tr data-match="${m.id}">
+      <td class="small">${esc(matchLabel(m))}${m.notes === 'Bye' ? ' <span class="pill">Bye</span>' : ''}
+        <div class="muted" style="font-size:.78rem">${m.best_of === 1 ? 'game' : 'best of ' + m.best_of} to ${m.points_to}${m.win_by === 2 ? ', win by 2' : ''}</div></td>
+      <td style="text-align:right">${side(m.home_entry_id)}</td>
+      <td class="games">${inputs}</td>
+      <td>${side(m.away_entry_id)}</td>
+      <td><span class="dot${m.winner_entry_id ? ' green' : ''}" id="dot-${m.id}"></span>
+          <div class="rowerr" id="err-${m.id}"></div></td>
+    </tr>`;
+  }).join('');
+  const sideWord = ev.discipline === 'singles' ? 'Player' : 'Pairing';
+  body.insertAdjacentHTML('beforeend', `
+    <div class="card">
+      <div class="flexrow"><h3 class="grow">Scores — ${esc(ev.name)}</h3>
+        <span class="pill ${done === ms.length ? 'ok' : ''}">${done}/${ms.length} decided</span>
+        <button class="btn gold small" id="saveAll">Save all entered</button></div>
+      <p class="sub small">Each game's boxes read left to right: the left box is the left ${sideWord.toLowerCase()}'s points.
+        Keyboard flow: type a score, <strong>Enter</strong> jumps to the next box; a full match saves itself and
+        advancing the winner into the next round happens automatically. Dots: grey untouched · amber unsaved · green saved · red error (shown on the row).</p>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Round</th><th style="text-align:right">${sideWord} 1</th><th>Games</th><th>${sideWord} 2</th><th></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+    </div>`);
+  const allInputs = [...body.querySelectorAll('input[data-g]')];
+  allInputs.forEach((inp, idx) => {
+    inp.addEventListener('input', () => {
+      $('dot-' + inp.dataset.m).className = 'dot amber'; S.dirty++;
+    });
+    inp.addEventListener('keydown', async (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const next = allInputs[idx + 1];
+      const thisMatch = inp.dataset.m;
+      if (!next || next.dataset.m !== thisMatch){
+        await saveMatch(thisMatch, body);
+        next?.focus(); next?.select?.();
+      } else { next.focus(); next.select?.(); }
+    });
+    inp.addEventListener('blur', () => { /* keep amber until saved */ });
+  });
+  $('saveAll').onclick = async () => {
+    const ids = [...new Set(allInputs
+      .filter(i => $('dot-' + i.dataset.m).className.includes('amber'))
+      .map(i => i.dataset.m))];
+    for (const id of ids) await saveMatch(id, body);
+  };
+}
+
+async function saveMatch(matchId, body){
+  const m = S.matches.find(x => x.id === matchId);
+  const dot = $('dot-' + matchId), errEl = $('err-' + matchId);
+  const inputs = [...document.querySelectorAll(`input[data-m="${matchId}"]`)];
+  const byGame = new Map();
+  for (const inp of inputs){
+    if (!byGame.has(inp.dataset.g)) byGame.set(inp.dataset.g, {});
+    byGame.get(inp.dataset.g)[inp.dataset.side] = inp.value === '' ? null : Number(inp.value);
+  }
+  try {
+    let hWins = 0, aWins = 0;
+    for (const [gid, v] of byGame){
+      if ((v.h === null) !== (v.a === null)) throw new Error('A game needs both scores (or neither).');
+      const { error } = await client.from('games').update({
+        home_score: v.h, away_score: v.a }).eq('id', gid);
+      if (error) throw error;
+      if (v.h !== null){ if (v.h > v.a) hWins++; else if (v.a > v.h) aWins++;
+        else throw new Error('A game cannot be drawn.'); }
+    }
+    const needed = Math.floor(m.best_of / 2) + 1;
+    let winner = null;
+    if (hWins >= needed) winner = m.home_entry_id;
+    else if (aWins >= needed) winner = m.away_entry_id;
+    if ((m.winner_entry_id || null) !== winner){
+      const { error } = await client.from('matches').update({ winner_entry_id: winner }).eq('id', matchId);
+      if (error) throw error;
+    }
+    dot.className = winner ? 'dot green' : (hWins + aWins > 0 ? 'dot amber' : 'dot');
+    errEl.textContent = '';
+    S.dirty = Math.max(0, S.dirty - inputs.length);
+    // light refresh: update local state so advancement shows without a full reload
+    await refresh();
+  } catch (err){
+    dot.className = 'dot red';
+    errEl.textContent = err.message;
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Court-side display — Tournament Manager</title>
+<link rel="icon" type="image/png" href="pbtable-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* A TV screen, not a web page: read from five metres, nobody touches it, and it must
+     never need a scrollbar. Everything sizes in vh/vw so one file fits a 1080p telly, a
+     4K panel or a laptop on the scorer's table. */
+  :root{
+    --wine:#3a0d17; --crimson:#7d1527; --crimson-soft:#a02a3d;
+    --gold:#d9a441; --gold-soft:#f2ddab; --ink:#fff;
+    --dim:rgba(255,255,255,.62); --line:rgba(255,255,255,.14);
+    --live:#57c77f;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; overflow:hidden; }
+  body{
+    font-family:'Barlow',sans-serif; color:var(--ink);
+    background:radial-gradient(120% 130% at 80% 0%, var(--crimson) 0%, var(--wine) 62%);
+    display:flex; flex-direction:column;
+  }
+  h1,h2,h3,.cond{ font-family:'Barlow Condensed',sans-serif; }
+
+  /* ---------- header */
+  header{ display:flex; align-items:center; gap:1.6vw; padding:1.4vh 2vw;
+    border-bottom:1px solid var(--line); flex:0 0 auto; }
+  header img{ height:5.2vh; }
+  header .t{ min-width:0; }
+  header .t h1{ font-size:3.4vh; font-weight:700; line-height:1; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; }
+  header .t .v{ font-size:1.7vh; color:var(--dim); margin-top:.3vh; }
+  header .grow{ flex:1; }
+  header .clock{ font-family:'Barlow Condensed'; font-weight:700; font-size:4.2vh;
+    color:var(--gold); line-height:1; font-variant-numeric:tabular-nums; }
+  header .clock small{ display:block; font-family:'Barlow'; font-weight:400;
+    font-size:1.4vh; color:var(--dim); text-align:right; letter-spacing:.04em; }
+  .beat{ width:1.1vh; height:1.1vh; border-radius:50%; background:var(--live);
+    box-shadow:0 0 0 0 rgba(87,199,127,.7); animation:beat 2.6s infinite; }
+  @keyframes beat{ 0%{ box-shadow:0 0 0 0 rgba(87,199,127,.6);} 70%{ box-shadow:0 0 0 1.4vh rgba(87,199,127,0);} 100%{ box-shadow:0 0 0 0 rgba(87,199,127,0);} }
+
+  /* ---------- stage */
+  main{ flex:1 1 auto; padding:2vh 2vw 0; min-height:0; display:flex; flex-direction:column; }
+  .panel-title{ display:flex; align-items:baseline; gap:1.2vw; margin-bottom:1.4vh; flex:0 0 auto; }
+  .panel-title h2{ font-size:4.6vh; font-weight:700; letter-spacing:.01em; line-height:1; }
+  .panel-title .sub{ font-size:2vh; color:var(--dim); }
+  .stage{ flex:1 1 auto; min-height:0; overflow:hidden; }
+
+  /* courts grid */
+  .courts{ display:grid; gap:1.6vh 1.4vw; height:100%;
+    grid-template-columns:repeat(auto-fit,minmax(26vw,1fr)); align-content:start; }
+  .court{ background:rgba(255,255,255,.055); border:1px solid var(--line);
+    border-radius:1.2vh; padding:1.6vh 1.5vw; display:flex; flex-direction:column; }
+  .court .num{ font-family:'Barlow Condensed'; font-weight:700; color:var(--gold);
+    font-size:2.2vh; letter-spacing:.12em; text-transform:uppercase; }
+  .court .ev{ font-size:1.6vh; color:var(--dim); margin-bottom:.9vh; }
+  .side{ display:flex; align-items:center; gap:1vw; padding:.5vh 0; }
+  .side .nm{ font-size:3vh; font-weight:600; line-height:1.12; flex:1; min-width:0;
+    overflow:hidden; text-overflow:ellipsis; }
+  .side .sc{ font-family:'Barlow Condensed'; font-weight:700; font-size:3.6vh;
+    color:var(--gold); font-variant-numeric:tabular-nums; min-width:2.4ch; text-align:right; }
+  .side.win .nm{ color:var(--gold-soft); }
+  .vs{ font-size:1.5vh; color:var(--dim); letter-spacing:.2em; margin:.2vh 0; }
+
+  /* up-next / results lists */
+  .rows{ display:flex; flex-direction:column; gap:1.1vh; height:100%; }
+  .row{ display:grid; grid-template-columns:9vw 7vw 1fr auto; align-items:center;
+    gap:1.2vw; background:rgba(255,255,255,.05); border:1px solid var(--line);
+    border-radius:1vh; padding:1.3vh 1.4vw; }
+  .row .when{ font-family:'Barlow Condensed'; font-weight:700; font-size:3.2vh;
+    color:var(--gold); line-height:1; }
+  .row .crt{ font-family:'Barlow Condensed'; font-weight:600; font-size:1.9vh;
+    color:var(--ink); background:rgba(217,164,65,.18); border:1px solid rgba(217,164,65,.5);
+    border-radius:.7vh; padding:.5vh .7vw; text-align:center; white-space:nowrap; }
+  .row .who{ font-size:2.5vh; font-weight:600; min-width:0; }
+  .row .who small{ display:block; font-size:1.5vh; font-weight:400; color:var(--dim); }
+  .row .res{ font-family:'Barlow Condensed'; font-weight:700; font-size:2.8vh;
+    color:var(--gold-soft); white-space:nowrap; font-variant-numeric:tabular-nums; }
+
+  /* standings */
+  table.stand{ width:100%; border-collapse:collapse; }
+  table.stand th{ font-family:'Barlow Condensed'; font-weight:600; font-size:1.7vh;
+    color:var(--dim); text-transform:uppercase; letter-spacing:.09em; text-align:left;
+    padding:.8vh .8vw; border-bottom:1px solid var(--line); }
+  table.stand td{ font-size:2.6vh; padding:1vh .8vw; border-bottom:1px solid var(--line); }
+  table.stand td.n{ text-align:right; font-variant-numeric:tabular-nums; }
+  table.stand tr:first-child td{ color:var(--gold-soft); font-weight:600; }
+  .pill-rank{ display:inline-grid; place-items:center; width:3.4vh; height:3.4vh;
+    border-radius:50%; background:var(--gold); color:var(--wine); font-weight:700;
+    font-family:'Barlow Condensed'; font-size:2vh; }
+
+  /* bracket */
+  .bracket{ display:flex; gap:1.6vw; height:100%; align-items:stretch; }
+  .brd{ flex:1 1 0; display:flex; flex-direction:column; justify-content:space-around;
+    gap:1vh; min-width:0; }
+  .brd h3{ font-size:1.8vh; color:var(--dim); text-transform:uppercase;
+    letter-spacing:.12em; text-align:center; margin-bottom:.4vh; }
+  .bm{ background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:1vh;
+    padding:1vh 1vw; }
+  .bm.final{ border-color:var(--gold); background:rgba(217,164,65,.12); }
+  .bm .l{ display:flex; justify-content:space-between; gap:.8vw; padding:.35vh 0;
+    font-size:2.1vh; }
+  .bm .l .p{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bm .l.w .p{ color:var(--gold-soft); font-weight:700; }
+  .bm .l .s{ font-family:'Barlow Condensed'; font-weight:700; color:var(--gold); }
+  .bm .tbc{ color:var(--dim); font-style:italic; }
+
+  /* champions */
+  .champs{ display:grid; gap:2vh; grid-template-columns:repeat(auto-fit,minmax(30vw,1fr));
+    align-content:center; height:100%; }
+  .champ{ background:rgba(217,164,65,.13); border:1px solid var(--gold);
+    border-radius:1.4vh; padding:2.4vh 2vw; text-align:center; }
+  .champ .ev{ font-size:2vh; color:var(--gold); text-transform:uppercase;
+    letter-spacing:.1em; font-family:'Barlow Condensed'; font-weight:600; }
+  .champ .nm{ font-size:4vh; font-weight:700; line-height:1.15; margin-top:.6vh; }
+
+  /* ---------- the board: courts across, time down. The shape people already read on a
+     departures board, so nobody has to be taught it. */
+  .board{ height:100%; overflow:hidden; display:flex; flex-direction:column; }
+  .board .hd, .board .rw{ display:grid; gap:.5vw; }
+  .board .hd{ margin-bottom:.7vh; }
+  .board .hd div{ font-family:'Barlow Condensed'; font-weight:700; font-size:2vh;
+    color:var(--gold); text-transform:uppercase; letter-spacing:.12em; text-align:center;
+    padding:.5vh 0; }
+  .board .hd div.tcol{ text-align:left; }
+  .board .rw{ margin-bottom:.6vh; align-items:stretch; }
+  .board .tcell{ font-family:'Barlow Condensed'; font-weight:700; font-size:2.6vh;
+    color:var(--ink); display:flex; flex-direction:column; justify-content:center;
+    padding-left:.3vw; line-height:1; }
+  .board .tcell small{ font-family:'Barlow'; font-weight:400; font-size:1.4vh;
+    color:var(--dim); }
+  .cell{ border-radius:.9vh; padding:.8vh .7vw; border:1px solid var(--line);
+    background:rgba(255,255,255,.05); min-height:8.6vh; display:flex;
+    flex-direction:column; justify-content:center; overflow:hidden; }
+  .cell.empty{ background:transparent; border-style:dashed; opacity:.35; }
+  .cell.done{ background:rgba(255,255,255,.035); border-color:transparent; }
+  .cell.done .who{ color:var(--dim); }
+  .cell.live{ background:rgba(87,199,127,.16); border-color:var(--live); }
+  .cell.soon{ background:rgba(217,164,65,.12); border-color:rgba(217,164,65,.55); }
+  .cell .ev{ font-size:1.35vh; color:var(--gold); text-transform:uppercase;
+    letter-spacing:.07em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cell .who{ font-size:1.95vh; font-weight:600; line-height:1.2; }
+  .cell .who .v{ color:var(--dim); font-weight:400; font-size:1.5vh; }
+  .cell .res{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.9vh;
+    color:var(--gold-soft); }
+  .cell .tag{ font-size:1.3vh; color:var(--live); font-weight:600; letter-spacing:.08em; }
+  .late{ background:rgba(217,164,65,.16); border:1px solid var(--gold); border-radius:.8vh;
+    padding:.4vh .8vw; font-size:1.8vh; color:var(--gold-soft); }
+  .late strong{ color:var(--gold); }
+
+  .idle{ display:grid; place-items:center; height:100%; text-align:center; }
+  .idle .big{ font-family:'Barlow Condensed'; font-weight:700; font-size:7vh; color:var(--gold); }
+  .idle .small{ font-size:2.4vh; color:var(--dim); margin-top:1vh; }
+
+  /* ---------- footer */
+  footer{ flex:0 0 auto; display:flex; align-items:center; gap:1.4vw;
+    padding:1.2vh 2vw; border-top:1px solid var(--line); }
+  footer .qr{ background:#fff; border-radius:.7vh; padding:.35vh; line-height:0; }
+  footer .qr svg{ display:block; height:7vh; width:7vh; }
+  footer .cta{ font-size:1.9vh; }
+  footer .cta strong{ display:block; font-family:'Barlow Condensed'; font-size:2.4vh;
+    color:var(--gold); }
+  footer .grow{ flex:1; }
+  .dots{ display:flex; gap:.6vw; align-items:center; }
+  .dot{ width:1vh; height:1vh; border-radius:50%; background:rgba(255,255,255,.28); }
+  .dot.on{ background:var(--gold); transform:scale(1.35); }
+  .bar{ position:absolute; left:0; bottom:0; height:.5vh; background:var(--gold);
+    width:0; transition:width .25s linear; }
+  .barwrap{ position:fixed; left:0; right:0; bottom:0; height:.5vh; }
+  .paused{ font-size:1.7vh; color:var(--gold); letter-spacing:.1em; }
+  .err{ position:fixed; left:2vw; bottom:2vh; background:rgba(0,0,0,.55);
+    border:1px solid rgba(255,255,255,.25); border-radius:1vh; padding:1vh 1.4vw;
+    font-size:1.7vh; color:#ffd9d9; max-width:60vw; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="pbtable-logo.png" alt="">
+  <div class="t">
+    <h1 id="tName">…</h1>
+    <div class="v" id="tVenue"></div>
+  </div>
+  <span class="grow"></span>
+  <span class="beat" id="beat" title="live"></span>
+  <div class="clock"><span id="clock">--:--</span><small id="upd">connecting</small></div>
+</header>
+
+<main>
+  <div class="panel-title">
+    <h2 id="pTitle">Loading</h2>
+    <span class="sub" id="pSub"></span>
+  </div>
+  <div class="stage" id="stage"></div>
+</main>
+
+<footer>
+  <div class="qr" id="qrWrap" hidden><div id="qr"></div></div>
+  <div class="cta"><strong>Full draws &amp; results</strong>
+    <span id="qrUrl">—</span></div>
+  <span class="grow"></span>
+  <span class="paused" id="pausedTag" hidden>PAUSED — press space to resume</span>
+  <div class="dots" id="dots"></div>
+</footer>
+<div class="barwrap"><div class="bar" id="bar"></div></div>
+<div class="err" id="err" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+'use strict';
+
+const SUPABASE_URL = 'https://fvyjvoimezsfrndydzkt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_k80t7cu9oPN9Q5r8OO3Y-w_Wk3c_mOV';
+
+const ROTATE_MS  = 15000;   // how long each panel is held
+const REFRESH_MS = 20000;   // how often the data is re-read
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let sb = null;
+const S = {
+  tournament: null, settings: null,
+  events: [], pools: [], matches: [], standings: [], late: 0,
+  playersById: new Map(), entryPlayers: new Map(),
+  gamesByMatch: new Map(),
+  panels: [], idx: 0, paused: false, tick: 0, courtFilter: null,
+};
+
+/* ------------------------------------------------------------------ helpers */
+
+function entryName(id){
+  if (!id) return null;
+  const ids = S.entryPlayers.get(id) || [];
+  const names = ids.map(p => S.playersById.get(p)?.name || '?');
+  if (!names.length) return null;
+  // "Rachel Vance & Sian Rowe" is long on a TV — surname-lead keeps it readable
+  return names.map(shortName).join(' / ');
+}
+function shortName(full){
+  const bits = String(full).trim().split(/\s+/);
+  if (bits.length < 2) return full;
+  return bits[0][0] + '. ' + bits.slice(1).join(' ');
+}
+function eventName(id){ return S.events.find(e => e.id === id)?.name || ''; }
+function fmtTime(ts){
+  return new Date(ts).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+}
+function gamesOf(m){ return (S.gamesByMatch.get(m.id) || []).filter(g => g.home_score !== null); }
+function gamesWon(m){
+  let h = 0, a = 0;
+  for (const g of gamesOf(m)){ if (g.home_score > g.away_score) h++; else if (g.away_score > g.home_score) a++; }
+  return { h, a };
+}
+function scoreLine(m){
+  const g = gamesOf(m);
+  return g.length ? g.map(x => `${x.home_score}-${x.away_score}`).join('  ') : null;
+}
+function roundLabel(round, maxRound){
+  const back = maxRound - round;
+  return back === 0 ? 'Final' : back === 1 ? 'Semi-final'
+    : back === 2 ? 'Quarter-final' : back === 3 ? 'Round of 16' : `Round ${round}`;
+}
+function matchStage(m){
+  if (m.stage === 'pool') return S.pools.find(p => p.id === m.pool_id)?.name || 'Pool';
+  const rounds = S.matches.filter(x => x.event_id === m.event_id && x.stage === 'bracket')
+    .map(x => x.round);
+  return roundLabel(m.round, Math.max(...rounds));
+}
+
+/* A match is "on court" if it is scheduled, has both sides, and has not been decided.
+   That rule holds whether the clock says it started an hour ago or is about to — which
+   matters, because a running day is always late and a demo is always in the future. */
+function playable(){
+  return S.matches
+    .filter(m => m.home_entry_id && m.away_entry_id && !m.winner_entry_id && m.scheduled_at)
+    // time first, then court — a slot should read left-to-right across the hall
+    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at)
+      || String(a.court ?? '').localeCompare(String(b.court ?? ''), undefined, { numeric:true }));
+}
+function liveByCourt(){
+  const seen = new Map();
+  for (const m of playable()){
+    const c = m.court || '—';
+    if (S.courtFilter && String(c) !== String(S.courtFilter)) continue;
+    if (!seen.has(c)) seen.set(c, m);       // earliest undecided match on that court
+  }
+  return [...seen.entries()]
+    .sort((a, b) => String(a[0]).localeCompare(String(b[0]), undefined, { numeric:true }));
+}
+function upNext(){
+  const live = new Set(liveByCourt().map(([, m]) => m.id));
+  return playable().filter(m => !live.has(m.id)).slice(0, 7);
+}
+function latestResults(){
+  return S.matches
+    .filter(m => m.winner_entry_id && gamesOf(m).length)
+    .sort((a, b) => String(b.scheduled_at || '').localeCompare(String(a.scheduled_at || '')))
+    .slice(0, 7);
+}
+function champions(){
+  const out = [];
+  for (const ev of S.events){
+    const br = S.matches.filter(m => m.event_id === ev.id && m.stage === 'bracket'
+      && m.bracket_kind === 'main');
+    if (!br.length) continue;
+    const maxR = Math.max(...br.map(m => m.round));
+    const final = br.find(m => m.round === maxR);
+    if (final?.winner_entry_id) out.push({ ev: ev.name, who: entryName(final.winner_entry_id) });
+  }
+  return out;
+}
+
+/* PostgREST caps a response at 1000 rows silently. A big best-of-3 tournament has more
+   than 1000 games, so a plain select would drop scores off the board with no error. Page
+   through every row and chunk the id list (a huge ?in=(...) overflows the URL). */
+async function fetchAllIn(table, selectCols, col, ids, orderCol){
+  const out = [];
+  const chunks = [];
+  for (let i = 0; i < ids.length; i += 200) chunks.push(ids.slice(i, i + 200));
+  for (const chunk of chunks){
+    let from = 0;
+    for (;;){
+      let q = sb.from(table).select(selectCols).in(col, chunk).range(from, from + 999);
+      if (orderCol) q = q.order(orderCol);
+      const { data, error } = await q;
+      if (error) throw error;
+      out.push(...(data || []));
+      if (!data || data.length < 1000) break;
+      from += 1000;
+    }
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ data */
+
+async function load(){
+  try {
+    const c = sb;
+    const ts = await c.from('tournaments').select('*').order('start_date');
+    if (ts.error) throw ts.error;
+    const all = ts.data || [];
+    if (!all.length){ fail('No tournament published yet.'); return; }
+
+    const wanted = (new URLSearchParams(location.search).get('t') || '').trim();
+    let t = all.find(x => x.slug === wanted || x.id === wanted);
+    if (!t){
+      // no link: prefer one happening today, else the next one, else the most recent
+      const today = new Date().toISOString().slice(0, 10);
+      t = all.find(x => x.start_date <= today && (x.end_date || x.start_date) >= today)
+        || all.find(x => x.start_date >= today)
+        || all[all.length - 1];
+    }
+    S.tournament = t;
+
+    const [settings, events, players] = await Promise.all([
+      c.from('tournament_settings').select('*').eq('tournament_id', t.id).maybeSingle(),
+      c.from('events').select('*').eq('tournament_id', t.id).order('display_order').order('name'),
+      c.from('players').select('id,name').eq('tournament_id', t.id),
+    ]);
+    S.settings = settings.data;
+    S.events = events.data || [];
+    S.playersById = new Map((players.data || []).map(p => [p.id, p]));
+
+    const ids = S.events.map(e => e.id);
+    let entries = [], pools = [], matches = [], standings = [];
+    if (ids.length){
+      [entries, pools, matches, standings] = await Promise.all([
+        fetchAllIn('entries', 'id,event_id,status', 'event_id', ids),
+        fetchAllIn('pools', '*', 'event_id', ids, 'display_order'),
+        fetchAllIn('matches', '*', 'event_id', ids),
+        fetchAllIn('pool_standings', '*', 'event_id', ids),
+      ]);
+    }
+    S.pools = pools; S.matches = matches; S.standings = standings;
+
+    // measured from recent finishes, so "approximate" is a fact rather than a hedge
+    const { data: late } = await c.rpc('running_late_minutes', { p_tournament: t.id });
+    S.late = Number(late) || 0;
+
+    // names resolved from ONE tournament-wide map, loaded once (never stage-scoped)
+    S.entryPlayers = new Map();
+    if (entries.length){
+      const eps = await fetchAllIn('entry_players', '*', 'entry_id', entries.map(e => e.id));
+      for (const ep of eps){
+        if (!S.entryPlayers.has(ep.entry_id)) S.entryPlayers.set(ep.entry_id, []);
+        S.entryPlayers.get(ep.entry_id).push(ep.player_id);
+      }
+    }
+    S.gamesByMatch = new Map();
+    if (matches.length){
+      const gs = await fetchAllIn('games', '*', 'match_id', matches.map(m => m.id), 'game_no');
+      for (const g of gs){
+        if (!S.gamesByMatch.has(g.match_id)) S.gamesByMatch.set(g.match_id, []);
+        S.gamesByMatch.get(g.match_id).push(g);
+      }
+    }
+
+    $('err').hidden = true;
+    $('upd').textContent = 'updated ' + new Date().toLocaleTimeString('en-GB',
+      { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    paintChrome();
+    buildPanels();
+  } catch (e){
+    fail(e.message || String(e));
+  }
+}
+
+function fail(m){
+  $('err').hidden = false;
+  $('err').textContent = 'Cannot reach live data — showing the last update. (' + m + ')';
+  $('upd').textContent = 'offline';
+}
+
+function paintChrome(){
+  const t = S.tournament;
+  $('tName').textContent = t.name;
+  $('tVenue').textContent = [t.venue, new Date(t.start_date + 'T00:00:00')
+    .toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' })]
+    .filter(Boolean).join(' · ') + (S.courtFilter ? ` · COURT ${S.courtFilter}` : '');
+
+  const url = new URL(`index.html?t=${encodeURIComponent(t.slug || t.id)}`, location.href).href;
+  $('qrUrl').textContent = url.replace(/^https?:\/\//, '');
+  if (typeof qrcode === 'function' && !$('qr').dataset.done){
+    try {
+      const q = qrcode(0, 'M'); q.addData(url); q.make();
+      const n = q.getModuleCount(), quiet = 2, dim = n + quiet * 2;
+      let d = '';
+      for (let r = 0; r < n; r++) for (let col = 0; col < n; col++)
+        if (q.isDark(r, col)) d += `M${col + quiet} ${r + quiet}h1v1h-1z`;
+      $('qr').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dim} ${dim}">`
+        + `<rect width="${dim}" height="${dim}" fill="#fff"/><path d="${d}" fill="#3a0d17"/></svg>`;
+      $('qr').dataset.done = '1';
+      $('qrWrap').hidden = false;
+    } catch {}
+  }
+}
+
+/* ------------------------------------------------------------------ panels */
+
+/* The board: every scheduled match placed on a courts x time grid. Rows are the distinct
+   start times actually used, so a ragged schedule still lines up and no empty slots are
+   invented. Only a window around "now" is shown — a whole day would shrink the type to
+   nothing, and nobody at a venue cares what happened three hours ago. */
+function boardModel(){
+  const scheduled = S.matches.filter(m => m.scheduled_at);
+  if (!scheduled.length) return null;
+
+  const courts = [...new Set(scheduled.map(m => m.court).filter(Boolean))]
+    .sort((a, b) => String(a).localeCompare(String(b), undefined, { numeric:true }));
+  if (!courts.length) return null;
+
+  const times = [...new Set(scheduled.map(m => m.scheduled_at))].sort();
+  // centre the window on the earliest slot that still has an undecided match
+  const liveIds = new Set(playable().map(m => m.scheduled_at));
+  const firstLive = times.findIndex(t => liveIds.has(t));
+  const anchor = firstLive < 0 ? Math.max(0, times.length - 5) : Math.max(0, firstLive - 1);
+  const rows = times.slice(anchor, anchor + 6);
+
+  const at = new Map();
+  for (const m of scheduled) at.set(m.scheduled_at + '|' + (m.court ?? ''), m);
+  return { courts, rows, at, more: times.length - (anchor + rows.length) };
+}
+
+function boardHtml(){
+  const b = boardModel();
+  if (!b) return null;
+  const cols = `grid-template-columns:7vw repeat(${b.courts.length},1fr)`;
+  const live = new Set(liveByCourt().map(([, m]) => m.id));
+
+  const head = `<div class="hd" style="${cols}"><div class="tcol">Time</div>`
+    + b.courts.map(c => `<div>Court ${esc(c)}</div>`).join('') + `</div>`;
+
+  const rows = b.rows.map(t => {
+    const est = estimatedTime(t);
+    const cells = b.courts.map(c => {
+      const m = b.at.get(t + '|' + c);
+      if (!m) return `<div class="cell empty"></div>`;
+      const done = !!m.winner_entry_id;
+      const onCourt = live.has(m.id);
+      const w = gamesWon(m);
+      const cls = done ? 'done' : onCourt ? 'live' : 'soon';
+      const score = done
+        ? `<div class="res">${m.best_of > 1 ? `${w.h}–${w.a}` : esc(scoreLine(m) || '')}</div>`
+        : (gamesOf(m).length
+            ? `<div class="res">${esc(scoreLine(m))} <span class="tag">IN PLAY</span></div>`
+            : '');
+      return `<div class="cell ${cls}">
+        <div class="ev">${esc(eventName(m.event_id))} · ${esc(matchStage(m))}</div>
+        <div class="who">${esc(entryName(m.home_entry_id) || 'TBC')}
+          <span class="v">v</span> ${esc(entryName(m.away_entry_id) || 'TBC')}</div>
+        ${score}</div>`;
+    }).join('');
+    return `<div class="rw" style="${cols}">
+      <div class="tcell">${esc(fmtTime(t))}${est ? `<small>≈ ${esc(est)}</small>` : ''}</div>
+      ${cells}</div>`;
+  }).join('');
+
+  return `<div class="board">${head}${rows}</div>`;
+}
+
+/* Planned time plus however late the day is actually running. Only shown once the delay
+   is worth mentioning — "≈ 11:42" when the card says 11:40 is just noise. */
+function estimatedTime(iso){
+  if (S.late < 5) return null;
+  return fmtTime(new Date(new Date(iso).getTime() + S.late * 60000).toISOString());
+}
+
+function buildPanels(){
+  const p = [];
+  if (boardModel()) p.push({ kind:'board' });
+  if (liveByCourt().length) p.push({ kind:'now' });
+  if (upNext().length)      p.push({ kind:'next' });
+  if (latestResults().length) p.push({ kind:'results' });
+
+  for (const ev of S.events){
+    const br = S.matches.filter(m => m.event_id === ev.id && m.stage === 'bracket');
+    if (br.length) p.push({ kind:'bracket', ev });
+  }
+  for (const pool of S.pools){
+    if (S.standings.some(s => s.pool_id === pool.id)) p.push({ kind:'pool', pool });
+  }
+  const ch = champions();
+  if (ch.length) p.push({ kind:'champs', ch });
+  if (!p.length) p.push({ kind:'idle' });
+
+  // ?view=board pins the screen to the order of play and stops the rotation — for a
+  // venue that wants one dedicated schedule board rather than a cycling display.
+  if (S.view){
+    const only = p.filter(x => x.kind === S.view);
+    S.panels = only.length ? only : p;
+    S.idx = 0;
+    paintDots(); paint();
+    return;
+  }
+
+  S.panels = p;
+  if (S.idx >= p.length) S.idx = 0;
+  paintDots();
+  paint();
+}
+
+function paintDots(){
+  $('dots').innerHTML = S.panels.map((_, i) =>
+    `<span class="dot${i === S.idx ? ' on' : ''}"></span>`).join('');
+}
+
+function paint(){
+  const p = S.panels[S.idx];
+  if (!p) return;
+  const stage = $('stage');
+  paintDots();
+
+  if (p.kind === 'board'){
+    const b = boardModel();
+    $('pTitle').textContent = 'Order of play';
+    $('pSub').innerHTML = S.late >= 5
+      ? `<span class="late">Running <strong>${S.late} min</strong> behind — times are approximate</span>`
+      : 'Running to time';
+    stage.innerHTML = boardHtml()
+      + (b.more > 0 ? `<div style="text-align:center;color:var(--dim);font-size:1.6vh;margin-top:.6vh">
+           +${b.more} more slot${b.more === 1 ? '' : 's'} later — scan for the full schedule</div>` : '');
+
+  } else if (p.kind === 'now'){
+    const live = liveByCourt();
+    $('pTitle').textContent = 'On court now';
+    $('pSub').textContent = `${live.length} court${live.length === 1 ? '' : 's'} in play`;
+    stage.innerHTML = `<div class="courts">` + live.map(([court, m]) => {
+      const w = gamesWon(m), best = m.best_of > 1;
+      const sc = scoreLine(m);
+      return `<div class="court">
+        <div class="num">Court ${esc(court)}</div>
+        <div class="ev">${esc(eventName(m.event_id))} · ${esc(matchStage(m))}${
+          m.scheduled_at ? ' · ' + esc(fmtTime(m.scheduled_at)) : ''}</div>
+        <div class="side"><span class="nm">${esc(entryName(m.home_entry_id))}</span>
+          <span class="sc">${best ? w.h : (gamesOf(m)[0]?.home_score ?? '')}</span></div>
+        <div class="vs">V</div>
+        <div class="side"><span class="nm">${esc(entryName(m.away_entry_id))}</span>
+          <span class="sc">${best ? w.a : (gamesOf(m)[0]?.away_score ?? '')}</span></div>
+        ${sc && best ? `<div class="ev" style="margin-top:.8vh">${esc(sc)}</div>` : ''}
+      </div>`;
+    }).join('') + `</div>`;
+
+  } else if (p.kind === 'next'){
+    const rows = upNext();
+    $('pTitle').textContent = 'Up next';
+    $('pSub').innerHTML = S.late >= 5
+      ? `<span class="late">Running <strong>${S.late} min</strong> behind — be at your court early anyway</span>`
+      : 'Be at your court five minutes before';
+    stage.innerHTML = `<div class="rows">` + rows.map(m => `
+      <div class="row">
+        <span class="when">${m.scheduled_at ? esc(fmtTime(m.scheduled_at)) : '—'}${
+          estimatedTime(m.scheduled_at) ? `<small style="display:block;font-family:'Barlow';font-size:1.3vh;color:var(--dim);font-weight:400">≈ ${esc(estimatedTime(m.scheduled_at))}</small>` : ''}</span>
+        <span class="crt">${m.court ? 'Court ' + esc(m.court) : 'TBC'}</span>
+        <span class="who">${esc(entryName(m.home_entry_id))} v ${esc(entryName(m.away_entry_id))}
+          <small>${esc(eventName(m.event_id))} · ${esc(matchStage(m))}</small></span>
+        <span class="res"></span>
+      </div>`).join('') + `</div>`;
+
+  } else if (p.kind === 'results'){
+    const rows = latestResults();
+    $('pTitle').textContent = 'Latest results';
+    $('pSub').textContent = 'Scan the code for every draw';
+    stage.innerHTML = `<div class="rows">` + rows.map(m => {
+      const w = gamesWon(m);
+      const homeWon = m.winner_entry_id === m.home_entry_id;
+      return `<div class="row">
+        <span class="when">${m.scheduled_at ? esc(fmtTime(m.scheduled_at)) : '—'}</span>
+        <span class="crt">${m.court ? 'Court ' + esc(m.court) : '—'}</span>
+        <span class="who">
+          <span style="color:${homeWon ? 'var(--gold-soft)' : 'inherit'};font-weight:${homeWon ? 700 : 500}">${esc(entryName(m.home_entry_id))}</span>
+          v
+          <span style="color:${!homeWon ? 'var(--gold-soft)' : 'inherit'};font-weight:${!homeWon ? 700 : 500}">${esc(entryName(m.away_entry_id))}</span>
+          <small>${esc(eventName(m.event_id))} · ${esc(matchStage(m))}</small></span>
+        <span class="res">${m.best_of > 1 ? `${w.h}–${w.a}` : esc(scoreLine(m) || '')}</span>
+      </div>`;
+    }).join('') + `</div>`;
+
+  } else if (p.kind === 'bracket'){
+    const br = S.matches.filter(m => m.event_id === p.ev.id && m.stage === 'bracket'
+      && m.bracket_kind === 'main');
+    const rounds = [...new Set(br.map(m => m.round))].sort((a, b) => a - b);
+    const maxR = rounds[rounds.length - 1];
+    $('pTitle').textContent = p.ev.name;
+    $('pSub').textContent = 'Knockout';
+    stage.innerHTML = `<div class="bracket">` + rounds.map(r => {
+      const ms = br.filter(m => m.round === r).sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
+      return `<div class="brd"><h3>${esc(roundLabel(r, maxR))}</h3>` + ms.map(m => {
+        const w = gamesWon(m);
+        const line = (id, s, isW) => `<div class="l${isW ? ' w' : ''}">
+          <span class="p">${id ? esc(entryName(id)) : '<span class="tbc">TBC</span>'}</span>
+          <span class="s">${gamesOf(m).length ? s : ''}</span></div>`;
+        return `<div class="bm${r === maxR ? ' final' : ''}">
+          ${line(m.home_entry_id, m.best_of > 1 ? w.h : (gamesOf(m)[0]?.home_score ?? ''), m.winner_entry_id === m.home_entry_id)}
+          ${line(m.away_entry_id, m.best_of > 1 ? w.a : (gamesOf(m)[0]?.away_score ?? ''), m.winner_entry_id === m.away_entry_id)}
+        </div>`;
+      }).join('') + `</div>`;
+    }).join('') + `</div>`;
+
+  } else if (p.kind === 'pool'){
+    const rows = S.standings.filter(s => s.pool_id === p.pool.id)
+      .sort((a, b) => a.pool_rank - b.pool_rank);
+    $('pTitle').textContent = `${eventName(p.pool.event_id)}`;
+    $('pSub').textContent = p.pool.name;
+    stage.innerHTML = `<table class="stand">
+      <thead><tr><th style="width:6vw"></th><th>Team</th><th class="n">P</th><th class="n">W</th>
+        <th class="n">Games</th><th class="n">+/−</th></tr></thead>
+      <tbody>` + rows.map(r => `<tr>
+        <td><span class="pill-rank">${r.played ? r.pool_rank : '–'}</span></td>
+        <td>${esc(entryName(r.entry_id))}</td>
+        <td class="n">${r.played}</td><td class="n">${r.won}</td>
+        <td class="n">${r.games_won}</td>
+        <td class="n">${r.points_diff > 0 ? '+' : ''}${r.points_diff}</td>
+      </tr>`).join('') + `</tbody></table>`;
+
+  } else if (p.kind === 'champs'){
+    $('pTitle').textContent = 'Champions';
+    $('pSub').textContent = S.tournament.name;
+    stage.innerHTML = `<div class="champs">` + p.ch.map(c => `
+      <div class="champ"><div class="ev">${esc(c.ev)}</div>
+        <div class="nm">${esc(c.who)}</div></div>`).join('') + `</div>`;
+
+  } else {
+    $('pTitle').textContent = 'Tournament Manager';
+    $('pSub').textContent = '';
+    stage.innerHTML = `<div class="idle"><div>
+      <div class="big">${esc(S.tournament.name)}</div>
+      <div class="small">Draws and live scores appear here once play begins.</div>
+    </div></div>`;
+  }
+}
+
+/* ------------------------------------------------------------------ loop */
+
+function next(step = 1){
+  if (!S.panels.length) return;
+  S.idx = (S.idx + step + S.panels.length) % S.panels.length;
+  S.tick = 0;
+  paint();
+}
+
+function startLoop(){
+  setInterval(() => {
+    $('clock').textContent = new Date().toLocaleTimeString('en-GB',
+      { hour:'2-digit', minute:'2-digit' });
+    if (S.paused) return;
+    S.tick += 250;
+    $('bar').style.width = Math.min(100, (S.tick / ROTATE_MS) * 100) + '%';
+    if (S.tick >= ROTATE_MS){ next(1); $('bar').style.width = '0'; }
+  }, 250);
+  setInterval(load, REFRESH_MS);
+}
+
+// A screen on a wall still gets a keyboard now and then — enough control to run a demo
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' '){ e.preventDefault(); S.paused = !S.paused; $('pausedTag').hidden = !S.paused; }
+  if (e.key === 'ArrowRight') next(1);
+  if (e.key === 'ArrowLeft') next(-1);
+  if (e.key.toLowerCase() === 'f'){
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen?.();
+  }
+});
+
+(async function boot(){
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const q = new URLSearchParams(location.search);
+  S.courtFilter = q.get('court');
+  S.view = q.get('view');            // e.g. ?view=board — one screen, one job
+  await load();
+  startLoop();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Netlify rewrites (no effect on the local http-server, which serves files directly).
+#
+# Lets an organiser advertise  pbtable.com/enter/severn-vale-winter-open
+# instead of                    pbtable.com/enter.html?t=severn-vale-winter-open
+# Status 200 = rewrite, not redirect, so the pretty address stays in the address bar.
+/enter/:slug   /enter.html?t=:slug   200
+
+# Same courtesy for the public results page.
+/t/:slug       /index.html?t=:slug   200

@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enter online — Tournament Manager</title>
+<link rel="icon" type="image/png" href="pbtable-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wine:#46101c; --crimson:#7d1527; --crimson-soft:#a02a3d;
+    --gold:#d9a441; --gold-deep:#b07f22; --gold-soft:#f2ddab;
+    --cream:#fbf6ee; --mid:#f2e9db; --ink:#2b171b; --muted:#806a63;
+    --hairline:rgba(43,23,27,.14); --card:#fff; --ok:#2c7a4b; --err:#b3261e; --warn:#a86a00;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Barlow',sans-serif; color:var(--ink); background:var(--cream);
+    font-size:16px; line-height:1.5; }
+  h1,h2,h3,h4,.condensed{ font-family:'Barlow Condensed',sans-serif; }
+
+  header.bar{ background:linear-gradient(160deg,var(--crimson),var(--wine)); color:#fff;
+    display:flex; align-items:center; gap:12px; padding:12px 20px; flex-wrap:wrap; }
+  header.bar img{ height:38px; }
+  header.bar .product{ font-family:'Barlow Condensed'; font-weight:600; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--gold-soft); }
+  header.bar .grow{ flex:1; }
+  header.bar a{ color:#fff; text-decoration:none; font-weight:600; font-size:.92rem; }
+  header.bar .who{ font-size:.88rem; color:var(--gold-soft); }
+  header.bar button{ font:inherit; font-weight:600; font-size:.85rem; color:#fff;
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3);
+    border-radius:999px; padding:5px 13px; cursor:pointer; }
+
+  .hero{ background:linear-gradient(160deg,var(--crimson) 0%, var(--wine) 72%); color:#fff;
+    padding:26px 20px 30px; position:relative; overflow:hidden; }
+  .hero .wrap{ max-width:940px; margin:0 auto; position:relative; z-index:1; }
+  .hero-court{ position:absolute; right:-60px; bottom:-40px; width:min(480px,58vw);
+    color:var(--gold); opacity:.13; pointer-events:none; transform:rotate(-8deg); }
+  .hero-ball{ position:absolute; right:8%; top:10px; width:88px; color:var(--gold);
+    opacity:.10; pointer-events:none; transform:rotate(14deg); }
+  .hero .kicker{ color:var(--gold); font-family:'Barlow Condensed'; font-weight:600;
+    text-transform:uppercase; letter-spacing:.14em; font-size:.9rem; }
+  .hero .kicker svg{ width:17px; height:17px; fill:currentColor; vertical-align:-4px; margin-right:6px; }
+  .hero h1{ font-size:clamp(1.9rem,4.5vw,2.8rem); font-weight:700; line-height:1.08; margin:4px 0 8px; }
+  .hero .meta{ color:rgba(255,255,255,.85); display:flex; gap:16px; flex-wrap:wrap; }
+  .hero .meta strong{ color:var(--gold-soft); }
+  /* Deliberately NOT a picker: once a player has followed the organiser's link the
+     tournament is settled. This is only an escape hatch back to the list. */
+  .switch{ margin-top:12px; font-size:.86rem; color:rgba(255,255,255,.72); }
+  .switch a{ color:var(--gold-soft); }
+
+  /* choose-a-tournament landing, used only when no link was followed */
+  .pick-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:14px; grid-auto-rows:1fr; align-items:stretch; }
+  .pick{ display:flex; flex-direction:column; text-decoration:none; color:inherit;
+    background:var(--card); border:1px solid var(--hairline); border-radius:12px;
+    padding:18px; transition:border-color .15s, transform .15s; }
+  .pick:hover{ border-color:var(--gold); transform:translateY(-2px); }
+  .pick h3{ font-size:1.35rem; margin-bottom:3px; }
+  .pick .when{ color:var(--muted); font-size:.9rem; }
+  .pick .grow{ flex:1 1 auto; min-height:10px; }
+  .pick .go{ border-top:1px solid var(--hairline); padding-top:10px; margin-top:10px;
+    font-weight:600; color:var(--crimson); display:flex; align-items:center; gap:6px; }
+  .pick .go .arrow{ margin-left:auto; color:var(--gold-deep); }
+
+  main{ max-width:940px; margin:0 auto; padding:24px 20px 70px; }
+  h2{ font-size:1.6rem; color:var(--crimson); margin:26px 0 2px; }
+  h2:first-child{ margin-top:0; }
+  h3{ font-size:1.2rem; color:var(--crimson); margin-bottom:6px; }
+  .sub{ color:var(--muted); margin-bottom:14px; }
+
+  .card{ background:var(--card); border:1px solid var(--hairline); border-radius:12px;
+    padding:16px 18px; box-shadow:0 1px 2px rgba(43,23,27,.05); margin-bottom:14px; }
+  .card.gold{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(217,164,65,.25); }
+
+  label.f{ display:block; margin-bottom:12px; font-weight:600; }
+  label.f .hint{ display:block; font-weight:400; font-size:.8rem; color:var(--muted); margin-bottom:3px; }
+  input[type=text],input[type=email],input[type=date],input[type=number],input[type=password],
+  input[type=tel],select{
+    font:inherit; width:100%; max-width:400px; padding:8px 11px; border-radius:8px;
+    border:1px solid var(--hairline); background:#fff; color:var(--ink); }
+  input:focus,select:focus{ outline:2px solid var(--gold); outline-offset:0; border-color:var(--gold); }
+  /* Equal columns give every box the same width. The harder half is vertical: a one-line
+     hint ("As you want it to appear in the draw.") and a two-line one ("Decides which
+     men's / women's / mixed events you can enter.") would otherwise start their inputs at
+     different heights. Each cell is a flex column stretched to the row height with the
+     input pushed to the bottom, so the boxes line up whatever the hint does. */
+  .frow{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:4px 18px; align-items:stretch; }
+  .frow > label.f{ display:flex; flex-direction:column; margin-bottom:14px; }
+  .frow > label.f .hint{ margin-bottom:6px; }
+  /* select and input[type=date] are intrinsically a couple of px taller/shorter than a
+     text input, which is enough to knock a bottom-aligned row out. Pin one height. */
+  .frow > label.f input, .frow > label.f select{
+    margin-top:auto; max-width:none; height:42px; }
+
+  button.btn{ font:inherit; font-weight:600; cursor:pointer; border-radius:999px;
+    padding:9px 20px; border:1px solid var(--crimson); background:var(--crimson); color:#fff; }
+  button.btn:hover{ background:var(--crimson-soft); }
+  button.btn.ghost{ background:transparent; color:var(--crimson); }
+  button.btn.gold{ background:var(--gold); border-color:var(--gold); color:var(--wine); }
+  button.btn.small{ padding:5px 14px; font-size:.87rem; }
+  button.btn.danger{ background:transparent; border-color:var(--err); color:var(--err); }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+  .btnrow{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+  .pill{ display:inline-block; font-size:.76rem; font-weight:600; padding:2px 10px;
+    border-radius:999px; border:1px solid var(--hairline); color:var(--muted);
+    background:var(--cream); white-space:nowrap; }
+  .pill.gold{ background:var(--gold); border-color:var(--gold); color:var(--wine); }
+  .pill.ok{ color:var(--ok); border-color:var(--ok); background:#eef7f1; }
+  .pill.warn{ color:var(--warn); border-color:var(--warn); background:#fdf4e3; }
+  .pill.err{ color:var(--err); border-color:var(--err); background:#fdeeee; }
+
+  .msg{ border-radius:10px; padding:11px 14px; margin-bottom:14px; font-size:.93rem; }
+  .msg.err{ background:#fdeeee; border:1px solid var(--err); color:var(--err); }
+  .msg.ok{ background:#eef7f1; border:1px solid var(--ok); color:var(--ok); }
+  .msg.warn{ background:#fdf4e3; border:1px solid var(--warn); color:var(--warn); }
+  .msg.info{ background:#fff8e8; border:1px solid var(--gold); }
+
+  /* ---- the entry builder: tick several events, name a partner for each, confirm once.
+     A row, not a card grid, because the player is scanning a list and comparing, and
+     because each row has to be able to open up a partner field underneath itself. */
+  .ev-row{ display:grid; grid-template-columns:auto 1fr auto; gap:6px 14px;
+    align-items:center; background:var(--card); border:1px solid var(--hairline);
+    border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+  .ev-row.picked{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(217,164,65,.28); }
+  .ev-row.off{ background:#faf7f2; }
+  .ev-row .tick{ width:22px; height:22px; accent-color:var(--crimson); cursor:pointer; margin:0; }
+  .ev-row .who{ cursor:pointer; }
+  .ev-row .who strong{ font-size:1.12rem; display:block; line-height:1.2; }
+  .ev-row .meta{ font-size:.84rem; color:var(--muted); margin-top:2px; }
+  .ev-row .blocked{ color:var(--err); font-size:.85rem; margin-top:3px; }
+  .ev-row .money{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.35rem;
+    color:var(--gold-deep); text-align:right; white-space:nowrap; line-height:1.1; }
+  .ev-row .money small{ font-family:'Barlow'; font-weight:400; font-size:.7rem;
+    color:var(--muted); display:block; }
+  .ev-partner{ grid-column:1 / -1; border-top:1px dashed var(--hairline);
+    margin-top:8px; padding-top:11px; }
+  .ev-partner .found{ font-size:.84rem; margin-top:5px; min-height:1.1em; }
+  .ev-partner .found.ok{ color:var(--ok); }
+  .ev-partner .found.new{ color:var(--muted); }
+
+  /* running total — the thing that makes a multi-event entry feel like one decision */
+  .basket{ position:sticky; bottom:12px; display:flex; align-items:center; gap:14px;
+    flex-wrap:wrap; background:var(--wine); color:#fff; border-radius:12px;
+    padding:13px 18px; box-shadow:0 6px 20px rgba(43,23,27,.28); margin-top:4px; }
+  .basket .chosen{ flex:1 1 220px; }
+  .basket .chosen strong{ font-size:1.05rem; }
+  .basket .chosen .list{ font-size:.83rem; color:var(--gold-soft); margin-top:2px; }
+  .basket .total{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.7rem;
+    color:var(--gold); line-height:1; text-align:right; }
+  .basket .total small{ font-family:'Barlow'; font-weight:400; font-size:.7rem;
+    color:rgba(255,255,255,.7); display:block; }
+  .basket button{ font:inherit; font-weight:700; cursor:pointer; border-radius:999px;
+    padding:11px 24px; border:none; background:var(--gold); color:var(--wine); }
+  .basket button:disabled{ opacity:.4; cursor:not-allowed; }
+
+  /* ---- your order of play */
+  .sch-row{ display:grid; grid-template-columns:8.5rem 7.5rem 1fr auto; gap:10px 14px;
+    align-items:center; padding:12px 0; border-bottom:1px solid var(--hairline); }
+  .sch-row:last-child{ border-bottom:none; }
+  .sch-row.done{ opacity:.68; }
+  .sch-when strong{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.45rem;
+    color:var(--crimson); display:block; line-height:1.05; }
+  .sch-when small{ display:block; font-size:.74rem; color:var(--muted); }
+  .when-tbc{ font-size:.9rem; color:var(--muted); font-style:italic; }
+  .sch-court{ font-family:'Barlow Condensed'; font-weight:600; font-size:1rem;
+    background:var(--mid); border-radius:8px; padding:5px 9px; text-align:center;
+    white-space:nowrap; }
+  .sch-who strong{ display:block; font-size:1.05rem; }
+  .sch-who small{ color:var(--muted); font-size:.83rem; }
+  .sch-head{ font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
+    letter-spacing:.08em; font-size:.85rem; color:var(--muted); border-top:2px solid var(--hairline);
+    margin-top:12px; padding-top:10px; }
+  @media (max-width:620px){
+    .sch-row{ grid-template-columns:auto 1fr; }
+    .sch-res{ grid-column:1 / -1; }
+  }
+
+  /* ---- fees & payments */
+  .fee-row{ display:grid; grid-template-columns:1fr auto auto; gap:8px 14px;
+    align-items:center; padding:11px 0; border-bottom:1px solid var(--hairline); }
+  .fee-row:last-of-type{ border-bottom:none; }
+  .fee-row .what strong{ display:block; }
+  .fee-row .what .sub2{ font-size:.82rem; color:var(--muted); }
+  .fee-row .amt{ font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap; }
+  .fee-row .amt.gone{ text-decoration:line-through; color:var(--muted); font-weight:400; }
+  .owed{ display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    background:var(--wine); color:#fff; border-radius:12px; padding:15px 18px; margin-top:14px; }
+  .owed .big{ font-family:'Barlow Condensed'; font-weight:700; font-size:2rem;
+    color:var(--gold); line-height:1; }
+  .owed .big small{ font-family:'Barlow'; font-weight:400; font-size:.72rem;
+    color:rgba(255,255,255,.72); display:block; }
+  .owed .grow{ flex:1 1 auto; }
+  .owed button{ font:inherit; font-weight:700; cursor:pointer; border-radius:999px;
+    padding:11px 24px; border:none; background:var(--gold); color:var(--wine); }
+  .owed button:disabled{ opacity:.45; cursor:not-allowed; }
+  .paybox{ background:var(--mid); border-radius:10px; padding:12px 14px; margin-top:12px;
+    font-size:.9rem; }
+  .paybox strong{ display:block; margin-bottom:3px; }
+
+  details.tuck{ border:1px solid var(--hairline); border-radius:12px; background:var(--card);
+    padding:0 16px; margin-bottom:14px; }
+  details.tuck > summary{ cursor:pointer; padding:14px 0; font-weight:600; color:var(--crimson);
+    font-family:'Barlow Condensed'; font-size:1.2rem; }
+  details.tuck[open] > summary{ border-bottom:1px solid var(--hairline); margin-bottom:14px; }
+  details.tuck .card{ border:none; box-shadow:none; padding:0; margin:0 0 14px; }
+  .ev-card{ display:flex; flex-direction:column; margin-bottom:0; }
+  .ev-head{ display:flex; gap:11px; align-items:flex-start; }
+  .ev-mark{ flex:0 0 auto; width:40px; height:40px; border-radius:11px; background:var(--mid);
+    color:var(--crimson); display:grid; place-items:center; }
+  .ev-mark svg{ width:23px; height:23px; fill:currentColor; }
+  .ev-card h3{ margin-bottom:5px; line-height:1.15; }
+  .ev-card .pills{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .ev-card .rules{ font-size:.85rem; color:var(--muted); }
+  .ev-card .grow{ flex:1 1 auto; min-height:8px; }
+  .ev-foot{ display:flex; align-items:center; gap:10px; border-top:1px solid var(--hairline);
+    margin-top:11px; padding-top:10px; }
+  .fee{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.5rem;
+    color:var(--gold-deep); line-height:1; }
+  .fee small{ font-family:'Barlow'; font-weight:400; font-size:.72rem; color:var(--muted);
+    display:block; letter-spacing:.02em; }
+  .ev-foot .push{ flex:1 1 auto; }
+  .blocked{ color:var(--err); font-size:.87rem; margin-top:7px; }
+
+  .entry{ display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; }
+  .entry .body{ flex:1 1 320px; }
+  .entry .lineup{ font-weight:600; font-size:1.05rem; }
+  .entry .where{ color:var(--muted); font-size:.88rem; }
+  .steps{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 4px; }
+  .step{ font-size:.78rem; padding:2px 9px; border-radius:999px; border:1px solid var(--hairline);
+    color:var(--muted); background:var(--cream); }
+  .step.done{ background:#eef7f1; border-color:var(--ok); color:var(--ok); }
+  .step.now{ background:var(--gold); border-color:var(--gold); color:var(--wine); font-weight:600; }
+
+  .empty{ background:var(--card); border:1px dashed var(--hairline); border-radius:12px;
+    padding:24px; text-align:center; color:var(--muted); }
+  .empty svg{ width:32px; height:32px; fill:var(--gold); opacity:.55; display:block;
+    margin:0 auto 8px; }
+  .empty .word{ font-family:'Barlow Condensed'; font-weight:600; font-size:1.15rem;
+    color:var(--gold-deep); text-transform:uppercase; letter-spacing:.1em; display:block; }
+  h2 .h2mark{ display:inline-grid; place-items:center; width:30px; height:30px;
+    border-radius:8px; background:var(--crimson); color:var(--gold);
+    vertical-align:-6px; margin-right:9px; }
+  h2 .h2mark svg{ width:18px; height:18px; fill:currentColor; }
+  .muted{ color:var(--muted); } .small{ font-size:.86rem; }
+  /* one-time code entry — big, spaced, numeric */
+  .otp-code{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:1.6rem;
+    letter-spacing:.4em; text-align:center; padding:10px 12px; max-width:220px; }
+  .authswap{ margin-top:12px; font-size:.86rem; color:var(--muted); }
+  .authswap button{ background:none; border:none; padding:0; font:inherit;
+    color:var(--crimson); font-weight:600; cursor:pointer; text-decoration:underline; }
+  .sentto{ background:var(--mid); border-radius:9px; padding:10px 12px; font-size:.9rem;
+    margin-bottom:12px; }
+  .tabs2{ display:flex; gap:6px; margin-bottom:14px; }
+  .tabs2 button{ font:inherit; font-weight:600; cursor:pointer; padding:6px 15px;
+    border-radius:999px; border:1px solid var(--hairline); background:#fff; }
+  .tabs2 button.active{ background:var(--crimson); border-color:var(--crimson); color:#fff; }
+  footer{ background:var(--wine); color:rgba(255,255,255,.75); padding:22px; text-align:center;
+    font-size:.88rem; }
+  footer .gold{ color:var(--gold-soft); font-weight:600; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- Broad angular face (~11" x 8"), pinched throat, chunky grip, flared butt cap —
+         angular is what makes it a pickleball paddle and not a table-tennis bat. -->
+    <symbol id="i-paddle" viewBox="0 0 24 24">
+      <rect x="6.7" y="1.1" width="10.6" height="13.8" rx="3.1"/>
+      <path d="M8.8 14.2c.3 1.6 1 2.4 1.3 3.1h3.8c.3-.7 1-1.5 1.3-3.1z"/>
+      <rect x="10.1" y="16.6" width="3.8" height="5.4" rx="1"/>
+      <rect x="9.4" y="21.2" width="5.2" height="1.8" rx=".9"/>
+    </symbol>
+    <symbol id="i-ball" viewBox="0 0 24 24">
+      <path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z
+        M12 6.1a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M7.6 9.2a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M16.4 9.2a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M12 11.9a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M9.2 15.3a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M14.8 15.3a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z"/>
+    </symbol>
+    <symbol id="i-doubles" viewBox="0 0 24 24">
+      <g opacity=".45" transform="rotate(-17 8 12)">
+        <rect x="3.5" y="2.6" width="7.6" height="9.9" rx="2.3"/>
+        <path d="M5 11.9c.2 1.1.7 1.7.9 2.2h2.7c.2-.5.7-1.1.9-2.2z"/>
+        <rect x="6.1" y="13.6" width="2.7" height="4.1" rx=".8"/>
+        <rect x="5.6" y="17.1" width="3.7" height="1.4" rx=".7"/>
+      </g>
+      <g transform="rotate(17 16 13)">
+        <rect x="12.9" y="4.1" width="7.6" height="9.9" rx="2.3"/>
+        <path d="M14.4 13.4c.2 1.1.7 1.7.9 2.2h2.7c.2-.5.7-1.1.9-2.2z"/>
+        <rect x="15.5" y="15.1" width="2.7" height="4.1" rx=".8"/>
+        <rect x="15" y="18.6" width="3.7" height="1.4" rx=".7"/>
+      </g>
+    </symbol>
+    <symbol id="i-court" viewBox="0 0 200 100">
+      <g fill="none" stroke="currentColor" stroke-width="2.4">
+        <rect x="2" y="2" width="196" height="96" rx="1"/>
+        <line x1="100" y1="0" x2="100" y2="100" stroke-width="3.4"/>
+        <line x1="68" y1="2" x2="68" y2="98"/>
+        <line x1="132" y1="2" x2="132" y2="98"/>
+        <line x1="2" y1="50" x2="68" y2="50"/>
+        <line x1="132" y1="50" x2="198" y2="50"/>
+      </g>
+    </symbol>
+    <symbol id="i-user" viewBox="0 0 24 24">
+      <path d="M12 12.4a4.7 4.7 0 1 0 0-9.4 4.7 4.7 0 0 0 0 9.4zm0 1.9c-4 0-8 2-8 4.5V21h16v-2.2c0-2.5-4-4.5-8-4.5z"/>
+    </symbol>
+    <symbol id="i-envelope" viewBox="0 0 24 24">
+      <path d="M2.5 5.5h19c.6 0 1 .4 1 1v11c0 .6-.4 1-1 1h-19c-.6 0-1-.4-1-1v-11c0-.6.4-1 1-1zm1.9 2L12 12.6l7.6-5.1H4.4z"/>
+    </symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24">
+      <path d="M7 3h10v2.2h3.2v2.4c0 2.6-1.8 4.6-4.2 5.1a4.9 4.9 0 0 1-2.6 1.9v2.6h3.1V19H7.5v-1.8h3.1v-2.6a4.9 4.9 0 0 1-2.6-1.9C5.6 12.2 3.8 10.2 3.8 7.6V5.2H7V3zm-1.3 4.4v.2c0 1.4.8 2.5 2 3V7.4H5.7zm12.6 0h-2v3.2c1.2-.5 2-1.6 2-3v-.2zM6.6 20.4h10.8V22H6.6z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="bar">
+  <img src="pbtable-logo.png" alt="PBTable logo">
+  <span class="product">Tournament Manager</span>
+  <span class="grow"></span>
+  <a href="index.html">Draws &amp; results →</a>
+  <span class="who" id="who"></span>
+  <button id="signOutBtn" hidden>Sign out</button>
+</header>
+
+<div class="hero">
+  <svg class="hero-court" viewBox="0 0 200 100" aria-hidden="true"><use href="#i-court"/></svg>
+  <svg class="hero-ball" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#i-ball"/></svg>
+  <div class="wrap">
+    <div class="kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ball"/></svg>Enter online</div>
+    <h1 id="tName">Loading…</h1>
+    <div class="meta" id="tMeta"></div>
+    <div id="tSwitch" class="switch" hidden></div>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<footer><span class="gold">PBTable · Tournament Manager</span> — enter, pick your partner, play.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+'use strict';
+
+const SUPABASE_URL = 'https://fvyjvoimezsfrndydzkt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_k80t7cu9oPN9Q5r8OO3Y-w_Wk3c_mOV';
+// How fees are collected is a per-tournament organiser setting
+// (tournaments.payment_method), not a constant in this file — so switching a club to
+// card payment is a toggle in the admin, not a code change.
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money = (pence, cur) => (pence === 0 || pence == null) ? 'Free'
+  : new Intl.NumberFormat('en-GB', { style:'currency', currency:(cur||'gbp').toUpperCase() })
+      .format(pence / 100);
+
+let sb = null;
+const S = {
+  user: null, profile: null,
+  tournaments: [], tournament: null, isOpen: () => false,
+  options: [], entries: [], invites: [], settings: null, fees: [], schedule: [], late: 0,
+  authTab: 'in',
+  authMode: 'otp',        // 'otp' (default, passwordless) | 'password'
+  otpEmail: '', otpSent: false, otpBusy: false, otpNote: null,
+  arrivedByLink: false,   // followed the organiser's link — never offer a picker
+  inviteToken: null, inviteCtx: null,
+  basket: new Map(),      // event_id -> { partner } — chosen but not yet confirmed
+};
+
+/* ------------------------------------------------------------------ boot
+
+   Arrival is the whole game here. A player has been sent a link by the organiser and
+   has already decided what they are entering, so a link LOCKS the page to that
+   tournament. Only somebody who arrived with no link at all is asked to choose, and
+   even then only if more than one tournament is actually taking entries.            */
+
+async function boot(){
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const params = new URLSearchParams(location.search);
+  const wanted = (params.get('t') || '').trim();
+  S.inviteToken = params.get('invite');
+
+  const { data: { session } } = await sb.auth.getSession();
+  S.user = session?.user ?? null;
+
+  const [tRes, sRes] = await Promise.all([
+    sb.from('tournaments').select('*').order('start_date', { ascending: true }),
+    sb.from('tournament_settings').select('tournament_id, self_service_entries'),
+  ]);
+  if (tRes.error){ $('main').innerHTML = msg('err', tRes.error.message); return; }
+  S.tournaments = tRes.data || [];
+
+  const openSet = new Set((sRes.data || [])
+    .filter(s => s.self_service_entries).map(s => s.tournament_id));
+  const nowIso = new Date().toISOString();
+  S.isOpen = (t) => openSet.has(t.id)
+    && (!t.registration_opens_at  || t.registration_opens_at  <= nowIso)
+    && (!t.registration_closes_at || t.registration_closes_at >= nowIso);
+
+  if (!S.tournaments.length){
+    $('tName').textContent = 'Pending';
+    $('main').innerHTML = empty('Pending', 'No tournament is open for entry yet.');
+    return;
+  }
+
+  // 1. An invitation link carries its own tournament — resolve it even when signed out,
+  //    so the partner lands in the right place rather than on a chooser.
+  if (S.inviteToken){
+    const { data: ctx } = await sb.rpc('invitation_context', { p_token: S.inviteToken });
+    S.inviteCtx = ctx?.[0] || null;
+    if (S.inviteCtx){
+      S.arrivedByLink = true;
+      return selectTournament(S.inviteCtx.tournament_id);
+    }
+  }
+
+  // 2. The organiser's link — slug preferred, id still accepted for older links.
+  if (wanted){
+    const t = S.tournaments.find(x => x.slug === wanted || x.id === wanted);
+    if (t){ S.arrivedByLink = true; return selectTournament(t.id); }
+    return renderChooser(`We could not find a tournament at that link (“${wanted}”). `
+      + `It may have been mistyped, or the event may have finished.`);
+  }
+
+  // 3. No link. One tournament taking entries is not a choice — go straight in.
+  const open = S.tournaments.filter(S.isOpen);
+  if (open.length === 1) return selectTournament(open[0].id);
+  return renderChooser(null);
+}
+
+async function afterSelect(){
+  await handlePaymentReturn();   // coming back from Stripe
+}
+
+/* The chooser is a landing screen, not a control in the hero: arriving without a link
+   is the rare case, and when it happens the player deserves to see dates and venues
+   rather than guess from a truncated <option>. */
+function renderChooser(problem){
+  const open = S.tournaments.filter(S.isOpen);
+  const later = S.tournaments.filter(t => !S.isOpen(t)
+    && new Date(t.start_date) >= new Date(new Date().toDateString()));
+
+  $('tName').textContent = 'Choose your tournament';
+  $('tMeta').innerHTML = '<span>Pick the event you were sent to enter.</span>';
+  $('tSwitch').hidden = true;
+
+  const card = (t) => `<a class="pick" href="?t=${encodeURIComponent(t.slug)}">
+      <h3>${esc(t.name)}</h3>
+      <div class="when">${esc(fmtDate(t.start_date))}${t.venue ? ' · ' + esc(t.venue) : ''}</div>
+      <div class="grow"></div>
+      <div class="go">Enter online <span class="arrow">→</span></div>
+    </a>`;
+
+  $('main').innerHTML =
+    (problem ? msg('warn', problem) : '')
+    + (open.length
+        ? `<h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-doubles"/></svg></span>Open for entry</h2>
+           <div class="pick-grid">${open.map(card).join('')}</div>`
+        : empty('Pending', 'No tournament is taking online entries at the moment.'))
+    + (later.length
+        ? `<h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-trophy"/></svg></span>Coming up</h2>
+           <p class="sub">Entries for these are not open online yet — the organiser will share a link.</p>
+           <div class="pick-grid">${later.map(t => `<div class="pick" style="opacity:.72">
+             <h3>${esc(t.name)}</h3>
+             <div class="when">${esc(fmtDate(t.start_date))}${t.venue ? ' · ' + esc(t.venue) : ''}</div>
+             <div class="grow"></div>
+             <div class="go" style="color:var(--muted)">Entries not open yet</div></div>`).join('')}</div>`
+        : '');
+}
+
+function fmtDate(d){
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-GB',
+    { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+}
+function fmtWhen(ts){
+  return ts ? new Date(ts).toLocaleString('en-GB',
+    { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : null;
+}
+function msg(kind, text){ return `<div class="msg ${kind}">${esc(text)}</div>`; }
+function empty(word, detail){
+  return `<div class="empty"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-paddle"/></svg>`
+    + `<span class="word">${esc(word)}</span>${esc(detail)}</div>`;
+}
+
+async function selectTournament(id){
+  S.tournament = S.tournaments.find(t => t.id === id);
+  const t = S.tournament;
+  // Keep the address bar honest: whatever route got them here, the URL is now the
+  // shareable one, so a bookmark or a forwarded link behaves the same way.
+  const url = new URL(location.href);
+  url.searchParams.set('t', t.slug);
+  history.replaceState({}, '', url);
+
+  $('tName').textContent = t.name;
+  const closes = fmtWhen(t.registration_closes_at);
+  $('tMeta').innerHTML =
+    `<span><strong>${esc(fmtDate(t.start_date))}</strong></span>`
+    + (t.venue ? `<span>${esc(t.venue)}</span>` : '')
+    + (closes ? `<span>Entries close <strong>${esc(closes)}</strong></span>` : '');
+
+  // Only ever an escape hatch, and only when there is somewhere else to go.
+  const others = S.tournaments.filter(x => x.id !== t.id && S.isOpen(x)).length;
+  const sw = $('tSwitch');
+  sw.hidden = others === 0;
+  if (others) sw.innerHTML = `Not the right event? <a href="?">See all tournaments open for entry</a>`;
+
+  await refresh();
+  await afterSelect();
+}
+
+async function refresh(){
+  const { data: { session } } = await sb.auth.getSession();
+  S.user = session?.user ?? null;
+  $('signOutBtn').hidden = !S.user;
+  $('signOutBtn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  $('who').textContent = S.user ? (S.profile?.full_name || S.user.email) : '';
+
+  S.profile = null; S.entries = []; S.invites = [];
+  if (S.user){
+    const [prof, ent, inv] = await Promise.all([
+      sb.from('player_accounts').select('*').eq('user_id', S.user.id).maybeSingle(),
+      sb.from('my_entries').select('*'),
+      sb.rpc('my_invitations'),
+    ]);
+    S.profile = prof.data;
+    S.entries = ent.data || [];
+    S.invites = inv.data || [];
+    $('who').textContent = S.profile?.full_name || S.user.email;
+  }
+  const [optRes, setRes, feeRes, schRes, lateRes] = await Promise.all([
+    sb.rpc('my_event_options', { p_tournament: S.tournament.id }),
+    sb.from('tournament_settings').select('*').eq('tournament_id', S.tournament.id).maybeSingle(),
+    S.user ? sb.rpc('my_fees', { p_tournament: S.tournament.id }) : Promise.resolve({ data: [] }),
+    S.user ? sb.rpc('my_schedule', { p_tournament: S.tournament.id }) : Promise.resolve({ data: [] }),
+    sb.rpc('running_late_minutes', { p_tournament: S.tournament.id }),
+  ]);
+  S.options = optRes.data || [];
+  S.settings = setRes.data;
+  S.fees = feeRes.data || [];
+  S.schedule = schRes.data || [];
+  S.late = Number(lateRes.data) || 0;
+  render();
+}
+
+/* ------------------------------------------------------------------ render */
+
+function render(){
+  const main = $('main');
+  const parts = [];
+
+  if (!S.user){ main.innerHTML = signInHtml(); wireSignIn(); return; }
+  if (!S.profile){ main.innerHTML = profileHtml(true); wireProfile(); return; }
+
+  const inviteToken = new URLSearchParams(location.search).get('invite');
+
+  // Your details comes FIRST. Eligibility for every event is computed from gender,
+  // rating and date of birth, so it is the thing that decides what the rest of the page
+  // can even offer. Collapsed it costs one line; when it is missing something that
+  // blocks events it opens itself and says which.
+  const gapped = S.options.filter(o => o.problem && /your profile/i.test(o.problem));
+  const reasons = [...new Set(gapped.map(o => o.problem))];
+  parts.push(`<details class="tuck" id="detailsBlock" ${gapped.length ? 'open' : ''}>
+      <summary>Your details — ${esc(S.profile.full_name)}${S.profile.dupr_rating
+        ? ' · DUPR ' + Number(S.profile.dupr_rating).toFixed(2) : ''}
+        ${gapped.length
+          ? `<span class="pill warn" style="margin-left:8px">${gapped.length} event${gapped.length === 1 ? '' : 's'} blocked</span>`
+          : '<span class="pill ok" style="margin-left:8px">Complete</span>'}</summary>
+      ${gapped.length
+        ? msg('warn', `Add the missing details below to open these up. ${reasons.join(' ')}`)
+        : '<p class="sub small">Used for seeding and to check you fit each event’s band. Keep it current.</p>'}
+      ${profileHtml(false)}
+    </details>`);
+
+  // Then what they came to do: answer an invitation, see what they already have (only if
+  // they have any), then add more.
+  if (S.invites.length) parts.push(invitesHtml());
+  parts.push(scheduleHtml());     // on the day this is the only thing they want
+  parts.push(entriesHtml());
+  parts.push(paymentsHtml());
+  parts.push(builderHtml());
+
+  main.innerHTML = parts.join('');
+  wireInvites(); wireEntries(); wirePayments(); wireBuilder(); wireProfile();
+
+
+  if (inviteToken){
+    const row = S.invites.find(i => i.token === inviteToken);
+    if (row) document.querySelector(`[data-inv="${inviteToken}"]`)
+      ?.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+
+/* ---------------------------------------------------- sign in / sign up */
+
+function signInHtml(){
+  const c = S.inviteCtx;
+  // Arriving from a partner's invitation: lead with who asked and what for, so signing
+  // in feels like the obvious next step rather than a gate.
+  const invitePanel = (c && c.still_open) ? `
+    <div class="card gold" style="max-width:460px;margin-bottom:16px">
+      <h3>${esc(c.invited_by_name)} has asked you to partner them</h3>
+      <div class="small muted">${esc(c.event_name)} · ${esc(c.tournament_name)} ·
+        ${esc(fmtDate(c.start_date))}${c.venue ? ' · ' + esc(c.venue) : ''}</div>
+      <p class="small" style="margin-top:8px">Sign in with
+        <strong>${esc(c.invited_email)}</strong> to accept — or create an account with that
+        address if you have not used PBTable before.</p>
+    </div>` : (c && !c.still_open) ? msg('warn',
+      'That invitation has already been answered. You can still enter below.') : '';
+
+  const head = `
+    <h2>Enter ${esc(S.tournament?.name || 'this tournament')}</h2>
+    <p class="sub">Your email is your account — it is how partners invite you. One profile
+      carries your details, rating and entries to every tournament run on PBTable.</p>`;
+
+  // ---- passwordless: a typed code, not a magic link. A link opens in whatever browser
+  // the mail app picks, which would throw away a half-finished entry (and the invite
+  // token in the URL). A code is typed into the tab they are already in.
+  if (S.authMode === 'otp'){
+    return invitePanel + head + `
+      <div class="card" style="max-width:460px">
+        <div id="authErr"></div>
+        ${S.otpSent ? `
+          <div class="sentto">We have emailed a 6-digit code to
+            <strong>${esc(S.otpEmail)}</strong>. It is valid for about an hour.</div>
+          <label class="f">Your code
+            <span class="hint">Six digits from the email. Check spam if it has not arrived.</span>
+            <input type="text" id="auCode" class="otp-code" inputmode="numeric"
+              autocomplete="one-time-code" maxlength="6" placeholder="000000"></label>
+          <div class="btnrow">
+            <button class="btn" id="auVerify">Sign in</button>
+            <button class="btn ghost small" id="auResend" ${S.otpBusy ? 'disabled' : ''}>Send another</button>
+            <button class="btn ghost small" id="auBack">Use a different email</button>
+          </div>
+        ` : `
+          <label class="f">Email
+            <span class="hint">Use the address your partner would invite you on. We will send a
+              6-digit code — no password to remember.</span>
+            <input type="email" id="auEmail" autocomplete="email"
+              value="${esc(S.inviteCtx?.still_open ? (S.inviteCtx.invited_email || '') : '')}"></label>
+          <div class="btnrow">
+            <button class="btn" id="auSend" ${S.otpBusy ? 'disabled' : ''}>
+              ${S.otpBusy ? 'Sending…' : 'Email me a code'}</button>
+          </div>
+          <p class="small muted" style="margin-top:10px">New to PBTable? The same code signs you
+            in and creates your account — there is nothing else to fill in first.</p>
+        `}
+        <div class="authswap">
+          <button id="auUsePassword">I would rather use a password</button>
+        </div>
+      </div>`;
+  }
+
+  // ---- password fallback, for anyone who set one
+  return invitePanel + head + `
+    <div class="card" style="max-width:460px">
+      <div class="tabs2">
+        <button data-atab="in"  class="${S.authTab==='in'?'active':''}">I have an account</button>
+        <button data-atab="up"  class="${S.authTab==='up'?'active':''}">Create account</button>
+      </div>
+      <div id="authErr"></div>
+      <label class="f">Email
+        <span class="hint">Your partner will invite you using this address, so use the one they know.</span>
+        <input type="email" id="auEmail" autocomplete="email"></label>
+      <label class="f">Password
+        <span class="hint">${S.authTab==='up' ? 'At least 8 characters.' : 'The password you set when you signed up.'}</span>
+        <input type="password" id="auPass" autocomplete="${S.authTab==='up'?'new-password':'current-password'}"></label>
+      <div class="btnrow">
+        <button class="btn" id="auGo">${S.authTab==='up' ? 'Create account' : 'Sign in'}</button>
+      </div>
+      <div class="authswap">
+        <button id="auUseCode">Email me a code instead — no password needed</button>
+      </div>
+    </div>`;
+}
+
+function wireSignIn(){
+  const swapToPassword = $('auUsePassword');
+  if (swapToPassword) swapToPassword.onclick = () => { S.authMode = 'password'; render(); };
+  const swapToCode = $('auUseCode');
+  if (swapToCode) swapToCode.onclick = () => { S.authMode = 'otp'; S.otpSent = false; render(); };
+
+  // ---- send the code
+  const send = async (email) => {
+    S.otpBusy = true; render();
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true, emailRedirectTo: location.href },
+    });
+    S.otpBusy = false;
+    if (error){
+      S.otpSent = false; render();
+      $('authErr').innerHTML = msg('err', /rate|limit|seconds/i.test(error.message)
+        ? 'That is a lot of codes in a short time — wait a minute and try again.'
+        : error.message);
+      return;
+    }
+    S.otpEmail = email; S.otpSent = true; render();
+    $('auCode')?.focus();
+  };
+
+  const sendBtn = $('auSend');
+  if (sendBtn) sendBtn.onclick = () => {
+    const email = $('auEmail').value.trim();
+    if (!email || !email.includes('@')){
+      $('authErr').innerHTML = msg('err', 'Put in the email address you want the code sent to.');
+      return;
+    }
+    send(email);
+  };
+  $('auEmail')?.addEventListener('keydown', e => { if (e.key === 'Enter' && sendBtn) sendBtn.click(); });
+
+  const resend = $('auResend');
+  if (resend) resend.onclick = () => send(S.otpEmail);
+  const back = $('auBack');
+  if (back) back.onclick = () => { S.otpSent = false; render(); };
+
+  // ---- verify the code
+  const verify = async () => {
+    const token = ($('auCode').value || '').replace(/\D/g, '');
+    if (token.length < 6){
+      $('authErr').innerHTML = msg('err', 'The code is six digits.');
+      return;
+    }
+    const { error } = await sb.auth.verifyOtp({ email: S.otpEmail, token, type: 'email' });
+    if (error){
+      $('authErr').innerHTML = msg('err', /expired|invalid/i.test(error.message)
+        ? 'That code is wrong or has expired — use “Send another”.'
+        : error.message);
+      return;
+    }
+    S.otpSent = false; S.otpEmail = '';
+    await refresh();
+  };
+  const verifyBtn = $('auVerify');
+  if (verifyBtn) verifyBtn.onclick = verify;
+  const codeIn = $('auCode');
+  if (codeIn){
+    codeIn.addEventListener('keydown', e => { if (e.key === 'Enter') verify(); });
+    // typing/pasting the sixth digit signs them in — no reason to make them press a button
+    codeIn.addEventListener('input', () => {
+      codeIn.value = codeIn.value.replace(/\D/g, '').slice(0, 6);
+      if (codeIn.value.length === 6) verify();
+    });
+  }
+
+  document.querySelectorAll('[data-atab]').forEach(b => b.onclick = () => {
+    S.authTab = b.dataset.atab; render();
+  });
+  const go = async () => {
+    const email = $('auEmail').value.trim(), pass = $('auPass').value;
+    if (!email || !pass){ $('authErr').innerHTML = msg('err','Email and password are both needed.'); return; }
+    const { error } = S.authTab === 'up'
+      ? await sb.auth.signUp({ email, password: pass })
+      : await sb.auth.signInWithPassword({ email, password: pass });
+    if (error){ $('authErr').innerHTML = msg('err', error.message); return; }
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session){
+      $('authErr').innerHTML = msg('ok','Account created — check your email to confirm it, then sign in.');
+      return;
+    }
+    await refresh();
+  };
+  const goBtn = $('auGo');
+  if (goBtn){
+    goBtn.onclick = go;
+    $('auPass').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  }
+}
+
+/* ---------------------------------------------------- profile */
+
+function profileHtml(first){
+  const p = S.profile || {};
+  return `
+    ${first ? `<h2>Your player profile</h2>
+      <p class="sub">One profile, every tournament. Ratings and date of birth decide which
+        bands you may enter, so they are worth getting right.</p>` : ''}
+    <div class="card">
+      <div id="profErr"></div>
+      <div class="frow">
+        <label class="f">Full name
+          <span class="hint">As you want it to appear in the draw.</span>
+          <input type="text" id="pfName" value="${esc(p.full_name || '')}"></label>
+        <label class="f">Gender
+          <span class="hint">Decides which men's / women's / mixed events you can enter.</span>
+          <select id="pfGender">
+            ${['female','male','other'].map(g =>
+              `<option value="${g}" ${p.gender===g?'selected':''}>${g}</option>`).join('')}
+          </select></label>
+        <label class="f">Email
+          <span class="hint">How partners find you when they send an invitation.</span>
+          <input type="email" id="pfEmail" value="${esc(p.email || S.user?.email || '')}"></label>
+        <label class="f">Phone
+          <span class="hint">Optional. Given to the organiser so they can reach you about your
+            entry, or on the day if a match time moves.</span>
+          <input type="tel" id="pfPhone" value="${esc(p.phone || '')}"
+            autocomplete="tel" placeholder="07…"></label>
+        <label class="f">Date of birth
+          <span class="hint">Only used for age-banded events. Age counts as of 31 December of the tournament year.</span>
+          <input type="date" id="pfDob" value="${esc(p.date_of_birth || '')}"></label>
+        <label class="f">DUPR rating
+          <span class="hint">Your official DUPR number, if you have one. Used for seeding and band checks.</span>
+          <input type="number" id="pfDupr" step="0.01" min="0" max="8" value="${p.dupr_rating ?? ''}"></label>
+        <label class="f">DUPR ID
+          <span class="hint">Optional — helps the organiser verify your rating.</span>
+          <input type="text" id="pfDuprId" value="${esc(p.dupr_id || '')}"></label>
+        <label class="f">Self-assessed rating
+          <span class="hint">Used only when you have no DUPR rating. Be honest — organisers move sandbaggers up.</span>
+          <input type="number" id="pfSelf" step="0.01" min="0" max="8" value="${p.self_rating ?? ''}"></label>
+      </div>
+      <button class="btn" id="pfSave">${first ? 'Save and continue' : 'Save changes'}</button>
+    </div>`;
+}
+
+function wireProfile(){
+  const btn = $('pfSave'); if (!btn) return;
+  btn.onclick = async () => {
+    const name = $('pfName').value.trim(), email = $('pfEmail').value.trim();
+    if (!name || !email){ $('profErr').innerHTML = msg('err','Name and email are both needed.'); return; }
+    const num = (id) => $(id).value === '' ? null : Number($(id).value);
+    const { error } = await sb.rpc('upsert_my_profile', {
+      p_full_name: name, p_gender: $('pfGender').value, p_email: email,
+      p_date_of_birth: $('pfDob').value || null, p_phone: $('pfPhone').value.trim() || null,
+      p_dupr_id: $('pfDuprId').value.trim() || null,
+      p_dupr_rating: num('pfDupr'), p_self_rating: num('pfSelf'),
+    });
+    if (error){ $('profErr').innerHTML = msg('err', error.message); return; }
+    await refresh();
+  };
+}
+
+/* ---------------------------------------------------- invitations */
+
+function invitesHtml(){
+  return `<h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-envelope"/></svg></span>Partner invitations</h2>
+    <p class="sub">Someone has asked you to play with them. Accepting adds you to their entry.</p>` +
+    S.invites.map(i => `
+      <div class="card gold" data-inv="${esc(i.token)}">
+        <h3>${esc(i.invited_by_name)} wants you as their partner</h3>
+        <div class="small muted">${esc(i.event_name)} · ${esc(i.tournament_name)} ·
+          ${esc(fmtDate(i.start_date))}${i.venue ? ' · ' + esc(i.venue) : ''}</div>
+        <div style="margin:8px 0"><span class="pill gold">${esc(money(i.entry_fee_pence, i.currency))}</span>
+          <span class="muted small">your share of the entry fee</span></div>
+        ${i.problem ? msg('err', i.problem) : ''}
+        <div class="btnrow">
+          <button class="btn" data-acc="${esc(i.token)}" ${i.problem ? 'disabled' : ''}>Accept</button>
+          <button class="btn ghost small" data-dec="${esc(i.token)}">Decline</button>
+        </div>
+      </div>`).join('');
+}
+
+function wireInvites(){
+  document.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => respond(b.dataset.acc, true, b));
+  document.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => respond(b.dataset.dec, false, b));
+}
+async function respond(token, accept, btn){
+  btn.disabled = true;
+  const { error } = await sb.rpc('respond_to_invitation', { p_token: token, p_accept: accept });
+  if (error){
+    btn.disabled = false;
+    btn.closest('.card').insertAdjacentHTML('afterbegin', msg('err', error.message));
+    return;
+  }
+  history.replaceState({}, '', location.pathname + location.search.replace(/[?&]invite=[^&]*/, ''));
+  await refresh();
+}
+
+/* ---------------------------------------------------- my entries */
+
+function entryStage(e){
+  if (e.status === 'withdrawn') return { label:'Withdrawn', cls:'err' };
+  if (e.status === 'waitlisted') return { label:'Waitlisted', cls:'warn' };
+  if (e.status === 'entered')   return { label:'Entered', cls:'ok' };
+  if (e.roster < e.roster_needed) return { label:'Needs a partner', cls:'warn' };
+  return { label:'Payment due', cls:'warn' };
+}
+
+function entriesHtml(){
+  const mine = S.entries.filter(e => e.tournament_id === S.tournament.id);
+  const h = `<h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-trophy"/></svg></span>Your entries</h2>`;
+  // Nothing yet? Say nothing — the builder below is the whole page for a new player.
+  if (!mine.length) return '';
+
+  return h + `
+    <p class="sub">Change partners or withdraw yourself right up to the deadline; after the draw is
+      made the organiser has to do it for you.</p>` +
+    mine.map(e => {
+      const st = entryStage(e);
+      const hasPartner = e.roster >= e.roster_needed;
+      const paid = e.my_payment_status === 'paid' || e.my_payment_status === 'waived';
+      const canEdit = e.status !== 'withdrawn' && !e.draw_made;
+      const deadline = fmtWhen(e.withdrawal_deadline);
+      return `<div class="card" data-entry="${e.entry_id}">
+        <div class="entry">
+          <div class="body">
+            <div class="lineup">${esc(e.line_up || 'You')}
+              ${e.roster < e.roster_needed ? '<span class="muted"> + partner TBC</span>' : ''}</div>
+            <div class="where">${esc(e.event_name)}${e.band_label ? ' · ' + esc(e.band_label) : ''}</div>
+            <div class="steps">
+              <span class="step done">Entered</span>
+              <span class="step ${hasPartner ? 'done' : 'now'}">${e.roster_needed === 1 ? 'Singles' : (hasPartner ? 'Partner confirmed' : 'Partner pending')}</span>
+              <span class="step ${paid ? 'done' : (hasPartner ? 'now' : '')}">${e.entry_fee_pence ? (paid ? 'Paid' : 'Fee ' + money(e.entry_fee_pence, e.currency)) : 'No fee'}</span>
+              <span class="step ${e.status === 'entered' ? 'done' : ''}">In the draw</span>
+            </div>
+            ${e.invite_status === 'pending'
+              ? `<div class="small muted">Invitation sent to <strong>${esc(e.invited_email)}</strong> — waiting for them to accept.</div>` : ''}
+            ${e.invite_status === 'declined'
+              ? `<div class="small" style="color:var(--err)">${esc(e.invited_email)} declined — invite someone else.</div>` : ''}
+            ${e.status === 'waitlisted'
+              ? `<div class="small muted">This event is full. You keep your place in the queue and move up automatically if someone withdraws.</div>` : ''}
+            ${e.draw_made && e.status !== 'withdrawn'
+              ? `<div class="small muted">The draw has been made — contact the organiser for any change.</div>` : ''}
+          </div>
+          <div class="act"><span class="pill ${st.cls}">${st.label}</span></div>
+        </div>
+        ${canEdit ? `<div class="btnrow" style="margin-top:10px">
+          ${e.roster_needed > 1 ? `<button class="btn ghost small" data-partner="${e.entry_id}">${hasPartner ? 'Change partner' : (e.invite_status === 'pending' ? 'Invite someone else' : 'Invite a partner')}</button>` : ''}
+          ${e.invite_status === 'pending' ? `<button class="btn ghost small" data-cancelinv="${e.entry_id}">Cancel invitation</button>` : ''}
+          <span style="flex:1"></span>
+          ${hasPartner && e.roster_needed > 1
+            ? `<button class="btn ghost small" data-leave="${e.entry_id}"
+                 title="You drop out; your partner keeps the entry and can invite someone else">Leave this pairing</button>` : ''}
+          <button class="btn danger small" data-withdraw="${e.entry_id}">Withdraw${hasPartner && e.roster_needed > 1 ? ' both' : ''}</button>
+        </div>
+        ${deadline ? `<div class="small muted" style="margin-top:6px">Free withdrawal until ${esc(deadline)}.</div>` : ''}
+        <div data-slot="${e.entry_id}"></div>` : ''}
+      </div>`;
+    }).join('');
+}
+
+function wireEntries(){
+  document.querySelectorAll('[data-partner]').forEach(b => b.onclick = () => {
+    const id = b.dataset.partner;
+    const slot = document.querySelector(`[data-slot="${id}"]`);
+    slot.innerHTML = `
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--hairline)">
+        <label class="f">Partner's email
+          <span class="hint">They get an invitation to accept. If they change, their fee is released and yours stays put.</span>
+          <input type="email" data-pemail="${id}"></label>
+        <div class="btnrow">
+          <button class="btn small" data-psave="${id}">Send invitation</button>
+          <button class="btn ghost small" data-pcancel="${id}">Cancel</button>
+        </div>
+      </div>`;
+    slot.querySelector('[data-pcancel]').onclick = () => { slot.innerHTML = ''; };
+    slot.querySelector('[data-psave]').onclick = async () => {
+      const email = slot.querySelector('[data-pemail]').value.trim();
+      if (!email){ slot.insertAdjacentHTML('afterbegin', msg('err','Put their email in.')); return; }
+      const { error } = await sb.rpc('change_partner', { p_entry: id, p_partner_email: email });
+      if (error){ slot.insertAdjacentHTML('afterbegin', msg('err', error.message)); return; }
+      await refresh();
+    };
+  });
+
+  document.querySelectorAll('[data-cancelinv]').forEach(b => b.onclick = async () => {
+    if (!confirm('Cancel the invitation to your partner?')) return;
+    const { error } = await sb.rpc('cancel_my_invitation', { p_entry: b.dataset.cancelinv });
+    if (error){ alert(error.message); return; }
+    await refresh();
+  });
+
+  document.querySelectorAll('[data-leave]').forEach(b => b.onclick = async () => {
+    if (!confirm('Leave this pairing? Your partner keeps the entry and can invite someone else. '
+      + 'Your own fee is released.')) return;
+    const { data, error } = await sb.rpc('leave_entry', { p_entry: b.dataset.leave });
+    if (error){ alert(error.message); return; }
+    await refresh();
+    $('main').insertAdjacentHTML('afterbegin', data === 'left_refunded'
+      ? msg('ok', 'You have left that pairing — your fee will be refunded and your partner can now invite someone else.')
+      : msg('warn', 'You have left that pairing. This was after the refund deadline, so your fee is not refundable.'));
+  });
+
+  document.querySelectorAll('[data-withdraw]').forEach(b => b.onclick = async () => {
+    if (!confirm('Withdraw this entry? If you have a partner, their entry ends too.')) return;
+    const { data, error } = await sb.rpc('withdraw_my_entry', { p_entry: b.dataset.withdraw });
+    if (error){ alert(error.message); return; }
+    await refresh();
+    $('main').insertAdjacentHTML('afterbegin', data === 'withdrawn_refunded'
+      ? msg('ok', 'Withdrawn. Your entry fee will be refunded by the organiser.')
+      : msg('warn', 'Withdrawn. This was after the refund deadline, so the fee is not refundable.'));
+  });
+
+}
+
+/* ---------------------------------------------------- your order of play
+
+   The question a player actually has on the day. Times are a plan, so they are shown
+   with the tournament's measured delay applied rather than pretending 11:40 means 11:40;
+   court is often decided as courts free up, so "TBC" is stated plainly instead of guessed. */
+
+function scheduleHtml(){
+  if (!S.schedule.length) return '';
+  const upcoming = S.schedule.filter(m => !m.decided);
+  const played   = S.schedule.filter(m => m.decided);
+  const late = S.late;
+
+  const when = (m) => {
+    if (!m.scheduled_at) return `<span class="when-tbc">Time to be set</span>`;
+    const planned = new Date(m.scheduled_at);
+    const est = new Date(planned.getTime() + late * 60000);
+    const f = (d) => d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+    return late >= 5
+      ? `<strong>≈ ${esc(f(est))}</strong><small>scheduled ${esc(f(planned))}</small>`
+      : `<strong>${esc(f(planned))}</strong>`;
+  };
+
+  const row = (m) => `<div class="sch-row${m.decided ? ' done' : ''}">
+      <span class="sch-when">${when(m)}</span>
+      <span class="sch-court">${m.court ? 'Court ' + esc(m.court) : 'Court TBC'}</span>
+      <span class="sch-who"><strong>v ${esc(m.opponent || 'To be confirmed')}</strong>
+        <small>${esc(m.event_name)} · ${esc(m.stage === 'pool' ? 'Pool' : 'Knockout')}${
+          m.my_line_up ? ' · you and ' + esc(m.my_line_up.split(' & ').filter(n => n !== S.profile.full_name).join(' & ') || 'partner') : ''}</small></span>
+      <span class="sch-res">${m.decided
+        ? `<span class="pill ${m.i_won ? 'ok' : ''}">${m.i_won ? 'Won' : 'Lost'} ${esc(m.score || '')}</span>`
+        : (m.score ? `<span class="pill warn">${esc(m.score)} in play</span>` : '')}</span>
+    </div>`;
+
+  return `<h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-court"/></svg></span>Your matches</h2>
+    <p class="sub">Courts are assigned on the day, so check the screen at the venue when you arrive.</p>
+    ${late >= 5 ? msg('warn', `Play is running about ${late} minutes behind. Times below already
+      include that — but be at your court early anyway, because a day can catch up as fast as it slips.`) : ''}
+    <div class="card">
+      ${upcoming.length ? upcoming.map(row).join('')
+        : '<div class="small muted">Nothing left to play — see your results below.</div>'}
+      ${played.length ? `<div class="sch-head">Already played</div>` + played.map(row).join('') : ''}
+    </div>`;
+}
+
+/* ---------------------------------------------------- fees & payments
+
+   One section, not a button buried in each entry: a player who entered three events
+   should see one total and pay once. Refunds and past payments stay visible here too —
+   "where did my money go" is the question this page has to answer. */
+
+const FEE_PILL = { paid:'ok', waived:'ok', pending:'warn', refunded:'', failed:'err' };
+const FEE_WORD = { paid:'Paid', waived:'No fee', pending:'Due', refunded:'Refunded', failed:'Not paid' };
+
+function paymentsHtml(){
+  const fees = S.fees.filter(f => f.amount_pence > 0 || f.status === 'refunded');
+  if (!fees.length) return '';
+
+  const due      = fees.filter(f => f.status === 'pending' || f.status === 'failed');
+  const settled  = fees.filter(f => f.status === 'paid');
+  const refunded = fees.filter(f => f.status === 'refunded');
+  const owed     = due.reduce((a, f) => a + f.amount_pence, 0);
+  const cur      = S.tournament.currency;
+  const online   = S.tournament.payment_method === 'online';
+
+  const row = (f) => `<div class="fee-row">
+      <span class="what"><strong>${esc(f.event_name)}</strong>
+        <span class="sub2">${f.still_in === false
+            ? 'You are no longer in this entry'
+            : esc(f.line_up || 'You')}${
+          f.still_in !== false && f.roster < f.roster_needed ? ' · partner still to confirm' : ''}${
+          f.paid_at ? ' · paid ' + fmtWhen(f.paid_at) : ''}${
+          f.refunded_at ? ' · refunded ' + fmtWhen(f.refunded_at) : ''}</span></span>
+      <span class="amt ${f.status === 'refunded' ? 'gone' : ''}">${esc(money(f.amount_pence, f.currency || cur))}</span>
+      <span class="pill ${FEE_PILL[f.status] || ''}">${esc(FEE_WORD[f.status] || f.status)}</span>
+    </div>`;
+
+  let action = '';
+  if (owed > 0){
+    action = online
+      ? `<div class="owed">
+           <span class="big">${esc(money(owed, cur))}<small>outstanding${due.length > 1 ? ` across ${due.length} events` : ''}</small></span>
+           <span class="grow"></span>
+           <button id="payAll">Pay ${esc(money(owed, cur))} by card</button>
+         </div>
+         <p class="small muted" style="margin-top:8px">One payment covers every outstanding
+           entry above. You will be taken to Stripe and brought straight back.</p>`
+      : `<div class="owed">
+           <span class="big">${esc(money(owed, cur))}<small>outstanding${due.length > 1 ? ` across ${due.length} events` : ''}</small></span>
+           <span class="grow"></span>
+         </div>
+         <div class="paybox"><strong>How to pay</strong>
+           ${esc(S.tournament.payment_instructions
+             || 'The organiser collects entry fees directly and will be in touch with how to pay.')}
+           <div class="small muted" style="margin-top:7px">Entry fees must be settled before
+             the draw is made — an unpaid entry is not placed in it.</div></div>`;
+  } else if (settled.length){
+    action = msg('ok', refunded.length
+      ? 'Everything outstanding is settled. Refunded fees are returned by the organiser through the original payment method.'
+      : 'All your entry fees are paid — nothing outstanding.');
+  }
+
+  return `<h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-ball"/></svg></span>Fees &amp; payments</h2>
+    <p class="sub">Each player pays their own share, so a change of partner never costs you twice.</p>
+    <div class="card">
+      ${fees.map(row).join('')}
+      ${action}
+      ${S.tournament.refund_policy
+        ? `<p class="small muted" style="margin-top:12px"><strong>Refunds:</strong> ${esc(S.tournament.refund_policy)}</p>` : ''}
+    </div>`;
+}
+
+function wirePayments(){
+  const btn = $('payAll');
+  if (!btn) return;
+  btn.onclick = async () => {
+    const entryIds = [...new Set(S.fees
+      .filter(f => (f.status === 'pending' || f.status === 'failed') && f.amount_pence > 0)
+      .map(f => f.entry_id))];
+    if (!entryIds.length) return;
+    btn.disabled = true; btn.textContent = 'Opening secure checkout…';
+
+    let payload, status;
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-entry-checkout`, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', apikey: SUPABASE_KEY,
+                  Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ entryIds,
+          returnUrl: location.href.split('?')[0] + '?t=' + S.tournament.slug }),
+      });
+      status = res.status; payload = await res.json();
+    } catch (err){
+      btn.disabled = false; btn.textContent = 'Try again';
+      btn.insertAdjacentHTML('afterend', msg('err','Could not reach the payment service: ' + err.message));
+      return;
+    }
+    if (status !== 200 || !payload?.url){
+      btn.disabled = false; btn.textContent = 'Try again';
+      btn.closest('.card').insertAdjacentHTML('beforeend',
+        msg(status === 503 ? 'info' : 'err', payload?.error || 'Payment could not be started.'));
+      return;
+    }
+    location.href = payload.url;
+  };
+}
+
+/* Coming back from Stripe. The webhook settles the fees, and it can land a moment after
+   the redirect, so poll briefly rather than showing a stale "outstanding" figure. */
+async function handlePaymentReturn(){
+  const params = new URLSearchParams(location.search);
+  const paid = params.get('paid');
+  if (!paid) return;
+  params.delete('paid');
+  const clean = location.pathname + (params.toString() ? '?' + params : '');
+  history.replaceState({}, '', clean);
+
+  if (paid === '0'){
+    $('main').insertAdjacentHTML('afterbegin',
+      msg('warn', 'Payment cancelled — nothing was charged. Your entries are still held; you can pay whenever you are ready.'));
+    return;
+  }
+  $('main').insertAdjacentHTML('afterbegin',
+    `<div class="msg ok" id="payWait">Thank you — confirming your payment…</div>`);
+  for (let i = 0; i < 6; i++){
+    await new Promise(r => setTimeout(r, 1200));
+    const { data } = await sb.rpc('my_fees', { p_tournament: S.tournament.id });
+    S.fees = data || [];
+    const stillDue = S.fees.some(f => f.status === 'pending' && f.amount_pence > 0);
+    if (!stillDue){
+      await refresh();
+      $('main').insertAdjacentHTML('afterbegin',
+        msg('ok', 'Payment received — your entry fees are settled. You are in the draw.'));
+      return;
+    }
+  }
+  await refresh();
+  $('main').insertAdjacentHTML('afterbegin', msg('info',
+    'Payment taken. It can take a moment to show here — refresh in a minute if it still says outstanding.'));
+}
+
+/* ---------------------------------------------------- events to enter */
+
+/* The builder. A player almost always enters two or three events in one sitting, and
+   very often with a DIFFERENT partner in each (mixed with one person, men's doubles with
+   another). So: tick everything you want, name a partner per event, see a running total,
+   confirm once. */
+
+function partnerBlockHtml(o){
+  const picked = S.basket.get(o.event_id) || {};
+  if (o.discipline === 'singles'){
+    return `<div class="ev-partner small muted">Singles — no partner needed.</div>`;
+  }
+  const tbcAllowed = S.settings?.allow_partner_tbc !== false;
+  return `<div class="ev-partner">
+    <label class="f" style="margin-bottom:0">Partner for ${esc(o.name)}
+      <span class="hint">${tbcAllowed
+        ? 'They get an invitation to accept. Leave blank if you are still looking — the organiser can see you need one.'
+        : 'This tournament asks you to name your partner when you enter.'}</span>
+      <input type="email" data-pemail="${o.event_id}" value="${esc(picked.partner || '')}"
+        placeholder="${tbcAllowed ? 'partner@example.com (optional)' : 'partner@example.com'}"></label>
+    <div class="found" data-pfound="${o.event_id}"></div>
+  </div>`;
+}
+
+function builderHtml(){
+  const head = `<h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-doubles"/></svg></span>Enter events</h2>`;
+  if (!S.options.length) return head + empty('Pending', 'No events have been published yet.');
+  const open = S.options[0].registration_open;
+  const mine = new Map(S.entries.filter(e => e.status !== 'withdrawn').map(e => [e.event_id, e]));
+
+  const rows = S.options.map(o => {
+    const already = mine.get(o.event_id);
+    const full = o.spaces_left === 0;
+    const picked = S.basket.has(o.event_id);
+    const cat = { mens:"Men's", womens:"Women's", mixed:'Mixed', open:'Open' }[o.category] || o.category;
+    const bits = [
+      `${cat} ${o.discipline === 'singles' ? 'Singles' : 'Doubles'}`,
+      o.band_label || null,
+      o.max_rating ? `${o.max_rating} and under — you may play up` : null,
+      o.combined_rating_max ? `pair combined max ${o.combined_rating_max}` : null,
+      o.max_entries ? `${o.entered}/${o.max_entries} in` : `${o.entered} entered`,
+    ].filter(Boolean).join(' · ');
+
+    // already in it, or cannot be in it — shown, but not selectable
+    if (already || !open || o.problem){
+      // Reuse the same wording as "Your entries" so a player never sees one event
+      // described two different ways on the same page.
+      const st = already ? entryStage(already) : null;
+      const note = st ? `<span class="pill ${st.cls}">${esc(st.label)}</span>` : '';
+      return `<div class="ev-row off">
+        <span style="width:22px"></span>
+        <span class="who"><strong>${esc(o.name)}</strong>
+          <span class="meta">${esc(bits)}</span>
+          ${(!already && o.problem) ? `<span class="blocked">${esc(o.problem)}</span>` : ''}</span>
+        <span class="money">${note || esc(money(o.entry_fee_pence, S.tournament.currency))}</span>
+      </div>`;
+    }
+
+    return `<div class="ev-row${picked ? ' picked' : ''}" data-row="${o.event_id}">
+      <input type="checkbox" class="tick" id="pick-${o.event_id}" data-pick="${o.event_id}"
+        ${picked ? 'checked' : ''} aria-label="Enter ${esc(o.name)}">
+      <label class="who" for="pick-${o.event_id}">
+        <strong>${esc(o.name)}${full ? ' <span class="pill warn">Full — you would join the waitlist</span>' : ''}</strong>
+        <span class="meta">${esc(bits)}</span>
+      </label>
+      <span class="money">${esc(money(o.entry_fee_pence, S.tournament.currency))}
+        ${o.entry_fee_pence ? '<small>per player</small>' : '<small>to enter</small>'}</span>
+      ${picked ? partnerBlockHtml(o) : ''}
+    </div>`;
+  }).join('');
+
+  return head
+    + `<p class="sub">Tick everything you want to play. You can name a different partner in each
+       event — most people do. Nothing is entered until you confirm at the bottom.</p>`
+    + (!open ? msg('warn', 'Online entry is not open for this tournament. The organiser is taking entries directly.') : '')
+    + rows
+    + (open ? `<div class="basket" id="basket"></div>` : '')
+    + `<div id="builderResult"></div>`;
+}
+
+function basketTotals(){
+  let pence = 0;
+  const names = [];
+  for (const id of S.basket.keys()){
+    const o = S.options.find(x => x.event_id === id);
+    if (!o) continue;
+    pence += o.entry_fee_pence || 0;
+    names.push(o.name);
+  }
+  return { n: names.length, pence, names };
+}
+
+function paintBasket(){
+  const el = $('basket');
+  if (!el) return;
+  const { n, pence, names } = basketTotals();
+  el.innerHTML = `
+    <div class="chosen">
+      <strong>${n ? `${n} event${n === 1 ? '' : 's'} selected` : 'Nothing selected yet'}</strong>
+      <div class="list">${n ? esc(names.join(' · ')) : 'Tick an event above to begin.'}</div>
+    </div>
+    <div class="total">${esc(money(pence, S.tournament.currency))}<small>${n > 1 ? 'total, your share' : 'your share'}</small></div>
+    <button id="confirmAll" ${n ? '' : 'disabled'}>Confirm ${n || ''} ${n === 1 ? 'entry' : 'entries'}</button>`;
+  const btn = $('confirmAll');
+  if (btn) btn.onclick = confirmBasket;
+}
+
+function wireBuilder(){
+  document.querySelectorAll('[data-pick]').forEach(cb => cb.onchange = () => {
+    const id = cb.dataset.pick;
+    const row = document.querySelector(`[data-row="${id}"]`);
+    if (cb.checked){
+      S.basket.set(id, { partner: '' });
+      row.classList.add('picked');
+      const o = S.options.find(x => x.event_id === id);
+      row.insertAdjacentHTML('beforeend', partnerBlockHtml(o));
+      wirePartnerField(row.querySelector('[data-pemail]'));
+      row.querySelector('[data-pemail]')?.focus();
+    } else {
+      S.basket.delete(id);
+      row.classList.remove('picked');
+      row.querySelector('.ev-partner')?.remove();
+    }
+    paintBasket();
+  });
+  document.querySelectorAll('[data-pemail]').forEach(wirePartnerField);
+  paintBasket();
+}
+
+function wirePartnerField(input){
+  if (!input) return;
+  const id = input.dataset.pemail;
+  // keep the basket in step without re-rendering, so typing never loses focus
+  input.addEventListener('input', () => {
+    const e = S.basket.get(id); if (e) e.partner = input.value.trim();
+  });
+  input.addEventListener('blur', async () => {
+    const out = document.querySelector(`[data-pfound="${id}"]`);
+    const v = input.value.trim();
+    if (!out) return;
+    if (!v){ out.textContent = ''; out.className = 'found'; return; }
+    const { data } = await sb.rpc('find_partner', { p_email: v });
+    if (data && data.length){
+      out.className = 'found ok';
+      out.innerHTML = `✓ ${esc(data[0].full_name)} will get an invitation to accept.`;
+    } else {
+      out.className = 'found new';
+      out.textContent = 'No PBTable account with that email yet — they will be invited to sign up and accept.';
+    }
+  });
+}
+
+/* Enter every ticked event in one go. Partial success is the honest outcome: one event
+   may bounce (a partner over the rating ceiling, say) while the rest go through, so each
+   is reported on its own rather than failing the lot. */
+async function confirmBasket(){
+  const btn = $('confirmAll');
+  const out = $('builderResult');
+  btn.disabled = true;
+  btn.textContent = 'Entering…';
+
+  const results = [];
+  for (const [eventId, sel] of S.basket){
+    const o = S.options.find(x => x.event_id === eventId);
+    const { error } = await sb.rpc('register_for_event', {
+      p_event: eventId, p_partner_email: sel.partner ? sel.partner : null });
+    results.push({ name: o?.name || 'Event', ok: !error, error: error?.message });
+    if (!error) S.basket.delete(eventId);
+  }
+
+  const good = results.filter(r => r.ok);
+  const bad  = results.filter(r => !r.ok);
+  await refresh();
+
+  const box = $('builderResult') || out;
+  if (box){
+    box.innerHTML =
+      (good.length ? msg('ok', `Entered: ${good.map(r => r.name).join(', ')}.`
+        + (good.length ? ' Anything with a fee or a pending partner is listed under “Your entries”.' : '')) : '')
+      + bad.map(r => msg('err', `${r.name} — ${r.error}`)).join('');
+    box.scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

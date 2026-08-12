@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tournament Manager — live draws &amp; results</title>
+<link rel="icon" type="image/png" href="pbtable-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ------------------------------------------------------------------ tokens
+     Tournament Manager palette: championship crimson + gold ("finals day").
+     Distinct from PBTable (navy+coral) and the league (indigo-violet+teal). */
+  :root{
+    --wine:        #46101c;   /* darkest — hero base, footer */
+    --crimson:     #7d1527;   /* hero gradient top, headings on light */
+    --crimson-soft:#a02a3d;   /* hovers, accents on dark */
+    --gold:        #d9a441;   /* primary accent */
+    --gold-deep:   #b07f22;   /* accent text on light backgrounds (AA on cream) */
+    --gold-soft:   #f2ddab;   /* subtle gold text on dark */
+    --cream:       #fbf6ee;   /* light section A */
+    --mid:         #f2e9db;   /* light section B — sections strictly alternate */
+    --ink:         #2b171b;
+    --muted:       #806a63;
+    --hairline:    rgba(43,23,27,.14);
+    --card:        #ffffff;
+    --ok:          #2c7a4b;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:'Barlow',sans-serif; color:var(--ink); background:var(--cream);
+    font-size:16px; line-height:1.5;
+  }
+  h1,h2,h3,.condensed{ font-family:'Barlow Condensed',sans-serif; }
+
+  /* ------------------------------------------------------------------ hero */
+  header.hero{
+    background:linear-gradient(160deg, var(--crimson) 0%, var(--wine) 70%);
+    color:#fff; padding:0 0 42px; position:relative; overflow:hidden;
+  }
+  /* court watermark — real 44x20 proportions, sat behind the headline */
+  .hero-court{
+    position:absolute; right:-70px; bottom:-46px; width:min(560px, 62vw);
+    color:var(--gold); opacity:.13; pointer-events:none;
+    transform:rotate(-8deg);
+  }
+  /* a faint ball, top-right, to break up the flat gradient */
+  .hero-ball{
+    position:absolute; right:9%; top:14px; width:104px; color:var(--gold);
+    opacity:.10; pointer-events:none; transform:rotate(12deg);
+  }
+  .hero-body{ position:relative; z-index:1; }
+  .hero-bar{
+    display:flex; align-items:center; gap:14px; padding:14px 22px;
+    border-bottom:1px solid rgba(255,255,255,.12);
+  }
+  .hero-bar img{ height:44px; width:auto; display:block; }
+  .hero-bar .product{ font-family:'Barlow Condensed'; font-weight:600; font-size:1.15rem;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--gold-soft); }
+  nav.mainnav{ margin-left:auto; display:flex; gap:4px; flex-wrap:wrap; }
+  nav.mainnav a{
+    color:#fff; text-decoration:none; font-weight:600; font-size:.95rem;
+    padding:7px 13px; border-radius:999px;
+  }
+  nav.mainnav a:hover{ background:rgba(255,255,255,.12); }
+  .hero-body{ max-width:1080px; margin:0 auto; padding:44px 22px 0; }
+  .hero-kicker svg{ width:18px; height:18px; fill:currentColor; vertical-align:-4px; margin-right:6px; }
+  .hero-kicker{ color:var(--gold); font-family:'Barlow Condensed'; font-weight:600;
+    text-transform:uppercase; letter-spacing:.14em; font-size:.95rem; }
+  h1.tourn-name{ font-size:clamp(2.2rem,5vw,3.4rem); font-weight:700; line-height:1.05;
+    margin:6px 0 10px; }
+  .hero-meta{ color:rgba(255,255,255,.85); font-size:1.05rem; display:flex; gap:18px;
+    flex-wrap:wrap; }
+  .hero-meta strong{ color:var(--gold-soft); font-weight:600; }
+  .tourn-picker{ margin-top:18px; }
+  .tourn-picker select{
+    font:inherit; padding:7px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.35);
+    background:rgba(255,255,255,.1); color:#fff;
+  }
+  .tourn-picker select option{ color:var(--ink); }
+
+  /* ------------------------------------------------------------------ sections */
+  section{ padding:48px 22px; border-top:1px solid var(--hairline); }
+  section:nth-of-type(odd){ background:var(--cream); }
+  section:nth-of-type(even){ background:var(--mid); }
+  .wrap{ max-width:1080px; margin:0 auto; }
+  h2{ font-size:2rem; font-weight:700; color:var(--crimson); margin-bottom:4px; }
+  .section-sub{ color:var(--muted); margin-bottom:22px; }
+
+  /* cards, pills, chips */
+  .card{
+    background:var(--card); border:1px solid var(--hairline); border-radius:12px;
+    padding:18px 20px; box-shadow:0 1px 2px rgba(43,23,27,.05);
+  }
+  .pill{
+    display:inline-block; font-size:.78rem; font-weight:600; padding:2px 10px;
+    border-radius:999px; border:1px solid var(--hairline); color:var(--muted);
+    background:var(--cream); white-space:nowrap;
+  }
+  .pill.gold{ background:var(--gold); border-color:var(--gold); color:var(--wine); }
+  .pill.ok{ color:var(--ok); border-color:var(--ok); background:#eef7f1; }
+  .chiprow{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+  .chip{
+    font:inherit; font-weight:600; font-size:.92rem; cursor:pointer;
+    padding:7px 15px; border-radius:999px; border:1px solid var(--hairline);
+    background:var(--card); color:var(--ink);
+  }
+  .chip:hover{ border-color:var(--gold-deep); }
+  .chip.active{ background:var(--crimson); border-color:var(--crimson); color:#fff; }
+
+  /* tables */
+  table{ width:100%; border-collapse:collapse; font-size:.95rem; }
+  th{ font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
+    letter-spacing:.06em; font-size:.8rem; color:var(--muted); text-align:left;
+    padding:8px 10px; border-bottom:2px solid var(--hairline); }
+  td{ padding:9px 10px; border-bottom:1px solid var(--hairline); vertical-align:top; }
+  tr:last-child td{ border-bottom:none; }
+  td.num, th.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .table-scroll{ overflow-x:auto; }
+
+  /* events grid — cards stretch to a shared height AND their internals line up:
+     title block at the top, entry count and format line pinned to the bottom, so the
+     eye reads straight across a row instead of a ragged edge. */
+  .events-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:16px; align-items:stretch; grid-auto-rows:1fr; }
+  .event-card{ display:flex; flex-direction:column; padding-top:16px; }
+  .event-card .head{ display:flex; gap:10px; align-items:flex-start; }
+  .event-card .mark{ flex:0 0 auto; width:38px; height:38px; border-radius:10px;
+    background:var(--mid); color:var(--crimson); display:grid; place-items:center; }
+  .event-card .mark svg{ width:22px; height:22px; fill:currentColor; }
+  .event-card h3{ font-size:1.3rem; font-weight:700; margin-bottom:6px; line-height:1.15; }
+  .event-card .pills{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .event-card .spacer{ flex:1 1 auto; min-height:6px; }
+  .event-card .foot{ border-top:1px solid var(--hairline); margin-top:10px; padding-top:9px; }
+  .event-card .fmt{ color:var(--muted); font-size:.86rem; margin-top:4px; }
+  .event-card .count{ font-weight:600; color:var(--gold-deep); }
+
+  /* pools */
+  .pools-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px;
+    margin-bottom:28px; }
+  .pool-card h3{ font-size:1.2rem; color:var(--crimson); margin-bottom:8px; }
+
+  /* bracket */
+  .bracket-scroll{ overflow-x:auto; padding-bottom:8px; }
+  .bracket{ display:flex; gap:22px; align-items:stretch; min-width:min-content; }
+  .bracket-round{ display:flex; flex-direction:column; justify-content:space-around;
+    gap:14px; min-width:230px; }
+  .bracket-round h4{ font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
+    letter-spacing:.08em; font-size:.85rem; color:var(--muted); text-align:center; }
+  .bmatch{
+    background:var(--card); border:1px solid var(--hairline); border-radius:10px;
+    padding:10px 12px; font-size:.92rem;
+  }
+  .bmatch .side{ display:flex; justify-content:space-between; gap:10px; padding:3px 0; }
+  .bmatch .side .n{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:170px; }
+  .bmatch .side.winner .n{ font-weight:700; color:var(--gold-deep); }
+  .bmatch .side .s{ font-variant-numeric:tabular-nums; color:var(--muted); }
+  .bmatch .side.winner .s{ color:var(--gold-deep); font-weight:700; }
+  .bmatch .tbc{ color:var(--muted); font-style:italic; }
+  .bmatch .meta{ margin-top:5px; font-size:.78rem; color:var(--muted); }
+  .bmatch.final-match{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(217,164,65,.35); }
+
+  /* meetings-head band (league lesson: mark the change between table and scores) */
+  .block-head{
+    font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
+    letter-spacing:.08em; font-size:.85rem; color:var(--muted);
+    border-top:2px solid var(--hairline); margin-top:14px; padding-top:10px;
+  }
+  .block-head .hint{ font-family:'Barlow'; text-transform:none; letter-spacing:0;
+    font-weight:400; font-size:.82rem; display:block; }
+
+  /* schedule */
+  .slot-time{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.05rem;
+    color:var(--crimson); white-space:nowrap; }
+
+  /* states */
+  .empty{
+    background:var(--card); border:1px dashed var(--hairline); border-radius:12px;
+    padding:26px; text-align:center; color:var(--muted);
+  }
+  .empty svg{ width:34px; height:34px; fill:var(--gold); opacity:.55; display:block;
+    margin:0 auto 8px; }
+  .empty .word{ font-family:'Barlow Condensed'; font-weight:600; font-size:1.2rem;
+    color:var(--gold-deep); text-transform:uppercase; letter-spacing:.1em; display:block;
+    margin-bottom:4px; }
+  /* section headings carry a small mark so the page has rhythm beyond type alone */
+  h2 .h2mark{ display:inline-grid; place-items:center; width:30px; height:30px;
+    border-radius:8px; background:var(--crimson); color:var(--gold);
+    vertical-align:-6px; margin-right:9px; }
+  h2 .h2mark svg{ width:18px; height:18px; fill:currentColor; }
+  h2 .h2mark svg.court{ width:22px; height:22px; fill:none; }
+  .banner{
+    max-width:1080px; margin:26px auto 0; border-radius:12px; padding:18px 22px;
+    background:#fff8e8; border:1px solid var(--gold); color:var(--ink);
+  }
+  .banner code{ background:var(--mid); padding:1px 6px; border-radius:5px; font-size:.9em; }
+  .banner.error{ background:#fdeeee; border-color:#c0392b; }
+
+  footer{
+    background:var(--wine); color:rgba(255,255,255,.75); padding:26px 22px;
+    font-size:.9rem; text-align:center;
+  }
+  footer .gold{ color:var(--gold-soft); font-weight:600; }
+</style>
+</head>
+<body>
+
+<!-- Inline SVG sprite: one definition, reused everywhere via <use>. Kept in the file so
+     the page stays a single no-build artefact and the marks inherit currentColor. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- Pickleball paddle: a broad ANGULAR face (~11" x 8", so taller than wide) with big
+         rounded corners, pinching into a throat, then a chunky grip and a flared butt cap.
+         The angular face is what separates it from a round table-tennis bat. -->
+    <symbol id="i-paddle" viewBox="0 0 24 24">
+      <rect x="6.7" y="1.1" width="10.6" height="13.8" rx="3.1"/>
+      <path d="M8.8 14.2c.3 1.6 1 2.4 1.3 3.1h3.8c.3-.7 1-1.5 1.3-3.1z"/>
+      <rect x="10.1" y="16.6" width="3.8" height="5.4" rx="1"/>
+      <rect x="9.4" y="21.2" width="5.2" height="1.8" rx=".9"/>
+    </symbol>
+    <!-- the perforated ball: holes punched with evenodd -->
+    <symbol id="i-ball" viewBox="0 0 24 24">
+      <path fill-rule="evenodd" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z
+        M12 6.1a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M7.6 9.2a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M16.4 9.2a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M12 11.9a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M9.2 15.3a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z
+        M14.8 15.3a1.35 1.35 0 1 1 0 2.7 1.35 1.35 0 0 1 0-2.7z"/>
+    </symbol>
+    <!-- Doubles: the same paddle twice, angled apart, the back one dimmed for depth. -->
+    <symbol id="i-doubles" viewBox="0 0 24 24">
+      <g opacity=".45" transform="rotate(-17 8 12)">
+        <rect x="3.5" y="2.6" width="7.6" height="9.9" rx="2.3"/>
+        <path d="M5 11.9c.2 1.1.7 1.7.9 2.2h2.7c.2-.5.7-1.1.9-2.2z"/>
+        <rect x="6.1" y="13.6" width="2.7" height="4.1" rx=".8"/>
+        <rect x="5.6" y="17.1" width="3.7" height="1.4" rx=".7"/>
+      </g>
+      <g transform="rotate(17 16 13)">
+        <rect x="12.9" y="4.1" width="7.6" height="9.9" rx="2.3"/>
+        <path d="M14.4 13.4c.2 1.1.7 1.7.9 2.2h2.7c.2-.5.7-1.1.9-2.2z"/>
+        <rect x="15.5" y="15.1" width="2.7" height="4.1" rx=".8"/>
+        <rect x="15" y="18.6" width="3.7" height="1.4" rx=".7"/>
+      </g>
+    </symbol>
+    <!-- true-proportion pickleball court, 44ft x 20ft, 7ft non-volley zone, net centred -->
+    <symbol id="i-court" viewBox="0 0 200 100">
+      <g fill="none" stroke="currentColor" stroke-width="2.4">
+        <rect x="2" y="2" width="196" height="96" rx="1"/>
+        <line x1="100" y1="0" x2="100" y2="100" stroke-width="3.4"/>
+        <line x1="68" y1="2" x2="68" y2="98"/>
+        <line x1="132" y1="2" x2="132" y2="98"/>
+        <line x1="2" y1="50" x2="68" y2="50"/>
+        <line x1="132" y1="50" x2="198" y2="50"/>
+      </g>
+    </symbol>
+    <!-- trophy, for champions -->
+    <symbol id="i-trophy" viewBox="0 0 24 24">
+      <path d="M7 3h10v2.2h3.2v2.4c0 2.6-1.8 4.6-4.2 5.1a4.9 4.9 0 0 1-2.6 1.9v2.6h3.1V19H7.5v-1.8h3.1v-2.6a4.9 4.9 0 0 1-2.6-1.9C5.6 12.2 3.8 10.2 3.8 7.6V5.2H7V3zm-1.3 4.4v.2c0 1.4.8 2.5 2 3V7.4H5.7zm12.6 0h-2v3.2c1.2-.5 2-1.6 2-3v-.2zM6.6 20.4h10.8V22H6.6z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="hero">
+  <div class="hero-bar">
+    <img src="pbtable-logo.png" alt="PBTable logo">
+    <span class="product">Tournament&nbsp;Manager</span>
+    <nav class="mainnav">
+      <a href="#events">Events</a>
+      <a href="#draws">Draws</a>
+      <a href="#schedule">Schedule</a>
+      <a href="enter.html" id="enterLink" style="background:var(--gold);color:var(--wine)" hidden>Enter online</a>
+    </nav>
+  </div>
+  <svg class="hero-court" viewBox="0 0 200 100" aria-hidden="true"><use href="#i-court"/></svg>
+  <svg class="hero-ball" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#i-ball"/></svg>
+  <div class="hero-body">
+    <div class="hero-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ball"/></svg>Live draws &amp; results</div>
+    <h1 class="tourn-name" id="tournName">Pending</h1>
+    <div class="hero-meta" id="tournMeta"></div>
+    <div class="tourn-picker" id="tournPicker" hidden>
+      <select id="tournSelect" aria-label="Choose tournament"></select>
+    </div>
+  </div>
+</header>
+
+<div id="setupBanner" class="banner" hidden>
+  <strong>Site not connected yet.</strong> Fill in <code>SUPABASE_URL</code> and
+  <code>SUPABASE_KEY</code> at the top of the script in this file once the
+  <code>tournament-manager</code> Supabase project exists (see <code>SETUP.md</code>).
+</div>
+<div id="errorBanner" class="banner error" hidden></div>
+
+<section id="events">
+  <div class="wrap">
+    <h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-doubles"/></svg></span>Events</h2>
+    <p class="section-sub">Every competition in this tournament — who can enter, how it's scored.</p>
+    <div id="eventsBody"></div>
+  </div>
+</section>
+
+<section id="draws">
+  <div class="wrap">
+    <h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-trophy"/></svg></span>Draws &amp; results</h2>
+    <p class="section-sub">Pool standings and knockout brackets, updated live as scores go in.</p>
+    <div id="drawChips" class="chiprow"></div>
+    <div id="drawsBody"></div>
+  </div>
+</section>
+
+<section id="schedule">
+  <div class="wrap">
+    <h2><span class="h2mark"><svg class="court" viewBox="0 0 200 100"><use href="#i-court"/></svg></span>Schedule</h2>
+    <p class="section-sub">Match order by time slot and court. Times are the organiser's plan — check in early.</p>
+    <div id="scheduleBody"></div>
+  </div>
+</section>
+
+<footer>
+  <span class="gold">PBTable · Tournament Manager</span> — entries, draws, live scores.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+'use strict';
+
+/* ------------------------------------------------------------------ config
+   Publishable key only — safe to embed; RLS does the protecting. */
+const SUPABASE_URL = 'https://fvyjvoimezsfrndydzkt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_k80t7cu9oPN9Q5r8OO3Y-w_Wk3c_mOV';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+  (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* One tournament-wide state. Names are ALWAYS resolved through these maps, loaded once —
+   never from a stage-scoped list (the league's "TBC" lesson). */
+const S = {
+  client: null,
+  tournaments: [],
+  tournament: null,
+  settings: null,
+  events: [],
+  playersById: new Map(),
+  entriesById: new Map(),
+  entryPlayers: new Map(),     // entry_id -> [player_id]
+  poolsById: new Map(),
+  poolEntries: new Map(),      // pool_id -> [entry_id]
+  matches: [],
+  gamesByMatch: new Map(),     // match_id -> [games]
+  standings: [],               // pool_standings rows
+  activeEventId: null,
+};
+
+/* ------------------------------------------------------------------ helpers */
+
+function entryName(entryId){
+  if (!entryId) return null;
+  const ids = S.entryPlayers.get(entryId) || [];
+  const names = ids.map(pid => S.playersById.get(pid)?.name || '?');
+  return names.length ? names.join(' & ') : 'Unnamed entry';
+}
+
+function fmtDateRange(t){
+  const opts = { day:'numeric', month:'short', year:'numeric' };
+  const a = new Date(t.start_date + 'T00:00:00');
+  if (!t.end_date || t.end_date === t.start_date) return a.toLocaleDateString('en-GB', opts);
+  const b = new Date(t.end_date + 'T00:00:00');
+  return a.toLocaleDateString('en-GB', { day:'numeric', month:'short' })
+    + ' – ' + b.toLocaleDateString('en-GB', opts);
+}
+
+function fmtTime(ts){
+  return new Date(ts).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+}
+function fmtSlot(ts){
+  const d = new Date(ts);
+  const sameDay = !S.tournament?.end_date || S.tournament.end_date === S.tournament.start_date;
+  return (sameDay ? '' : d.toLocaleDateString('en-GB', { weekday:'short' }) + ' ')
+    + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+}
+
+function fmtFormat(bestOf, to, winBy){
+  const g = bestOf === 1 ? 'game' : `best of ${bestOf}`;
+  return `${g} to ${to}${winBy === 2 ? ' (win by 2)' : ''}`;
+}
+
+function categoryLabel(ev){
+  const cat = { mens:"Men's", womens:"Women's", mixed:'Mixed', open:'Open' }[ev.category] || ev.category;
+  const disc = ev.discipline === 'singles' ? 'Singles' : 'Doubles';
+  return `${cat} ${disc}`;
+}
+
+function gamesSummary(matchId){
+  const games = (S.gamesByMatch.get(matchId) || []).filter(g => g.home_score !== null);
+  if (!games.length) return null;
+  return games.map(g => `${g.home_score}-${g.away_score}`).join(', ');
+}
+function gamesWon(matchId){
+  const games = (S.gamesByMatch.get(matchId) || []).filter(g => g.home_score !== null);
+  let h = 0, a = 0;
+  for (const g of games){ if (g.home_score > g.away_score) h++; else if (g.away_score > g.home_score) a++; }
+  return { h, a, scored: games.length };
+}
+
+function roundLabel(round, maxRound){
+  const back = maxRound - round;
+  if (back === 0) return 'Final';
+  if (back === 1) return 'Semi-finals';
+  if (back === 2) return 'Quarter-finals';
+  if (back === 3) return 'Round of 16';
+  return `Round ${round}`;
+}
+
+function empty(word, detail){
+  return `<div class="empty"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-paddle"/></svg>`
+    + `<span class="word">${esc(word)}</span>${esc(detail)}</div>`;
+}
+
+/* ------------------------------------------------------------------ boot */
+
+async function boot(){
+  if (SUPABASE_URL.startsWith('REPLACE') || SUPABASE_KEY.startsWith('REPLACE')){
+    $('setupBanner').hidden = false;
+    renderAllEmpty();
+    return;
+  }
+  S.client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  try {
+    const { data, error } = await S.client
+      .from('tournaments').select('*')
+      .order('start_date', { ascending:false });
+    if (error) throw error;
+    S.tournaments = data || [];
+    if (!S.tournaments.length){
+      $('tournName').textContent = 'Pending';
+      $('tournMeta').innerHTML = 'No tournament has been published yet.';
+      renderAllEmpty();
+      return;
+    }
+    buildPicker();
+    // ?t= accepts the readable slug (what organisers share) or the id (older links)
+    const wanted = (new URLSearchParams(location.search).get('t') || '').trim();
+    const pick = S.tournaments.find(t => t.slug === wanted || t.id === wanted)
+      || S.tournaments[0];
+    await loadTournament(pick);
+  } catch (err){
+    showError(err);
+  }
+}
+
+function buildPicker(){
+  if (S.tournaments.length < 2) return;
+  const sel = $('tournSelect');
+  sel.innerHTML = S.tournaments.map(t =>
+    `<option value="${t.id}">${esc(t.name)} — ${esc(fmtDateRange(t))}</option>`).join('');
+  sel.onchange = () => {
+    const t = S.tournaments.find(x => x.id === sel.value);
+    if (t) loadTournament(t);
+  };
+  $('tournPicker').hidden = false;
+}
+
+/* PostgREST caps a response at 1000 rows by default and never signals it — a big
+   best-of-3 tournament has >1000 games, so a plain select silently drops scores. This
+   pages through every row, and chunks the id list too (a huge ?in=(...) overflows the
+   URL). Every large read on this page goes through it. */
+async function fetchAllIn(table, selectCols, col, ids, orderCol){
+  const out = [];
+  const idChunks = [];
+  for (let i = 0; i < ids.length; i += 200) idChunks.push(ids.slice(i, i + 200));
+  for (const chunk of idChunks){
+    let from = 0;
+    for (;;){
+      let q = S.client.from(table).select(selectCols).in(col, chunk).range(from, from + 999);
+      if (orderCol) q = q.order(orderCol);
+      const { data, error } = await q;
+      if (error) throw error;
+      out.push(...(data || []));
+      if (!data || data.length < 1000) break;
+      from += 1000;
+    }
+  }
+  return out;
+}
+
+async function loadTournament(t){
+  S.tournament = t;
+  $('tournSelect').value = t.id;
+  $('tournName').textContent = t.name;
+  $('tournMeta').innerHTML =
+    `<span><strong>${esc(fmtDateRange(t))}</strong></span>`
+    + (t.venue ? `<span>${esc(t.venue)}</span>` : '');
+
+  try {
+    const c = S.client;
+    const [settings, events, players] = await Promise.all([
+      c.from('tournament_settings').select('*').eq('tournament_id', t.id).maybeSingle(),
+      c.from('events').select('*').eq('tournament_id', t.id)
+        .order('display_order').order('name'),
+      c.from('players').select('*').eq('tournament_id', t.id),
+    ]);
+    for (const r of [settings, events, players]) if (r.error) throw r.error;
+    S.settings = settings.data;
+    S.events = events.data || [];
+    // "Enter online" only appears when the organiser has actually opened entries
+    const nowIso = new Date().toISOString();
+    const open = S.settings?.self_service_entries
+      && (!t.registration_opens_at  || t.registration_opens_at  <= nowIso)
+      && (!t.registration_closes_at || t.registration_closes_at >= nowIso);
+    const link = $('enterLink');
+    link.hidden = !open;
+    link.href = 'enter.html?t=' + encodeURIComponent(t.slug || t.id);
+    S.playersById = new Map((players.data || []).map(p => [p.id, p]));
+
+    const eventIds = S.events.map(e => e.id);
+    let entries = [], pools = [], matches = [], standings = [];
+    if (eventIds.length){
+      [entries, pools, matches, standings] = await Promise.all([
+        fetchAllIn('entries', '*', 'event_id', eventIds),
+        fetchAllIn('pools', '*', 'event_id', eventIds, 'display_order'),
+        fetchAllIn('matches', '*', 'event_id', eventIds),
+        fetchAllIn('pool_standings', '*', 'event_id', eventIds),
+      ]);
+    }
+    S.entriesById = new Map(entries.map(e => [e.id, e]));
+    S.poolsById = new Map(pools.map(p => [p.id, p]));
+    S.matches = matches;
+    S.standings = standings;
+
+    S.entryPlayers = new Map();
+    S.poolEntries = new Map();
+    if (entries.length){
+      const eps = await fetchAllIn('entry_players', '*', 'entry_id', entries.map(e => e.id));
+      for (const ep of eps){
+        if (!S.entryPlayers.has(ep.entry_id)) S.entryPlayers.set(ep.entry_id, []);
+        S.entryPlayers.get(ep.entry_id).push(ep.player_id);
+      }
+    }
+    if (pools.length){
+      const pes = await fetchAllIn('pool_entries', '*', 'pool_id', pools.map(p => p.id));
+      for (const pe of pes){
+        if (!S.poolEntries.has(pe.pool_id)) S.poolEntries.set(pe.pool_id, []);
+        S.poolEntries.get(pe.pool_id).push(pe.entry_id);
+      }
+    }
+    S.gamesByMatch = new Map();
+    if (matches.length){
+      const gs = await fetchAllIn('games', '*', 'match_id', matches.map(m => m.id), 'game_no');
+      for (const g of gs){
+        if (!S.gamesByMatch.has(g.match_id)) S.gamesByMatch.set(g.match_id, []);
+        S.gamesByMatch.get(g.match_id).push(g);
+      }
+    }
+
+    S.activeEventId = S.events[0]?.id || null;
+    renderEvents();
+    renderDraws();
+    renderSchedule();
+  } catch (err){
+    showError(err);
+  }
+}
+
+function showError(err){
+  const b = $('errorBanner');
+  b.textContent = 'Could not load tournament data: ' + (err.message || err);
+  b.hidden = false;
+}
+
+function renderAllEmpty(){
+  $('eventsBody').innerHTML  = empty('Pending', 'Events will appear here once the tournament is set up.');
+  $('drawsBody').innerHTML   = empty('Pending', 'Draws are published once entries close.');
+  $('scheduleBody').innerHTML = empty('Pending', 'The schedule follows the draw.');
+}
+
+/* ------------------------------------------------------------------ events */
+
+function renderEvents(){
+  const body = $('eventsBody');
+  if (!S.events.length){
+    body.innerHTML = empty('Pending', 'Events will appear here once the organiser publishes them.');
+    return;
+  }
+  body.innerHTML = '<div class="events-grid">' + S.events.map(ev => {
+    const entries = [...S.entriesById.values()]
+      .filter(e => e.event_id === ev.id && e.status !== 'withdrawn');
+    const fmts = [
+      `Pools: ${fmtFormat(ev.pool_best_of, ev.pool_points_to, ev.pool_win_by)}`,
+      `Knockout: ${fmtFormat(ev.bracket_best_of, ev.bracket_points_to, ev.bracket_win_by)}`,
+      `Final: ${fmtFormat(ev.final_best_of, ev.final_points_to, ev.final_win_by)}`,
+    ].join(' · ');
+    return `<div class="card event-card">
+      <div class="head">
+        <span class="mark"><svg viewBox="0 0 24 24" aria-hidden="true">
+          <use href="#${ev.discipline === 'singles' ? 'i-paddle' : 'i-doubles'}"/></svg></span>
+        <div>
+          <h3>${esc(ev.name)}</h3>
+          <div class="pills">
+            <span class="pill">${esc(categoryLabel(ev))}</span>
+            ${ev.band_label ? `<span class="pill gold">${esc(ev.band_label)}</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="foot">
+        <div><span class="count">${entries.length}</span> ${entries.length === 1 ? 'entry' : 'entries'}</div>
+        <div class="fmt">${esc(fmts)}</div>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+/* ------------------------------------------------------------------ draws */
+
+function renderDraws(){
+  const chips = $('drawChips');
+  const body = $('drawsBody');
+  if (!S.events.length){
+    chips.innerHTML = '';
+    body.innerHTML = empty('Pending', 'Draws are published once entries close.');
+    return;
+  }
+  chips.innerHTML = S.events.map(ev =>
+    `<button class="chip${ev.id === S.activeEventId ? ' active' : ''}"
+             data-ev="${ev.id}">${esc(ev.name)}</button>`).join('');
+  chips.querySelectorAll('.chip').forEach(btn => btn.onclick = () => {
+    S.activeEventId = btn.dataset.ev;
+    renderDraws();
+  });
+  body.innerHTML = renderEventDraw(S.activeEventId);
+}
+
+function renderEventDraw(eventId){
+  const ev = S.events.find(e => e.id === eventId);
+  if (!ev) return '';
+  const pools = [...S.poolsById.values()].filter(p => p.event_id === eventId);
+  const bracket = S.matches.filter(m => m.event_id === eventId && m.stage === 'bracket');
+  if (!pools.length && !bracket.length){
+    return empty('Pending', 'The draw for this event has not been published yet.');
+  }
+  let html = '';
+  if (pools.length){
+    html += '<div class="pools-grid">' + pools.map(p => renderPool(p)).join('') + '</div>';
+  }
+  if (bracket.length){
+    html += renderBracket(bracket);
+  }
+  return html;
+}
+
+function renderPool(pool){
+  const rows = S.standings
+    .filter(r => r.pool_id === pool.id)
+    .sort((a, b) => a.pool_rank - b.pool_rank || (entryName(a.entry_id) || '').localeCompare(entryName(b.entry_id) || ''));
+  const poolMatches = S.matches
+    .filter(m => m.pool_id === pool.id)
+    .sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
+
+  let table;
+  if (!rows.length){
+    table = `<div class="empty" style="padding:14px">Pending</div>`;
+  } else {
+    table = `<div class="table-scroll"><table>
+      <thead><tr><th>#</th><th>Entry</th><th class="num">P</th><th class="num">W</th>
+        <th class="num">GW</th><th class="num">+/−</th></tr></thead>
+      <tbody>` + rows.map(r => `<tr>
+        <td class="num">${r.played > 0 ? r.pool_rank : '–'}</td>
+        <td>${esc(entryName(r.entry_id))}</td>
+        <td class="num">${r.played}</td>
+        <td class="num">${r.won}</td>
+        <td class="num">${r.games_won}</td>
+        <td class="num">${r.points_diff > 0 ? '+' : ''}${r.points_diff}</td>
+      </tr>`).join('') + '</tbody></table></div>';
+  }
+
+  let matchesHtml = '';
+  if (poolMatches.length){
+    matchesHtml = `<div class="block-head">Match results
+        <span class="hint">Ranked on matches won, then games won, then points difference.</span></div>
+      <div class="table-scroll"><table><tbody>` +
+      poolMatches.map(m => {
+        const sum = gamesSummary(m.id);
+        const hN = entryName(m.home_entry_id) || 'TBC';
+        const aN = entryName(m.away_entry_id) || 'TBC';
+        const hWin = m.winner_entry_id && m.winner_entry_id === m.home_entry_id;
+        const aWin = m.winner_entry_id && m.winner_entry_id === m.away_entry_id;
+        return `<tr>
+          <td>${hWin ? '<strong>' : ''}${esc(hN)}${hWin ? '</strong>' : ''}
+              &nbsp;v&nbsp;
+              ${aWin ? '<strong>' : ''}${esc(aN)}${aWin ? '</strong>' : ''}</td>
+          <td class="num">${sum ? esc(sum) : '<span class="pill">Pending</span>'}</td>
+        </tr>`;
+      }).join('') + '</tbody></table></div>';
+  }
+
+  return `<div class="card pool-card"><h3>${esc(pool.name)}</h3>${table}${matchesHtml}</div>`;
+}
+
+function renderBracket(matches){
+  const main = matches.filter(m => m.bracket_kind === 'main');
+  const cons = matches.filter(m => m.bracket_kind === 'consolation');
+  let html = `<div class="block-head">Knockout bracket
+    <span class="hint">Winners advance to the right. Bold gold marks the match winner.</span></div>`;
+  html += renderBracketKind(main);
+  if (cons.length){
+    html += `<div class="block-head">Consolation draw</div>` + renderBracketKind(cons);
+  }
+  return html;
+}
+
+function renderBracketKind(matches){
+  if (!matches.length) return '';
+  const rounds = [...new Set(matches.map(m => m.round))].sort((a, b) => a - b);
+  const maxRound = rounds[rounds.length - 1];
+  return '<div class="bracket-scroll"><div class="bracket">' + rounds.map(r => {
+    const rm = matches.filter(m => m.round === r).sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0));
+    return `<div class="bracket-round"><h4>${esc(roundLabel(r, maxRound))}</h4>` +
+      rm.map(m => renderBracketMatch(m, r === maxRound)).join('') + '</div>';
+  }).join('') + '</div></div>';
+}
+
+function renderBracketMatch(m, isFinal){
+  const w = gamesWon(m.id);
+  const side = (entryId, games) => {
+    const name = entryName(entryId);
+    const win = m.winner_entry_id && m.winner_entry_id === entryId && entryId;
+    return `<div class="side${win ? ' winner' : ''}">
+      <span class="n">${name ? esc(name) : '<span class="tbc">TBC</span>'}</span>
+      <span class="s">${w.scored ? games : ''}</span>
+    </div>`;
+  };
+  const sum = gamesSummary(m.id);
+  const meta = [
+    m.scheduled_at ? fmtSlot(m.scheduled_at) : null,
+    m.court ? `Court ${esc(m.court)}` : null,
+    sum,
+  ].filter(Boolean).join(' · ');
+  return `<div class="bmatch${isFinal ? ' final-match' : ''}">
+    ${side(m.home_entry_id, w.h)}
+    ${side(m.away_entry_id, w.a)}
+    ${meta ? `<div class="meta">${meta}</div>` : ''}
+  </div>`;
+}
+
+/* ------------------------------------------------------------------ schedule */
+
+function renderSchedule(){
+  const body = $('scheduleBody');
+  const scheduled = S.matches
+    .filter(m => m.scheduled_at)
+    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at)
+      || String(a.court ?? '').localeCompare(String(b.court ?? ''), undefined, { numeric:true }));
+  if (!scheduled.length){
+    body.innerHTML = empty('Pending', 'The schedule follows the draw.');
+    return;
+  }
+  const evName = new Map(S.events.map(e => [e.id, e.name]));
+  let lastSlot = null;
+  const rows = scheduled.map(m => {
+    const slot = fmtSlot(m.scheduled_at);
+    const showSlot = slot !== lastSlot;
+    lastSlot = slot;
+    const sum = gamesSummary(m.id);
+    const hN = entryName(m.home_entry_id) || 'TBC';
+    const aN = entryName(m.away_entry_id) || 'TBC';
+    return `<tr>
+      <td>${showSlot ? `<span class="slot-time">${esc(slot)}</span>` : ''}</td>
+      <td>${m.court ? esc(m.court) : '<span class="pill">Pending</span>'}</td>
+      <td>${esc(evName.get(m.event_id) || '')}</td>
+      <td>${esc(hN)} v ${esc(aN)}</td>
+      <td class="num">${sum ? esc(sum)
+        : (m.winner_entry_id ? '' : '<span class="pill">Pending</span>')}</td>
+    </tr>`;
+  }).join('');
+  body.innerHTML = `<div class="card"><div class="table-scroll"><table>
+    <thead><tr><th>Time</th><th>Court</th><th>Event</th><th>Match</th><th class="num">Result</th></tr></thead>
+    <tbody>${rows}</tbody></table></div></div>`;
+}
+
+boot();
+</script>
+</body>
+</html>
