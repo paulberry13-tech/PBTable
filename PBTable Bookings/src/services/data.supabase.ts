@@ -18,6 +18,8 @@ import type {
   LedgerEntry,
   Member,
   Session,
+  SessionAttendee,
+  SessionStatus,
 } from '@/types';
 import type {
   BookResult,
@@ -32,7 +34,9 @@ import type { RatingChange } from '@/domain/ratings';
 
 export { InsufficientBalanceError };
 
-/** Single-club app: whose sessions/leaderboard we show. */
+/** Single-club app: whose sessions/leaderboard we show. Slug-drift resilience lives
+ *  in the demo's rdr_leaderboard (single-tenant: it returns the one club's standings
+ *  regardless of the slug passed), so the client just passes the configured slug. */
 const CLUB_SLUG = process.env.EXPO_PUBLIC_CLUB_SLUG ?? '';
 
 const notBuiltYet = (what: string): never => {
@@ -54,7 +58,28 @@ type SessionRow = {
   name?: string | null;
   format?: string | null;
   courts?: number | null;
+  location?: string | null;
 };
+
+/** Whether the session has happened — derived from ITS DATE AND TIME, never from
+ *  `booking_open`. The two are orthogonal: an admin closes booking as soon as the
+ *  line-up is built or the session fills, which is normal and says nothing about
+ *  whether the night has been played. Deriving status from `booking_open` moved a
+ *  member's still-upcoming booking into "Past" the moment the admin closed it. */
+function sessionStatus(r: SessionRow): SessionStatus {
+  const startAt = new Date(`${r.played_on}T${r.start_time ?? '19:00'}`);
+  let endAt = new Date(`${r.played_on}T${r.end_time ?? '21:00'}`);
+  // An unparseable date shouldn't hide a session — treat it as still to come.
+  if (Number.isNaN(startAt.getTime())) return 'upcoming';
+  // Missing/!nonsense end time (or one before the start): assume a two-hour session.
+  if (Number.isNaN(endAt.getTime()) || endAt <= startAt) {
+    endAt = new Date(startAt.getTime() + 2 * 60 * 60 * 1000);
+  }
+  const now = new Date();
+  if (now >= endAt) return 'completed';
+  if (now >= startAt) return 'in_progress';
+  return 'upcoming';
+}
 
 function mapSession(r: SessionRow, kind: SessionKind, bookedCount: number, mine: Booking[]): Session {
   // The caller's own bookings are real (so "you're booked" detection works);
@@ -88,7 +113,9 @@ function mapSession(r: SessionRow, kind: SessionKind, bookedCount: number, mine:
     isRecurring: false,
     bookings,
     waitlist,
-    status: r.booking_open ? 'upcoming' : 'completed',
+    status: sessionStatus(r),
+    bookingOpen: !!r.booking_open,
+    location: r.location ?? undefined,
   };
 }
 
@@ -149,18 +176,41 @@ async function resolveKind(sessionId: string): Promise<SessionKind> {
   return social.data ? 'social' : 'graded';
 }
 
+/** Who's playing, with real names — via the session_attendees function (members
+ *  can't read the bookings table directly, so the roster would otherwise be
+ *  anonymous). Degrades to empty on error. */
+async function fetchAttendees(kind: SessionKind, sessionId: string): Promise<SessionAttendee[]> {
+  const { data, error } = await supabase.rpc('session_attendees', {
+    p_session_kind: kind,
+    p_session_id: sessionId,
+  });
+  if (error || !data) return [];
+  type Row = { member_id: string; name: string; rating: number | null; status: SessionAttendee['status'] };
+  return (data as Row[]).map((r) => ({
+    memberId: r.member_id,
+    name: r.name,
+    rating: r.rating ?? null,
+    status: r.status,
+  }));
+}
+
 // --- sessions ----------------------------------------------------------------
 
 export async function getSessions(): Promise<Session[]> {
+  // "Upcoming" means upcoming: only sessions from today onward. Past sessions that were
+  // left booking_open shouldn't clutter the list.
+  const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const [social, graded] = await Promise.all([
     supabase
       .from('social_sessions')
-      .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open')
-      .eq('booking_open', true),
+      .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,location')
+      .eq('booking_open', true)
+      .gte('played_on', today),
     supabase
       .from('session_plans')
-      .select('id,played_on,start_time,end_time,capacity,courts,price_pennies,booking_open')
-      .eq('booking_open', true),
+      .select('id,name,played_on,start_time,end_time,capacity,courts,format,price_pennies,booking_open,location')
+      .eq('booking_open', true)
+      .gte('played_on', today),
   ]);
   if (social.error) throw social.error;
   if (graded.error) throw graded.error;
@@ -180,7 +230,7 @@ export async function getSessions(): Promise<Session[]> {
 export async function getSession(id: string): Promise<Session> {
   const social = await supabase
     .from('social_sessions')
-    .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open')
+    .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,location')
     .eq('id', id)
     .maybeSingle();
   const kind: SessionKind = social.data ? 'social' : 'graded';
@@ -188,17 +238,18 @@ export async function getSession(id: string): Promise<Session> {
   if (!row) {
     const graded = await supabase
       .from('session_plans')
-      .select('id,played_on,start_time,end_time,capacity,courts,price_pennies,booking_open')
+      .select('id,name,played_on,start_time,end_time,capacity,courts,format,price_pennies,booking_open,location')
       .eq('id', id)
       .single();
     if (graded.error) throw graded.error;
     row = graded.data as SessionRow;
   }
-  const [counts, mine] = await Promise.all([
+  const [counts, mine, attendees] = await Promise.all([
     bookedCounts([{ id, kind }]),
     myBookingsForSessions([id]),
+    fetchAttendees(kind, id),
   ]);
-  return mapSession(row, kind, counts.get(id) ?? 0, mine.get(id) ?? []);
+  return { ...mapSession(row, kind, counts.get(id) ?? 0, mine.get(id) ?? []), attendees };
 }
 
 export async function createSession(input: CreateSessionInput): Promise<Session> {
@@ -425,9 +476,19 @@ export async function topUp(memberId: string, amountPence: number): Promise<Ledg
   if (STRIPE_TOPUP) {
     // Real Stripe Checkout (test mode). Redirect to Stripe; the webhook credits
     // the wallet on completion and the app reloads to the success_url.
-    const origin = Platform.OS === 'web' ? window.location.origin : 'https://demo.pbtable.com';
+    // Return the member to the exact app page they launched top-up from, so the
+    // whole round-trip stays inside the app — works whether it's hosted at the
+    // domain root or mounted under /app on the club site.
+    const returnUrl =
+      Platform.OS === 'web'
+        ? `${window.location.origin}${window.location.pathname}`
+        : 'https://demo.pbtable.com/wallet';
     const { data, error } = await supabase.functions.invoke('create-topup-checkout', {
-      body: { amount_pennies: amountPence, success_url: `${origin}/`, cancel_url: `${origin}/` },
+      body: {
+        amount_pennies: amountPence,
+        success_url: `${returnUrl}?topup=success`,
+        cancel_url: `${returnUrl}?topup=cancelled`,
+      },
     });
     if (error) throw new Error(error.message);
     const url = (data as { url?: string })?.url;

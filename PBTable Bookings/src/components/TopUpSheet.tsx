@@ -33,6 +33,12 @@ export function TopUpSheet({
     [minPence]
   );
   const [amount, setAmount] = useState<number>(defaultAmount);
+  const [customActive, setCustomActive] = useState(false);
+  const [customText, setCustomText] = useState('');
+  const customPence = Math.round((parseFloat(customText.replace(/[^0-9.]/g, '')) || 0) * 100);
+  const effectiveAmount = customActive ? customPence : amount;
+  const minAllowed = Math.max(100, minPence);
+  const amountValid = effectiveAmount >= minAllowed;
   const [cardNumber, setCardNumber] = useState('4242 4242 4242 4242');
   const [expiry, setExpiry] = useState('12/28');
   const [cvc, setCvc] = useState('123');
@@ -46,13 +52,14 @@ export function TopUpSheet({
   }
 
   const pay = async () => {
+    if (!amountValid) return;
     setPaying(true);
     try {
       if (!STRIPE_TOPUP) {
-        await charge({ amountPence: amount, description: `Wallet top-up`, cardNumber, expiry, cvc });
+        await charge({ amountPence: effectiveAmount, description: `Wallet top-up`, cardNumber, expiry, cvc });
       }
       // In Stripe mode onConfirm → topUp redirects to Stripe Checkout.
-      await onConfirm(amount);
+      await onConfirm(effectiveAmount);
     } finally {
       setPaying(false);
     }
@@ -78,11 +85,14 @@ export function TopUpSheet({
           <Text style={styles.label}>Amount</Text>
           <Row gap={spacing.sm} style={{ flexWrap: 'wrap' }}>
             {TOPUP_AMOUNTS.map((a) => {
-              const selected = a === amount;
+              const selected = !customActive && a === amount;
               return (
                 <Pressable
                   key={a}
-                  onPress={() => setAmount(a)}
+                  onPress={() => {
+                    setAmount(a);
+                    setCustomActive(false);
+                  }}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
                   style={[styles.amountChip, selected && styles.amountChipSelected]}
@@ -93,7 +103,36 @@ export function TopUpSheet({
                 </Pressable>
               );
             })}
+            <Pressable
+              onPress={() => setCustomActive(true)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: customActive }}
+              style={[styles.amountChip, customActive && styles.amountChipSelected]}
+            >
+              <Text style={[styles.amountText, styles.customText, customActive && { color: colors.textOnDark }]}>
+                Custom
+              </Text>
+            </Pressable>
           </Row>
+          {customActive ? (
+            <>
+              <View style={styles.customInputWrap}>
+                <Text style={styles.pound}>£</Text>
+                <TextInput
+                  style={styles.customInput}
+                  value={customText}
+                  onChangeText={(t) => setCustomText(t.replace(/[^0-9.]/g, ''))}
+                  keyboardType="decimal-pad"
+                  placeholder="Enter amount"
+                  placeholderTextColor={colors.textFaint}
+                  autoFocus
+                />
+              </View>
+              {customText !== '' && !amountValid ? (
+                <Text style={styles.minNote}>Minimum {formatMoney(minAllowed)}.</Text>
+              ) : null}
+            </>
+          ) : null}
 
           {!STRIPE_TOPUP ? (
             <>
@@ -144,13 +183,22 @@ export function TopUpSheet({
                   ? 'Opening Stripe…'
                   : 'Adding money…'
                 : STRIPE_TOPUP
-                  ? `Continue to payment · ${formatMoney(amount)}`
-                  : `Pay ${formatMoney(amount)}`
+                  ? `Continue to payment · ${formatMoney(effectiveAmount)}`
+                  : `Pay ${formatMoney(effectiveAmount)}`
             }
             onPress={pay}
             loading={paying}
+            disabled={!amountValid}
             style={{ marginTop: spacing.lg }}
           />
+          {STRIPE_TOPUP ? (
+            <Row style={{ marginTop: spacing.md, justifyContent: 'center' }} gap={6}>
+              <Ionicons name="lock-closed" size={12} color={colors.textFaint} />
+              <Text style={[type.caption, { color: colors.textFaint }]}>
+                You’ll pay on Stripe’s secure page, then come straight back.
+              </Text>
+            </Row>
+          ) : null}
         </View>
       </View>
     </Modal>
@@ -191,6 +239,40 @@ const styles = StyleSheet.create({
     fontFamily: fonts.monoBold,
     fontSize: 18,
     color: colors.navy,
+  },
+  customText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+  },
+  customInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.card,
+  },
+  pound: {
+    fontFamily: fonts.monoBold,
+    fontSize: 18,
+    color: colors.textMuted,
+    marginRight: 4,
+  },
+  customInput: {
+    flex: 1,
+    paddingVertical: 12,
+    minHeight: 44,
+    fontSize: 18,
+    fontFamily: fonts.monoBold,
+    color: colors.text,
+  },
+  minNote: {
+    marginTop: 6,
+    color: colors.amberText,
+    fontSize: 12,
+    fontFamily: fonts.medium,
   },
   demoNote: {
     flexDirection: 'row',

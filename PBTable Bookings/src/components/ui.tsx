@@ -149,13 +149,50 @@ export function ErrorState({ message }: { message: string }) {
 }
 
 // --- Capacity meter -------------------------------------------------------------------
-/** Thin booked/capacity track — green with room, amber when nearly full, navy when full. */
-export function CapacityBar({ booked, capacity }: { booked: number; capacity: number }) {
+/** Booked/capacity track — green with room, amber when nearly full, navy when full. */
+export function CapacityBar({ booked, capacity, height = 6 }: { booked: number; capacity: number; height?: number }) {
   const ratio = capacity > 0 ? Math.min(1, booked / capacity) : 0;
   const fill = ratio >= 1 ? colors.navy : ratio >= 0.75 ? colors.amber : colors.up;
   return (
-    <View style={styles.track}>
-      <View style={[styles.trackFill, { width: `${ratio * 100}%`, backgroundColor: fill }]} />
+    <View style={[styles.track, { height, borderRadius: height / 2 }]}>
+      <View style={[styles.trackFill, { width: `${ratio * 100}%`, backgroundColor: fill, borderRadius: height / 2 }]} />
+    </View>
+  );
+}
+
+// --- Fixture date block ---------------------------------------------------------------
+/** Sports-listing date tile: coral day, big date, month — the visual anchor of a
+ *  session card. `kind` colours the top rule: coral = graded, green = social. */
+export function DateBlock({
+  day, num, mon, kind = 'graded', size = 'md',
+}: {
+  day: string; num: string; mon: string; kind?: 'graded' | 'social'; size?: 'md' | 'lg';
+}) {
+  const lg = size === 'lg';
+  return (
+    <View style={[styles.dateBlock, lg && { width: 68, paddingVertical: 10 }]}>
+      <View style={[styles.dateBlockRule, { backgroundColor: kind === 'graded' ? colors.coral : colors.up }]} />
+      <Text style={styles.dateBlockDay}>{day}</Text>
+      <Text style={[styles.dateBlockNum, lg && { fontSize: 30 }]}>{num}</Text>
+      <Text style={styles.dateBlockMon}>{mon}</Text>
+    </View>
+  );
+}
+
+// --- Initials avatar ------------------------------------------------------------------
+const AVATAR_FILLS = ['#33456B', '#1B2B4B', '#546A99'] as const;
+export function Avatar({ initials, index = 0, size = 34 }: { initials: string; index?: number; size?: number }) {
+  return (
+    <View
+      style={{
+        width: size, height: size, borderRadius: size / 2,
+        backgroundColor: AVATAR_FILLS[index % AVATAR_FILLS.length],
+        alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <Text style={{ fontFamily: fonts.extrabold, fontSize: size * 0.36, color: colors.textOnDark, letterSpacing: 0.5 }}>
+        {initials}
+      </Text>
     </View>
   );
 }
@@ -239,14 +276,46 @@ const styles = StyleSheet.create({
     minHeight: 220,
   },
   track: {
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.trackBg,
     overflow: 'hidden',
     flex: 1,
   },
   trackFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
+  },
+  dateBlock: {
+    width: 58,
+    backgroundColor: colors.navy,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    paddingVertical: 8,
+    overflow: 'hidden',
+  },
+  dateBlockRule: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: 3,
+  },
+  dateBlockDay: {
+    fontFamily: fonts.extrabold,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: colors.coralBright,
+    marginTop: 2,
+  },
+  dateBlockNum: {
+    fontFamily: fonts.displayBold,
+    fontSize: 24,
+    color: colors.textOnDark,
+    lineHeight: 28,
+  },
+  dateBlockMon: {
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    color: colors.textOnDarkMuted,
   },
 });

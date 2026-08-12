@@ -6,7 +6,7 @@ import { TopUpSheet } from '@/components/TopUpSheet';
 import { Button, Card, EmptyState, LoadingView, Row } from '@/components/ui';
 import { formatDate } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
-import { USE_SUPABASE } from '@/services/config';
+import { DEMO_AUTOLOGIN, STRIPE_TOPUP, USE_SUPABASE } from '@/services/config';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
@@ -43,13 +43,23 @@ export default function WalletScreen() {
       <Text style={type.display}>Wallet</Text>
 
       <View style={styles.balanceCard}>
+        <View style={styles.balanceRule} />
         <Text style={styles.balanceLabel}>BALANCE</Text>
         <Text style={styles.balanceMoney}>{formatMoney(pence)}</Text>
+        <Text style={styles.balanceHint}>
+          {pence === 0 ? 'Top up to book your first session.' : 'Sessions are paid from this balance.'}
+        </Text>
         <Button
           title="Top up"
           onPress={() => setTopUpOpen(true)}
           style={{ marginTop: spacing.lg, alignSelf: 'flex-start', paddingHorizontal: spacing.xxl }}
         />
+        {STRIPE_TOPUP ? (
+          <Row style={{ marginTop: spacing.md }} gap={6}>
+            <Ionicons name="lock-closed" size={12} color={colors.textOnDarkMuted} />
+            <Text style={styles.stripeNote}>Card payments handled securely by Stripe</Text>
+          </Row>
+        ) : null}
       </View>
 
       <Text style={[type.h1, { marginTop: spacing.xl, marginBottom: spacing.md }]}>Activity</Text>
@@ -66,7 +76,7 @@ export default function WalletScreen() {
         </Card>
       )}
 
-      {USE_SUPABASE ? (
+      {USE_SUPABASE && !DEMO_AUTOLOGIN ? (
         <Button
           title="Sign out"
           variant="ghost"
@@ -86,15 +96,18 @@ export default function WalletScreen() {
 
 function LedgerRow({ entry, last }: { entry: LedgerEntry; last: boolean }) {
   const credit = entry.amountPence >= 0;
-  const icon =
-    entry.type === 'deposit' ? 'add-circle' : entry.type === 'refund' ? 'arrow-undo-circle' : 'remove-circle';
-  const tint = credit ? colors.up : colors.textMuted;
+  const icon: React.ComponentProps<typeof Ionicons>['name'] =
+    entry.type === 'deposit' ? 'add' : entry.type === 'refund' ? 'arrow-undo' : 'tennisball';
+  const chipBg = entry.type === 'deposit' ? colors.upSoft : entry.type === 'refund' ? colors.amberSoft : colors.trackBg;
+  const chipFg = entry.type === 'deposit' ? colors.upText : entry.type === 'refund' ? colors.amberText : colors.textFaint;
   const sign = credit ? '+' : '−';
   const magnitude = Math.abs(entry.amountPence);
 
   return (
     <Row style={[styles.ledgerRow, !last && styles.ledgerDivider]} gap={spacing.md}>
-      <Ionicons name={icon} size={22} color={tint} />
+      <View style={[styles.ledgerChip, { backgroundColor: chipBg }]}>
+        <Ionicons name={icon} size={16} color={chipFg} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={type.bodyBold} numberOfLines={1}>
           {entry.description}
@@ -117,6 +130,31 @@ const styles = StyleSheet.create({
     backgroundColor: colors.navy,
     borderRadius: radius.lg,
     padding: spacing.xl,
+    overflow: 'hidden',
+  },
+  balanceRule: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: 4,
+    backgroundColor: colors.coral,
+  },
+  balanceHint: {
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    color: colors.textOnDarkMuted,
+    marginTop: 2,
+  },
+  stripeNote: {
+    fontFamily: fonts.medium,
+    fontSize: 11.5,
+    color: colors.textOnDarkMuted,
+  },
+  ledgerChip: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   balanceLabel: {
     fontFamily: fonts.extrabold,

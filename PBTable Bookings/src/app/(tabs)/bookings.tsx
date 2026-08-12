@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmSheet } from '@/components/ConfirmSheet';
-import { Badge, Button, Card, EmptyState, LoadingView, Row } from '@/components/ui';
+import { Badge, Button, DateBlock, EmptyState, LoadingView, Row } from '@/components/ui';
 import { sessionStart } from '@/domain/cancellation';
 import { formatMoney, formatMoneyShort } from '@/lib/money';
-import { formatSessionWhen } from '@/lib/format';
+import { countdownLabel, dateBlockParts, formatSessionWhen, formatTimeRange } from '@/lib/format';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
-import { colors, fonts, radius, spacing, type } from '@/theme';
+import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
 export default function MyBookingsScreen() {
   const router = useRouter();
@@ -81,34 +81,58 @@ export default function MyBookingsScreen() {
       {upcoming.length === 0 ? (
         <EmptyState title="Nothing booked yet" hint="Head to Sessions to grab a spot." />
       ) : (
-        upcoming.map(({ booking, session }) => (
-          <Card key={booking.id} style={{ marginBottom: spacing.md }}>
-            <Pressable onPress={() => router.push({ pathname: '/session/[id]', params: { id: session.id } })}>
-              <Row style={{ justifyContent: 'space-between' }}>
-                <Text style={type.h2}>{session.title}</Text>
-                {booking.status === 'waitlisted' ? (
-                  <Badge label="Waitlisted" tone="amber" />
-                ) : (
-                  <Badge label="Booked" tone="green" />
-                )}
-              </Row>
-              <Text style={[type.caption, { marginTop: 2 }]}>{formatSessionWhen(session)}</Text>
-              <Text style={[type.caption, { marginTop: 2 }]}>
-                {booking.paidPence === 0
-                  ? booking.status === 'waitlisted'
-                    ? 'No charge yet'
-                    : 'Free'
-                  : `Paid ${formatMoneyShort(booking.paidPence)}`}
-              </Text>
-            </Pressable>
-            <Button
-              title={booking.status === 'waitlisted' ? 'Leave waitlist' : 'Cancel booking'}
-              variant="ghost"
-              onPress={() => void askCancel(session.id, session.title)}
-              style={{ marginTop: spacing.md }}
-            />
-          </Card>
-        ))
+        upcoming.map(({ booking, session }) => {
+          const parts = dateBlockParts(session.date);
+          const kind = session.affectsRating ? 'graded' : 'social';
+          const soon = countdownLabel(session);
+          const waitlisted = booking.status === 'waitlisted';
+          return (
+            <View key={booking.id} style={styles.card}>
+              <Pressable
+                onPress={() => router.push({ pathname: '/session/[id]', params: { id: session.id } })}
+                accessibilityRole="button"
+              >
+                <Row gap={spacing.md} style={{ alignItems: 'flex-start' }}>
+                  <DateBlock {...parts} kind={kind} />
+                  <View style={{ flex: 1 }}>
+                    <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }} gap={spacing.sm}>
+                      <Text style={styles.cardTitle} numberOfLines={2}>
+                        {session.title}
+                      </Text>
+                      {waitlisted ? <Badge label="Waitlisted" tone="amber" /> : <Badge label="Booked" tone="green" />}
+                    </Row>
+                    <Row style={{ marginTop: 3, flexWrap: 'wrap' }} gap={spacing.sm}>
+                      <Text style={styles.cardMeta}>{formatTimeRange(session)}</Text>
+                      {soon ? (
+                        <View style={styles.soonChip}>
+                          <Text style={styles.soonText}>{soon}</Text>
+                        </View>
+                      ) : null}
+                    </Row>
+                    {session.location ? (
+                      <Text style={[styles.cardMeta, { marginTop: 3 }]} numberOfLines={1}>
+                        {session.location}
+                      </Text>
+                    ) : null}
+                    <Text style={[styles.cardPaid, { marginTop: 5 }]}>
+                      {booking.paidPence === 0
+                        ? waitlisted
+                          ? 'No charge while you wait'
+                          : 'Free'
+                        : `Paid ${formatMoneyShort(booking.paidPence)}`}
+                    </Text>
+                  </View>
+                </Row>
+              </Pressable>
+              <Button
+                title={waitlisted ? 'Leave waitlist' : 'Cancel booking'}
+                variant="ghost"
+                onPress={() => void askCancel(session.id, session.title)}
+                style={{ marginTop: spacing.md }}
+              />
+            </View>
+          );
+        })
       )}
 
       <Text style={[type.h1, { marginTop: spacing.xl, marginBottom: spacing.md }]}>Past</Text>
@@ -116,18 +140,20 @@ export default function MyBookingsScreen() {
         <Text style={type.caption}>No past bookings yet.</Text>
       ) : (
         past.map(({ booking, session }) => (
-          <Card key={booking.id} style={{ marginBottom: spacing.md, opacity: 0.85 }}>
-            <Row style={{ justifyContent: 'space-between' }}>
-              <View>
-                <Text style={type.h2}>{session.title}</Text>
-                <Text style={[type.caption, { marginTop: 2 }]}>{formatSessionWhen(session)}</Text>
+          <View key={booking.id} style={[styles.card, styles.pastCard]}>
+            <Row style={{ justifyContent: 'space-between' }} gap={spacing.sm}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.cardTitle, { color: colors.textMuted }]} numberOfLines={1}>
+                  {session.title}
+                </Text>
+                <Text style={[styles.cardMeta, { marginTop: 2 }]}>{formatSessionWhen(session)}</Text>
               </View>
               <Badge
                 label={booking.status === 'attended' ? 'Attended' : booking.status}
                 tone={booking.status === 'attended' ? 'navy' : 'grey'}
               />
             </Row>
-          </Card>
+          </View>
         ))
       )}
 
@@ -148,6 +174,52 @@ export default function MyBookingsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 48, maxWidth: 720, width: '100%', alignSelf: 'center' },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    paddingRight: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
+  },
+  pastCard: {
+    opacity: 0.8,
+    paddingVertical: spacing.md,
+  },
+  cardTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: fonts.display,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    color: colors.navy,
+    lineHeight: 20,
+  },
+  cardMeta: {
+    fontSize: 12.5,
+    fontFamily: fonts.medium,
+    color: colors.textFaint,
+  },
+  cardPaid: {
+    fontSize: 12.5,
+    fontFamily: fonts.bold,
+    color: colors.textMuted,
+  },
+  soonChip: {
+    backgroundColor: colors.coralSoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 1.5,
+  },
+  soonText: {
+    fontSize: 11,
+    fontFamily: fonts.extrabold,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    color: colors.coralText,
+  },
   walletStrip: {
     flexDirection: 'row',
     alignItems: 'center',

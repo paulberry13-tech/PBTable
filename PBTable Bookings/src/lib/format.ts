@@ -45,3 +45,33 @@ export function spotsLeft(session: Session): number {
   const active = session.bookings.filter((b) => b.status === 'booked' || b.status === 'attended');
   return Math.max(0, session.capacity - active.length);
 }
+
+/** Pieces for the fixture-style date block: { day:'FRI', num:'15', mon:'AUG' } */
+export function dateBlockParts(isoDate: string): { day: string; num: string; mon: string } {
+  const d = new Date(`${isoDate}T00:00:00`);
+  return {
+    day: DAYS[d.getDay()].toUpperCase(),
+    num: String(d.getDate()),
+    mon: MONTHS[d.getMonth()].toUpperCase(),
+  };
+}
+
+/** "Tonight" / "Tomorrow" / "In 3 days" / "Today" — the countdown chip on My Bookings. */
+export function countdownLabel(session: Session): string | null {
+  const now = new Date();
+  const todayIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const start = new Date(`${session.date}T${session.startTime || '19:00'}`);
+  const days = Math.round((new Date(`${session.date}T00:00:00`).getTime() - new Date(`${todayIso}T00:00:00`).getTime()) / 86400000);
+  if (days < 0) return null;
+  if (days === 0) return start.getHours() >= 17 ? 'Tonight' : 'Today';
+  if (days === 1) return 'Tomorrow';
+  if (days <= 13) return `In ${days} days`;
+  const weeks = Math.round(days / 7);
+  return `In ${weeks} week${weeks === 1 ? '' : 's'}`;
+}
+
+/** Initials for the who's-playing avatars: "Sandra Jardine" → "SJ". */
+export function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '?';
+}

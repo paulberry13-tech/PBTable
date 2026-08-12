@@ -72,6 +72,21 @@ export interface Session {
   /** memberIds, in order. */
   waitlist: string[];
   status: SessionStatus;
+  /** Whether the club is currently accepting bookings for this session. Separate from
+   *  `status`: a future session can have booking closed (full, or the line-up is built). */
+  bookingOpen?: boolean;
+  /** Who's playing, with real names — populated on the live backend via the
+   *  session_attendees function (players can't read the bookings table directly). */
+  attendees?: SessionAttendee[];
+  /** Venue / address, shown on the sessions showcase. */
+  location?: string;
+}
+
+export interface SessionAttendee {
+  memberId: string;
+  name: string;
+  rating: number | null;
+  status: BookingStatus;
 }
 
 export type BookingStatus = 'booked' | 'waitlisted' | 'attended' | 'no_show' | 'cancelled';
