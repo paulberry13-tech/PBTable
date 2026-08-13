@@ -113,6 +113,7 @@
   /* per-tournament logo, on a white chip so any logo stays legible on the crimson hero */
   .hero-logo{ height:66px; width:auto; max-width:230px; object-fit:contain; background:#fff;
     padding:8px 12px; border-radius:12px; box-shadow:var(--sh-2); margin-bottom:16px; display:block; }
+  .hero-logo[hidden]{ display:none; }   /* [hidden] must beat the display:block above */
   .hero-meta{ color:rgba(255,255,255,.9); font-size:1.08rem; display:flex; gap:14px;
     flex-wrap:wrap; align-items:center; }
   .hero-meta span{ display:inline-flex; align-items:center; }
@@ -368,7 +369,6 @@
   <svg class="hero-ball" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#i-ball"/></svg>
   <div class="hero-body">
     <img id="tLogo" class="hero-logo hero-anim d1" alt="" hidden>
-    <div class="hero-kicker hero-anim d1"><span class="live"></span>Live draws &amp; results</div>
     <h1 class="tourn-name hero-anim d2" id="tournName">Pending</h1>
     <div class="hero-underline hero-anim d2"></div>
     <div class="hero-meta hero-anim d3" id="tournMeta"></div>
