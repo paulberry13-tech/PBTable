@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from './Sprite'
 import { Reveal } from './Reveal'
 import { Empty } from './Empty'
@@ -150,12 +150,64 @@ function Bracket({ data, matches }: { data: PublicData; matches: Match[] }) {
   )
 }
 
+type Seg = { x1: number; y1: number; x2: number; y2: number }
+
 function BracketKind({ data, matches }: { data: PublicData; matches: Match[] }) {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [segs, setSegs] = useState<Seg[]>([])
+
+  // Draw the connectors from the ACTUAL rendered card positions. Each bracket match stores
+  // winner_advances_to (the match its winner feeds), so we group feeders by that — no fragile
+  // slot arithmetic — and draw the classic elbow (a horizontal out of each feeder, a vertical
+  // joining them, a horizontal into the next). Measuring copes with any bracket size or height.
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current
+    if (!wrap) return
+    const compute = () => {
+      const wr = wrap.getBoundingClientRect()
+      const rectById = new Map<string, { left: number; right: number; cy: number }>()
+      wrap.querySelectorAll<HTMLElement>('.bmatch[data-id]').forEach((el) => {
+        const b = el.getBoundingClientRect()
+        rectById.set(el.dataset.id!, { left: b.left - wr.left, right: b.right - wr.left, cy: (b.top + b.bottom) / 2 - wr.top })
+      })
+      const groups = new Map<string, { left: number; cy: number; feeders: { right: number; cy: number }[] }>()
+      for (const m of matches) {
+        if (!m.winner_advances_to) continue
+        const feeder = rectById.get(m.id)
+        const target = rectById.get(m.winner_advances_to)
+        if (!feeder || !target) continue
+        let g = groups.get(m.winner_advances_to)
+        if (!g) { g = { left: target.left, cy: target.cy, feeders: [] }; groups.set(m.winner_advances_to, g) }
+        g.feeders.push({ right: feeder.right, cy: feeder.cy })
+      }
+      const out: Seg[] = []
+      for (const g of groups.values()) {
+        if (!g.feeders.length) continue
+        const feedRight = Math.max(...g.feeders.map((f) => f.right))
+        const midX = (feedRight + g.left) / 2
+        for (const f of g.feeders) out.push({ x1: f.right, y1: f.cy, x2: midX, y2: f.cy })
+        const ys = [...g.feeders.map((f) => f.cy), g.cy] // include next's centre so the elbow always meets
+        out.push({ x1: midX, y1: Math.min(...ys), x2: midX, y2: Math.max(...ys) })
+        out.push({ x1: midX, y1: g.cy, x2: g.left, y2: g.cy })
+      }
+      setSegs(out)
+    }
+    compute()
+    const ro = new ResizeObserver(compute)
+    ro.observe(wrap)
+    window.addEventListener('resize', compute)
+    document.fonts?.ready.then(compute).catch(() => {}) // fonts can reflow card heights
+    return () => { ro.disconnect(); window.removeEventListener('resize', compute) }
+  }, [matches])
+
   if (!matches.length) return null
   const rounds = [...new Set(matches.map((m) => m.round ?? 0))].sort((a, b) => a - b)
   const maxRound = rounds[rounds.length - 1]
   return (
-    <div className="bracket-scroll"><div className="bracket">
+    <div className="bracket-scroll"><div className="bracket" ref={wrapRef}>
+      <svg className="bracket-lines" aria-hidden="true">
+        {segs.map((s, i) => <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />)}
+      </svg>
       {rounds.map((r) => {
         const rm = matches.filter((m) => (m.round ?? 0) === r).sort((a, b) => (a.slot ?? 0) - (b.slot ?? 0))
         return (
@@ -187,11 +239,12 @@ function BracketMatch({ data, m, isFinal }: { data: PublicData; m: Match; isFina
     m.court ? `Court ${m.court}` : null,
     sum,
   ].filter(Boolean).join(' · ')
+  // A plain div (not Reveal) so its position is stable for the connector measurement.
   return (
-    <Reveal className={`bmatch${isFinal ? ' final-match' : ''}`}>
+    <div className={`bmatch${isFinal ? ' final-match' : ''}`} data-id={m.id}>
       {side(m.home_entry_id, w.h)}
       {side(m.away_entry_id, w.a)}
       {meta && <div className="meta">{meta}</div>}
-    </Reveal>
+    </div>
   )
 }

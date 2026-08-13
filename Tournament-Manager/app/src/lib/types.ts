@@ -79,6 +79,7 @@ export interface Match {
   home_entry_id: string | null
   away_entry_id: string | null
   winner_entry_id: string | null
+  winner_advances_to: string | null   // id of the match this winner feeds — drives bracket connectors
   court: string | null
   scheduled_at: string | null
   best_of: number | null
