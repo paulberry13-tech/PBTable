@@ -635,6 +635,104 @@ disk from the applied ledger 2026-08-12; each byte-identical to what ran):
   dashboard, not MCP) so they're the as-authored files, verified by column checks at the
   time. On-disk apply order now reproduces the live DB exactly: `001 002 003 004 005a…005i
   006 006b 007 007b 008 009 009b 010`.
+- 2026-08-12: **entry page split into tabs + amendable vs status made unmistakable.** Paul:
+  "I would prefer for the 'Your entries' to be on a separate page accessible via a tab or
+  menu item. All amendable areas need to be clearly identified. At the moment there are
+  clickable and non-clickable buttons and it's a bit confusing." Both done in `enter.html`,
+  no schema change:
+  - **`enter.html` is now tabbed**, not one endless scroll. A `.tabbar` under the hero and
+    an `S.view` state route `render()` to ONE section at a time: **Enter events** (builder)
+    · **My entries** · **Fees** · **My matches** · **My details** (the profile, moved out of
+    the top-of-page `<details>` onto its own tab). Tabs are built from what exists — no
+    "Fees" tab before there are fees, no "My matches" before a schedule — and carry
+    attention **badges**: pending-invitation count on My entries (gold), amount-due count
+    on Fees (amber), blocked-event count on My details (amber). Landing view: an invitation
+    waiting → My entries; a Stripe return (`?paid`) → Fees; otherwise Enter events. A
+    remembered tab that has since vanished falls back safely.
+  - **The confusion was that the `.steps` status strip looked like the action buttons.**
+    Fixed structurally, not just cosmetically: each entry card is now three fenced bands —
+    identity + a status **chip**, then a plain **`.progress` checklist** (a `<ul>` of ticked
+    / not-yet items, `cursor:auto`, no button chrome — provably not clickable), then, ONLY
+    when something is still changeable, a band **labelled "Manage this entry"** holding the
+    real buttons (Change/Invite partner · Cancel invitation · Leave this pairing ·
+    Withdraw). When an entry is locked (draw made) or withdrawn there are **no buttons at
+    all** — a plain "Locked." / "Withdrawn." line replaces them, so there is never a control
+    that looks live but isn't. The "Your entries" intro spells it out: the Manage buttons
+    are the only things to click; the ticks are just progress.
+  - Verified in the browser by injecting synthetic signed-in state and driving `render()`
+    (no auth, no writes): all five tabs render, tab-switch handler works (clicked Fees →
+    Fees view), the accessibility tree shows status as `listitem`s + a status chip and
+    actions as `button`s, and computed styles confirm `.progress li` is `cursor:auto` while
+    `.actions .btn` is `cursor:pointer`; the drawn entry shows the buttonless "Locked."
+    block. No JS errors (the only console 4xx are the pre-existing anon Supabase RPC calls
+    on the signed-out path). **Not yet walked as a real signed-in player** — that needs the
+    password fallback on a demo login, which Paul can do on the Winter Open.
+  - **Follow-up from Paul's live screenshot:** on "My entries" every card led with his own
+    name — identical on all of them — while the event was a muted sub-line, so the cards
+    were hard to tell apart. Flipped the hierarchy: the **event is now the crimson headline**
+    (`.entry-event`, 1.42rem Barlow Condensed) and the player/partner line is the muted
+    secondary. Added band de-dup — a "Mixed Doubles 50+" event with a "50+" band no longer
+    reads "50+ · 50+"; the band pill shows only when the event name does not already contain
+    it. Verified by computed styles (event 22.7px vs player 15.2px) and the three-card
+    de-dup (two names carry the band → no pill, one → "Open" pill).
+- 2026-08-13: **bold visual overhaul across all four surfaces** (`/design-taste-frontend`,
+  Paul chose "Bold reinvention"). Treated as a **preserve-mode redesign**: no-build kept (no
+  React/Tailwind/npm — the skill's stack was declined as inapplicable), crimson+gold brand
+  locked (palette hexes byte-unchanged), every layout, ID and JS hook preserved, zero
+  functional logic changed. The skill is built for React landing pages; three of the four
+  surfaces are explicitly out of its scope (admin = dense tool, display = TV data screen,
+  index/enter = data flows), so only its transferable craft was applied: type scale, depth,
+  motion-as-feedback, states, focus, consistency.
+  - **Shared language** added to each file's own `<style>` (no shared sheet exists): one
+    radius scale (`--r*`), crimson-tinted elevation (`--sh-1/2/3`, `--sh-gold`), a gold
+    focus `--ring`, `--grad-crimson` / `--grad-gold`, one `--ease`, `::selection` gold,
+    tightened Barlow Condensed tracking, antialiasing.
+  - **index.html (full bold):** hero is now a gradient STACK (gold spotlight + crimson wash
+    + deep base) with a live-pulse eyebrow, ~74px tight name, gold underline, gold base
+    edge, staggered entrance; cards/tables/chips on layered shadows with hover-lift +
+    tactile press; the **knockout bracket** gained round connector stubs, gilded winner
+    rows, and the final on a gold-glowing plinth; pool leaders gilded; footer gold ribbon;
+    **scroll-reveal** via IntersectionObserver + MutationObserver.
+  - **enter.html:** same hero treatment + gold-pill eyebrow; card/button depth + gradient +
+    tactile; a **`.view` fade** on each tab render + hero entrance (chosen over scroll-reveal
+    for a short tabbed flow).
+  - **display.html (broadcast):** gold-spotlight/vignette background, gold-edged header,
+    **on-court tiles** as elevated scoreboards (gradient + inner highlight + gold top edge),
+    glowing live/soon board cells, the final on a gold plinth, a **dramatic champions card**,
+    and a **panel-swap fade** re-triggered each `paint()`.
+  - **admin.html (restrained):** gold-edged layered header, card depth, tactile/gradient
+    buttons, tab hover, focus rings — polish, no theatrics (it is a workhorse).
+  - **Motion is safe by construction.** index's reveal hides content ONLY under
+    `html.reveal-ready` (added solely when IntersectionObserver exists) AND
+    `prefers-reduced-motion:no-preference`, with a 4s belt-and-braces fallback that force-
+    shows everything — so no-JS, old-browser, reduced-motion, or a backgrounded tab can
+    never strand content invisible (verified: after the fallback window all 9 reveal targets
+    show, 0 stranded). enter/display fades are one-shot and never persist a hidden state.
+  - **Verified structurally on all four** (no console errors; data loads; tabs/panels/cards
+    render; reveal-safe; motion confirmed `riseIn`/`swap` applied with reduced-motion=false).
+    **NOT seen visually from here** — the Browser pane could not be displayed, so screenshots
+    time out; Paul needs to eyeball each page (`index.html?t=cotswold-autumn-classic`,
+    `enter.html?t=severn-vale-winter-open`, `display.html?t=cheltenham-spring-shootout`,
+    `admin.html`). Light touch: removed the 3 visible em-dashes on index per the skill; left
+    the siblings' copy voice untouched.
+- 2026-08-13 (later): **Paul: "doesn't look like much enhancement… the attached lines don't
+  look right" → then "push harder across all the pages."** Two rounds:
+  1. **Bracket fixed + made bold.** The connector stubs (`bmatch::after`, `right:-30px`) were
+     floating into empty space because they left each card's mid-height while the next-round
+     card sits vertically centred elsewhere — real bracket connectors don't work in this flex
+     layout, so they were **removed**, not faked. Added a **`.champion-banner`** (gold-on-gold,
+     trophy, the winning pair's name) rendered by `renderBracket()` the moment the final has a
+     `winner_entry_id`; the final now sits on a gilded plinth with a pinned **FINAL** tag;
+     winners get a solid gold wash + gold edge-bar. Verified champions resolve for all three
+     Cotswold events (Prescott/Coleford, Marsh/Prescott, Dunmore).
+  2. **Calibration was too tasteful.** The first pass WAS live (not cached) — it was just
+     too subtle for "bold". Pushed intensity across all four: heavier depth tokens
+     (`--sh-2/3` roughly doubled), a **gold underline under every section `h2`**, larger
+     headers, **gradient-filled cards**, **crimson tinted table headers**, bigger hero names
+     (index ~83px, enter ~mid-3rem), a persistent gold top-bar on event cards, and on the TV
+     screen a stronger gold spotlight + bigger champions + thicker court accents. All four
+     still verified: no console errors, brand hexes unchanged, functionality intact.
+  **Still unseen from here** (pane won't display) — Paul is calibrating live and steering.
 - **Next:** Paul sets `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` in Edge Function
   secrets, points a Stripe webhook at `/functions/v1/entry-webhook`
   (`checkout.session.completed`, `charge.refunded`, `checkout.session.expired`) and

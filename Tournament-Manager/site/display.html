@@ -14,22 +14,35 @@
      4K panel or a laptop on the scorer's table. */
   :root{
     --wine:#3a0d17; --crimson:#7d1527; --crimson-soft:#a02a3d;
-    --gold:#d9a441; --gold-soft:#f2ddab; --ink:#fff;
+    --gold:#d9a441; --gold-deep:#b07f22; --gold-soft:#f2ddab; --ink:#fff;
     --dim:rgba(255,255,255,.62); --line:rgba(255,255,255,.14);
     --live:#57c77f;
+    --grad-gold:linear-gradient(100deg, var(--gold) 0%, #e7bd63 50%, var(--gold-deep) 100%);
+    --ease:cubic-bezier(.16,1,.3,1);
   }
   *{ box-sizing:border-box; margin:0; padding:0; }
   html,body{ height:100%; overflow:hidden; }
+  /* A gold spotlight, a floor vignette and the crimson wash, layered for broadcast depth. */
   body{
     font-family:'Barlow',sans-serif; color:var(--ink);
-    background:radial-gradient(120% 130% at 80% 0%, var(--crimson) 0%, var(--wine) 62%);
+    background:
+      radial-gradient(90% 70% at 85% -8%, rgba(217,164,65,.34) 0%, rgba(217,164,65,0) 46%),
+      radial-gradient(130% 100% at 50% 122%, rgba(0,0,0,.6) 0%, rgba(0,0,0,0) 56%),
+      radial-gradient(120% 130% at 80% 0%, var(--crimson) 0%, var(--wine) 58%),
+      #2c0a12;
     display:flex; flex-direction:column;
   }
-  h1,h2,h3,.cond{ font-family:'Barlow Condensed',sans-serif; }
+  h1,h2,h3,.cond{ font-family:'Barlow Condensed',sans-serif; letter-spacing:-.01em; }
+  ::selection{ background:var(--gold); color:var(--wine); }
+  @media (prefers-reduced-motion: no-preference){
+    #stage.swap{ animation:panelIn .55s var(--ease); }
+  }
+  @keyframes panelIn{ from{ opacity:0; transform:translateY(1.4vh) } to{ opacity:1; transform:none } }
 
   /* ---------- header */
   header{ display:flex; align-items:center; gap:1.6vw; padding:1.4vh 2vw;
-    border-bottom:1px solid var(--line); flex:0 0 auto; }
+    border-bottom:1px solid rgba(217,164,65,.32); flex:0 0 auto;
+    box-shadow:0 2px 26px rgba(0,0,0,.3); }
   header img{ height:5.2vh; }
   header .t{ min-width:0; }
   header .t h1{ font-size:3.4vh; font-weight:700; line-height:1; white-space:nowrap;
@@ -54,8 +67,13 @@
   /* courts grid */
   .courts{ display:grid; gap:1.6vh 1.4vw; height:100%;
     grid-template-columns:repeat(auto-fit,minmax(26vw,1fr)); align-content:start; }
-  .court{ background:rgba(255,255,255,.055); border:1px solid var(--line);
-    border-radius:1.2vh; padding:1.6vh 1.5vw; display:flex; flex-direction:column; }
+  .court{ position:relative; overflow:hidden;
+    background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+    border:1px solid var(--line); border-radius:1.2vh; padding:1.6vh 1.5vw;
+    display:flex; flex-direction:column;
+    box-shadow:0 1.2vh 3vh rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.10); }
+  .court::before{ content:""; position:absolute; left:0; right:0; top:0; height:.6vh;
+    background:var(--grad-gold); }
   .court .num{ font-family:'Barlow Condensed'; font-weight:700; color:var(--gold);
     font-size:2.2vh; letter-spacing:.12em; text-transform:uppercase; }
   .court .ev{ font-size:1.6vh; color:var(--dim); margin-bottom:.9vh; }
@@ -70,8 +88,9 @@
   /* up-next / results lists */
   .rows{ display:flex; flex-direction:column; gap:1.1vh; height:100%; }
   .row{ display:grid; grid-template-columns:9vw 7vw 1fr auto; align-items:center;
-    gap:1.2vw; background:rgba(255,255,255,.05); border:1px solid var(--line);
-    border-radius:1vh; padding:1.3vh 1.4vw; }
+    gap:1.2vw; background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+    border:1px solid var(--line); border-radius:1vh; padding:1.3vh 1.4vw;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06); }
   .row .when{ font-family:'Barlow Condensed'; font-weight:700; font-size:3.2vh;
     color:var(--gold); line-height:1; }
   .row .crt{ font-family:'Barlow Condensed'; font-weight:600; font-size:1.9vh;
@@ -89,7 +108,8 @@
     padding:.8vh .8vw; border-bottom:1px solid var(--line); }
   table.stand td{ font-size:2.6vh; padding:1vh .8vw; border-bottom:1px solid var(--line); }
   table.stand td.n{ text-align:right; font-variant-numeric:tabular-nums; }
-  table.stand tr:first-child td{ color:var(--gold-soft); font-weight:600; }
+  table.stand tr:first-child td{ color:var(--gold-soft); font-weight:600;
+    background:rgba(217,164,65,.1); }
   .pill-rank{ display:inline-grid; place-items:center; width:3.4vh; height:3.4vh;
     border-radius:50%; background:var(--gold); color:var(--wine); font-weight:700;
     font-family:'Barlow Condensed'; font-size:2vh; }
@@ -102,7 +122,9 @@
     letter-spacing:.12em; text-align:center; margin-bottom:.4vh; }
   .bm{ background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:1vh;
     padding:1vh 1vw; }
-  .bm.final{ border-color:var(--gold); background:rgba(217,164,65,.12); }
+  .bm.final{ border-color:var(--gold);
+    background:linear-gradient(180deg, rgba(217,164,65,.22), rgba(217,164,65,.08));
+    box-shadow:0 0 0 1px rgba(217,164,65,.4), 0 1.2vh 3vh rgba(217,164,65,.16); }
   .bm .l{ display:flex; justify-content:space-between; gap:.8vw; padding:.35vh 0;
     font-size:2.1vh; }
   .bm .l .p{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -113,11 +135,16 @@
   /* champions */
   .champs{ display:grid; gap:2vh; grid-template-columns:repeat(auto-fit,minmax(30vw,1fr));
     align-content:center; height:100%; }
-  .champ{ background:rgba(217,164,65,.13); border:1px solid var(--gold);
-    border-radius:1.4vh; padding:2.4vh 2vw; text-align:center; }
-  .champ .ev{ font-size:2vh; color:var(--gold); text-transform:uppercase;
-    letter-spacing:.1em; font-family:'Barlow Condensed'; font-weight:600; }
-  .champ .nm{ font-size:4vh; font-weight:700; line-height:1.15; margin-top:.6vh; }
+  .champ{ position:relative; overflow:hidden;
+    background:linear-gradient(160deg, rgba(217,164,65,.28), rgba(217,164,65,.08));
+    border:1px solid var(--gold); border-radius:1.4vh; padding:2.8vh 2vw; text-align:center;
+    box-shadow:0 0 0 1px rgba(217,164,65,.4), 0 1.6vh 4vh rgba(0,0,0,.35),
+      inset 0 1px 0 rgba(255,255,255,.14); }
+  .champ::before{ content:""; position:absolute; left:0; right:0; top:0; height:.5vh; background:var(--grad-gold); }
+  .champ .ev{ font-size:2.2vh; color:var(--gold); text-transform:uppercase;
+    letter-spacing:.12em; font-family:'Barlow Condensed'; font-weight:700; }
+  .champ .nm{ font-size:4.9vh; font-weight:700; line-height:1.1; margin-top:.6vh; color:#fff;
+    letter-spacing:-.01em; text-shadow:0 2px 20px rgba(0,0,0,.35); }
 
   /* ---------- the board: courts across, time down. The shape people already read on a
      departures board, so nobody has to be taught it. */
@@ -140,8 +167,10 @@
   .cell.empty{ background:transparent; border-style:dashed; opacity:.35; }
   .cell.done{ background:rgba(255,255,255,.035); border-color:transparent; }
   .cell.done .who{ color:var(--dim); }
-  .cell.live{ background:rgba(87,199,127,.16); border-color:var(--live); }
-  .cell.soon{ background:rgba(217,164,65,.12); border-color:rgba(217,164,65,.55); }
+  .cell.live{ background:rgba(87,199,127,.18); border-color:var(--live);
+    box-shadow:0 0 0 1px rgba(87,199,127,.4), 0 .8vh 2.4vh rgba(87,199,127,.18); }
+  .cell.soon{ background:rgba(217,164,65,.14); border-color:rgba(217,164,65,.6);
+    box-shadow:0 0 0 1px rgba(217,164,65,.3); }
   .cell .ev{ font-size:1.35vh; color:var(--gold); text-transform:uppercase;
     letter-spacing:.07em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .cell .who{ font-size:1.95vh; font-weight:600; line-height:1.2; }
@@ -676,6 +705,10 @@ function paint(){
       <div class="small">Draws and live scores appear here once play begins.</div>
     </div></div>`;
   }
+
+  // Re-trigger the panel entrance each paint so switching panels reads as a change rather
+  // than a jump-cut. Toggling the class plus a forced reflow restarts the CSS animation.
+  stage.classList.remove('swap'); void stage.offsetWidth; stage.classList.add('swap');
 }
 
 /* ------------------------------------------------------------------ loop */

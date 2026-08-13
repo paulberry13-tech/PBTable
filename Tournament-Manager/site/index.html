@@ -26,181 +26,268 @@
     --hairline:    rgba(43,23,27,.14);
     --card:        #ffffff;
     --ok:          #2c7a4b;
+
+    /* Elevated "finals day" language (bold pass, 2026-08-13). Palette hexes above are
+       UNCHANGED — brand lock. These add one radius scale, crimson-tinted depth, a gold
+       focus ring, and gradient stacks so the page reads richer without new colours. */
+    --r-sm:8px; --r:14px; --r-lg:20px; --r-pill:999px;
+    --edge:1px solid var(--hairline);
+    --sh-1:0 1px 3px rgba(70,16,28,.08);
+    --sh-2:0 12px 32px -10px rgba(70,16,28,.32), 0 3px 10px -4px rgba(70,16,28,.16);
+    --sh-3:0 40px 80px -26px rgba(70,16,28,.52), 0 16px 34px -18px rgba(70,16,28,.30);
+    --sh-gold:0 20px 46px -16px rgba(176,127,34,.55);
+    --ring:0 0 0 3px rgba(217,164,65,.5);
+    --grad-crimson:linear-gradient(150deg, var(--crimson-soft) 0%, var(--crimson) 42%, var(--wine) 100%);
+    --grad-gold:linear-gradient(100deg, var(--gold) 0%, #e7bd63 50%, var(--gold-deep) 100%);
+    --ease:cubic-bezier(.16,1,.3,1);
   }
   *{ box-sizing:border-box; margin:0; padding:0; }
   html{ scroll-behavior:smooth; }
   body{
     font-family:'Barlow',sans-serif; color:var(--ink); background:var(--cream);
-    font-size:16px; line-height:1.5;
+    font-size:16px; line-height:1.55;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   }
-  h1,h2,h3,.condensed{ font-family:'Barlow Condensed',sans-serif; }
+  h1,h2,h3,.condensed{ font-family:'Barlow Condensed',sans-serif; letter-spacing:-.015em; }
+  ::selection{ background:var(--gold); color:var(--wine); }
+  :focus-visible{ outline:none; box-shadow:var(--ring); border-radius:var(--r-sm); }
 
-  /* ------------------------------------------------------------------ hero */
+  /* Motion, gated two ways so it can never strand content: the hiding rules live inside
+     prefers-reduced-motion:no-preference AND under html.reveal-ready (a class JS only adds
+     when IntersectionObserver exists). No JS, old browser, or reduced-motion → full content,
+     no animation. reveal = rise-in on scroll; hero = a short staggered entrance on load. */
+  @media (prefers-reduced-motion: no-preference){
+    html.reveal-ready [data-reveal]{ opacity:0; transform:translateY(22px);
+      transition:opacity .7s var(--ease), transform .7s var(--ease); }
+    html.reveal-ready [data-reveal].in{ opacity:1; transform:none; }
+    html.reveal-ready .hero-anim{ opacity:0; transform:translateY(16px);
+      animation:riseIn .8s var(--ease) forwards; }
+    html.reveal-ready .hero-anim.d1{ animation-delay:.06s }
+    html.reveal-ready .hero-anim.d2{ animation-delay:.16s }
+    html.reveal-ready .hero-anim.d3{ animation-delay:.28s }
+    html.reveal-ready .hero-anim.d4{ animation-delay:.38s }
+  }
+  @keyframes riseIn{ to{ opacity:1; transform:none } }
+
+  /* ---------------------------------------------------------------- hero
+     A crimson gradient STACK (spotlight + wash + base) instead of one flat sweep, the court
+     mark enlarged behind the name, a live eyebrow, a gold underline, and a gold base edge. */
   header.hero{
-    background:linear-gradient(160deg, var(--crimson) 0%, var(--wine) 70%);
-    color:#fff; padding:0 0 42px; position:relative; overflow:hidden;
+    position:relative; overflow:hidden; color:#fff; padding:0 0 56px;
+    background:
+      radial-gradient(120% 88% at 84% -12%, rgba(217,164,65,.30) 0%, rgba(217,164,65,0) 46%),
+      radial-gradient(140% 120% at 10% 6%, rgba(160,42,61,.55) 0%, rgba(160,42,61,0) 52%),
+      linear-gradient(158deg, var(--crimson) 0%, #5c0f1f 46%, var(--wine) 100%);
   }
-  /* court watermark — real 44x20 proportions, sat behind the headline */
-  .hero-court{
-    position:absolute; right:-70px; bottom:-46px; width:min(560px, 62vw);
-    color:var(--gold); opacity:.13; pointer-events:none;
-    transform:rotate(-8deg);
-  }
-  /* a faint ball, top-right, to break up the flat gradient */
-  .hero-ball{
-    position:absolute; right:9%; top:14px; width:104px; color:var(--gold);
-    opacity:.10; pointer-events:none; transform:rotate(12deg);
-  }
-  .hero-body{ position:relative; z-index:1; }
-  .hero-bar{
-    display:flex; align-items:center; gap:14px; padding:14px 22px;
-    border-bottom:1px solid rgba(255,255,255,.12);
-  }
+  header.hero::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:4px;
+    background:var(--grad-gold); }
+  .hero-court{ position:absolute; right:-64px; bottom:-72px; width:min(640px,66vw);
+    color:var(--gold); opacity:.16; pointer-events:none; transform:rotate(-8deg); }
+  .hero-ball{ position:absolute; right:8%; top:12px; width:120px; color:var(--gold);
+    opacity:.12; pointer-events:none; transform:rotate(12deg); }
+  .hero-bar{ position:relative; z-index:2; display:flex; align-items:center; gap:14px;
+    padding:15px 22px; border-bottom:1px solid rgba(255,255,255,.14); }
   .hero-bar img{ height:44px; width:auto; display:block; }
   .hero-bar .product{ font-family:'Barlow Condensed'; font-weight:600; font-size:1.15rem;
-    letter-spacing:.06em; text-transform:uppercase; color:var(--gold-soft); }
-  nav.mainnav{ margin-left:auto; display:flex; gap:4px; flex-wrap:wrap; }
-  nav.mainnav a{
-    color:#fff; text-decoration:none; font-weight:600; font-size:.95rem;
-    padding:7px 13px; border-radius:999px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--gold-soft); }
+  nav.mainnav{ margin-left:auto; display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
+  nav.mainnav a{ color:#fff; text-decoration:none; font-weight:600; font-size:.95rem;
+    padding:8px 15px; border-radius:var(--r-pill); transition:background .2s var(--ease); }
+  nav.mainnav a:hover{ background:rgba(255,255,255,.14); }
+  nav.mainnav a#enterLink{ box-shadow:var(--sh-gold); }
+  nav.mainnav a#enterLink:hover{ filter:brightness(1.06); background:var(--gold); }
+  .hero-body{ position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:54px 22px 0; }
+  .hero-kicker{ display:inline-flex; align-items:center; gap:10px; color:var(--gold-soft);
+    font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
+    letter-spacing:.18em; font-size:.9rem; background:rgba(217,164,65,.12);
+    border:1px solid rgba(217,164,65,.34); padding:6px 15px; border-radius:var(--r-pill); }
+  .hero-kicker .live{ width:9px; height:9px; border-radius:50%; background:#57c77f; flex:0 0 auto; }
+  @media (prefers-reduced-motion: no-preference){
+    .hero-kicker .live{ box-shadow:0 0 0 0 rgba(87,199,127,.7); animation:beat 2.6s infinite; }
   }
-  nav.mainnav a:hover{ background:rgba(255,255,255,.12); }
-  .hero-body{ max-width:1080px; margin:0 auto; padding:44px 22px 0; }
-  .hero-kicker svg{ width:18px; height:18px; fill:currentColor; vertical-align:-4px; margin-right:6px; }
-  .hero-kicker{ color:var(--gold); font-family:'Barlow Condensed'; font-weight:600;
-    text-transform:uppercase; letter-spacing:.14em; font-size:.95rem; }
-  h1.tourn-name{ font-size:clamp(2.2rem,5vw,3.4rem); font-weight:700; line-height:1.05;
-    margin:6px 0 10px; }
-  .hero-meta{ color:rgba(255,255,255,.85); font-size:1.05rem; display:flex; gap:18px;
-    flex-wrap:wrap; }
+  @keyframes beat{ 0%{ box-shadow:0 0 0 0 rgba(87,199,127,.6);} 70%{ box-shadow:0 0 0 9px rgba(87,199,127,0);} 100%{ box-shadow:0 0 0 0 rgba(87,199,127,0);} }
+  h1.tourn-name{ font-size:clamp(2.8rem,7vw,5.2rem); font-weight:700; line-height:.98;
+    letter-spacing:-.025em; margin:16px 0 0; max-width:17ch; text-shadow:0 2px 30px rgba(0,0,0,.24); }
+  .hero-underline{ width:104px; height:6px; border-radius:var(--r-pill);
+    background:var(--grad-gold); margin:18px 0 14px; box-shadow:var(--sh-gold); }
+  .hero-meta{ color:rgba(255,255,255,.9); font-size:1.08rem; display:flex; gap:14px;
+    flex-wrap:wrap; align-items:center; }
+  .hero-meta span{ display:inline-flex; align-items:center; }
+  .hero-meta span + span{ position:relative; padding-left:27px; }
+  .hero-meta span + span::before{ content:""; position:absolute; left:9px; top:50%;
+    width:5px; height:5px; margin-top:-2px; border-radius:50%; background:var(--gold); opacity:.75; }
   .hero-meta strong{ color:var(--gold-soft); font-weight:600; }
-  .tourn-picker{ margin-top:18px; }
-  .tourn-picker select{
-    font:inherit; padding:7px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.35);
-    background:rgba(255,255,255,.1); color:#fff;
-  }
+  .tourn-picker{ margin-top:20px; }
+  .tourn-picker select{ font:inherit; padding:9px 14px; border-radius:var(--r-sm);
+    border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12); color:#fff; }
   .tourn-picker select option{ color:var(--ink); }
 
-  /* ------------------------------------------------------------------ sections */
-  section{ padding:48px 22px; border-top:1px solid var(--hairline); }
+  /* ---------------------------------------------------------------- sections */
+  section{ padding:66px 22px; border-top:1px solid var(--hairline); position:relative; }
   section:nth-of-type(odd){ background:var(--cream); }
-  section:nth-of-type(even){ background:var(--mid); }
+  section:nth-of-type(even){ background:linear-gradient(180deg, var(--mid) 0%, #efe4d2 100%); }
   .wrap{ max-width:1080px; margin:0 auto; }
-  h2{ font-size:2rem; font-weight:700; color:var(--crimson); margin-bottom:4px; }
-  .section-sub{ color:var(--muted); margin-bottom:22px; }
+  h2{ font-size:clamp(2.3rem,4vw,3.4rem); font-weight:700; color:var(--crimson);
+    margin-bottom:6px; line-height:1; }
+  section h2::after{ content:""; display:block; width:66px; height:5px; margin-top:12px;
+    border-radius:var(--r-pill); background:var(--grad-gold); box-shadow:var(--sh-gold); }
+  .section-sub{ color:var(--muted); margin:16px 0 30px; max-width:60ch; font-size:1.06rem; }
 
   /* cards, pills, chips */
-  .card{
-    background:var(--card); border:1px solid var(--hairline); border-radius:12px;
-    padding:18px 20px; box-shadow:0 1px 2px rgba(43,23,27,.05);
-  }
+  .card{ background:linear-gradient(180deg, #ffffff, #fffdf8); border:var(--edge);
+    border-radius:var(--r); padding:20px 22px; box-shadow:var(--sh-2); }
   .pill{
-    display:inline-block; font-size:.78rem; font-weight:600; padding:2px 10px;
-    border-radius:999px; border:1px solid var(--hairline); color:var(--muted);
+    display:inline-block; font-size:.78rem; font-weight:600; padding:3px 11px;
+    border-radius:var(--r-pill); border:1px solid var(--hairline); color:var(--muted);
     background:var(--cream); white-space:nowrap;
   }
   .pill.gold{ background:var(--gold); border-color:var(--gold); color:var(--wine); }
-  .pill.ok{ color:var(--ok); border-color:var(--ok); background:#eef7f1; }
-  .chiprow{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+  .pill.ok{ color:var(--ok); border-color:rgba(44,122,75,.4); background:#eef7f1; }
+  .chiprow{ display:flex; gap:9px; flex-wrap:wrap; margin-bottom:24px; }
   .chip{
     font:inherit; font-weight:600; font-size:.92rem; cursor:pointer;
-    padding:7px 15px; border-radius:999px; border:1px solid var(--hairline);
-    background:var(--card); color:var(--ink);
+    padding:8px 16px; border-radius:var(--r-pill); border:1px solid var(--hairline);
+    background:var(--card); color:var(--ink); box-shadow:var(--sh-1);
+    transition:transform .15s var(--ease), border-color .2s var(--ease),
+      background .2s var(--ease), color .2s var(--ease), box-shadow .2s var(--ease);
   }
-  .chip:hover{ border-color:var(--gold-deep); }
-  .chip.active{ background:var(--crimson); border-color:var(--crimson); color:#fff; }
+  .chip:hover{ border-color:var(--gold-deep); transform:translateY(-1px); }
+  .chip:active{ transform:translateY(0) scale(.97); }
+  .chip.active{ background:var(--grad-crimson); border-color:var(--crimson); color:#fff;
+    box-shadow:var(--sh-2); }
 
   /* tables */
   table{ width:100%; border-collapse:collapse; font-size:.95rem; }
-  th{ font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
-    letter-spacing:.06em; font-size:.8rem; color:var(--muted); text-align:left;
-    padding:8px 10px; border-bottom:2px solid var(--hairline); }
-  td{ padding:9px 10px; border-bottom:1px solid var(--hairline); vertical-align:top; }
+  th{ font-family:'Barlow Condensed'; font-weight:700; text-transform:uppercase;
+    letter-spacing:.07em; font-size:.82rem; color:var(--crimson); text-align:left;
+    padding:11px 12px; border-bottom:2px solid rgba(217,164,65,.45);
+    background:rgba(125,21,39,.05); }
+  td{ padding:11px 12px; border-bottom:1px solid var(--hairline); vertical-align:top; }
   tr:last-child td{ border-bottom:none; }
   td.num, th.num{ text-align:right; font-variant-numeric:tabular-nums; }
-  .table-scroll{ overflow-x:auto; }
+  .table-scroll{ overflow-x:auto; border:var(--edge); border-radius:var(--r);
+    background:var(--card); box-shadow:var(--sh-1); }
+  .table-scroll tbody tr{ transition:background .15s var(--ease); }
+  .table-scroll tbody tr:hover{ background:rgba(217,164,65,.07); }
 
   /* events grid — cards stretch to a shared height AND their internals line up:
      title block at the top, entry count and format line pinned to the bottom, so the
      eye reads straight across a row instead of a ragged edge. */
   .events-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-    gap:16px; align-items:stretch; grid-auto-rows:1fr; }
-  .event-card{ display:flex; flex-direction:column; padding-top:16px; }
-  .event-card .head{ display:flex; gap:10px; align-items:flex-start; }
-  .event-card .mark{ flex:0 0 auto; width:38px; height:38px; border-radius:10px;
-    background:var(--mid); color:var(--crimson); display:grid; place-items:center; }
-  .event-card .mark svg{ width:22px; height:22px; fill:currentColor; }
-  .event-card h3{ font-size:1.3rem; font-weight:700; margin-bottom:6px; line-height:1.15; }
+    gap:18px; align-items:stretch; grid-auto-rows:1fr; }
+  .event-card{ display:flex; flex-direction:column; padding-top:18px; position:relative;
+    overflow:hidden; transition:transform .3s var(--ease), box-shadow .3s var(--ease); }
+  .event-card::before{ content:""; position:absolute; left:0; right:0; top:0; height:4px;
+    background:var(--grad-gold); }
+  .event-card:hover{ transform:translateY(-5px); box-shadow:var(--sh-3); }
+  .event-card .head{ display:flex; gap:12px; align-items:flex-start; }
+  .event-card .mark{ flex:0 0 auto; width:42px; height:42px; border-radius:12px;
+    background:var(--grad-crimson); color:var(--gold); display:grid; place-items:center;
+    box-shadow:var(--sh-1); }
+  .event-card .mark svg{ width:23px; height:23px; fill:currentColor; }
+  .event-card h3{ font-size:1.32rem; font-weight:700; margin-bottom:7px; line-height:1.14; }
   .event-card .pills{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
   .event-card .spacer{ flex:1 1 auto; min-height:6px; }
-  .event-card .foot{ border-top:1px solid var(--hairline); margin-top:10px; padding-top:9px; }
+  .event-card .foot{ border-top:1px solid var(--hairline); margin-top:12px; padding-top:11px; }
   .event-card .fmt{ color:var(--muted); font-size:.86rem; margin-top:4px; }
-  .event-card .count{ font-weight:600; color:var(--gold-deep); }
+  .event-card .count{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.15rem;
+    color:var(--gold-deep); }
 
   /* pools */
-  .pools-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px;
-    margin-bottom:28px; }
-  .pool-card h3{ font-size:1.2rem; color:var(--crimson); margin-bottom:8px; }
+  .pools-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:18px;
+    margin-bottom:30px; }
+  .pool-card{ transition:transform .3s var(--ease), box-shadow .3s var(--ease); }
+  .pool-card:hover{ transform:translateY(-3px); box-shadow:var(--sh-3); }
+  .pool-card h3{ font-size:1.24rem; color:var(--crimson); margin-bottom:10px; }
+  .pool-card .table-scroll{ box-shadow:none; }
+  /* the pool leader, gently gilded */
+  .pool-card tbody tr:first-child td{ background:rgba(217,164,65,.09); font-weight:600; }
+  .pool-card tbody tr:first-child td:first-child{ border-top-left-radius:8px; border-bottom-left-radius:8px; }
 
-  /* bracket */
-  .bracket-scroll{ overflow-x:auto; padding-bottom:8px; }
-  .bracket{ display:flex; gap:22px; align-items:stretch; min-width:min-content; }
+  /* bracket — the signature. Rounds march right joined by connector stubs, winners are
+     gilded, and the final sits on a gold-glowing plinth. */
+  .bracket-scroll{ overflow-x:auto; padding:16px 2px 12px; }
+  .bracket{ display:flex; gap:34px; align-items:stretch; min-width:min-content; }
   .bracket-round{ display:flex; flex-direction:column; justify-content:space-around;
-    gap:14px; min-width:230px; }
-  .bracket-round h4{ font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
-    letter-spacing:.08em; font-size:.85rem; color:var(--muted); text-align:center; }
-  .bmatch{
-    background:var(--card); border:1px solid var(--hairline); border-radius:10px;
-    padding:10px 12px; font-size:.92rem;
-  }
-  .bmatch .side{ display:flex; justify-content:space-between; gap:10px; padding:3px 0; }
-  .bmatch .side .n{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:170px; }
+    gap:18px; min-width:250px; }
+  .bracket-round h4{ font-family:'Barlow Condensed'; font-weight:700; text-transform:uppercase;
+    letter-spacing:.12em; font-size:.85rem; color:var(--gold-deep); text-align:center;
+    padding-bottom:7px; border-bottom:2px solid rgba(217,164,65,.3); }
+  .bmatch{ position:relative; background:var(--card); border:var(--edge); border-radius:var(--r);
+    padding:12px 14px; font-size:.96rem; box-shadow:var(--sh-2);
+    transition:box-shadow .25s var(--ease), transform .25s var(--ease); }
+  .bmatch:hover{ box-shadow:var(--sh-3); transform:translateY(-2px); }
+  .bmatch .side{ display:flex; justify-content:space-between; gap:10px; padding:6px 8px;
+    border-radius:8px; align-items:center; }
+  .bmatch .side + .side{ margin-top:2px; }
+  .bmatch .side .n{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:172px; }
+  /* the winner of each match, clearly gilded with a gold edge bar */
+  .bmatch .side.winner{ background:linear-gradient(90deg, rgba(217,164,65,.34), rgba(217,164,65,.10));
+    box-shadow:inset 3px 0 0 var(--gold); }
   .bmatch .side.winner .n{ font-weight:700; color:var(--gold-deep); }
-  .bmatch .side .s{ font-variant-numeric:tabular-nums; color:var(--muted); }
-  .bmatch .side.winner .s{ color:var(--gold-deep); font-weight:700; }
+  .bmatch .side .s{ font-variant-numeric:tabular-nums; color:var(--muted); font-weight:700;
+    min-width:1.4ch; text-align:right; }
+  .bmatch .side.winner .s{ color:var(--gold-deep); font-weight:800; }
   .bmatch .tbc{ color:var(--muted); font-style:italic; }
-  .bmatch .meta{ margin-top:5px; font-size:.78rem; color:var(--muted); }
-  .bmatch.final-match{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(217,164,65,.35); }
+  .bmatch .meta{ margin-top:7px; font-size:.78rem; color:var(--muted); }
+  /* the final: a gilded plinth with a tag pinned above it */
+  .bmatch.final-match{ border:2px solid var(--gold);
+    background:linear-gradient(180deg, #ffffff 0%, #fff7e6 100%);
+    box-shadow:0 0 0 4px rgba(217,164,65,.28), var(--sh-gold); }
+  .bmatch.final-match::before{ content:"FINAL"; position:absolute; top:-11px; left:50%;
+    transform:translateX(-50%); font-family:'Barlow Condensed'; font-weight:700; font-size:.72rem;
+    letter-spacing:.16em; color:var(--wine); background:var(--grad-gold); padding:3px 12px;
+    border-radius:var(--r-pill); box-shadow:var(--sh-1); white-space:nowrap; }
+
+  /* CHAMPIONS — the emotional peak of a finished event, gold on gold. */
+  .champion-banner{ display:flex; align-items:center; gap:16px; margin:2px 0 24px;
+    padding:16px 22px; border-radius:var(--r-lg); color:var(--wine);
+    background:var(--grad-gold); box-shadow:var(--sh-gold), inset 0 1px 0 rgba(255,255,255,.45); }
+  .champion-banner svg{ width:40px; height:40px; fill:var(--wine); flex:0 0 auto; }
+  .champion-banner .lbl{ font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
+    letter-spacing:.16em; font-size:.82rem; opacity:.75; }
+  .champion-banner .who{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.75rem;
+    line-height:1.05; letter-spacing:-.01em; }
 
   /* meetings-head band (league lesson: mark the change between table and scores) */
   .block-head{
     font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase;
-    letter-spacing:.08em; font-size:.85rem; color:var(--muted);
-    border-top:2px solid var(--hairline); margin-top:14px; padding-top:10px;
+    letter-spacing:.09em; font-size:.85rem; color:var(--gold-deep);
+    border-top:2px solid var(--hairline); margin-top:16px; padding-top:12px;
   }
   .block-head .hint{ font-family:'Barlow'; text-transform:none; letter-spacing:0;
-    font-weight:400; font-size:.82rem; display:block; }
+    font-weight:400; font-size:.82rem; color:var(--muted); display:block; }
 
   /* schedule */
-  .slot-time{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.05rem;
+  .slot-time{ font-family:'Barlow Condensed'; font-weight:700; font-size:1.1rem;
     color:var(--crimson); white-space:nowrap; }
 
   /* states */
   .empty{
-    background:var(--card); border:1px dashed var(--hairline); border-radius:12px;
-    padding:26px; text-align:center; color:var(--muted);
+    background:var(--card); border:1px dashed rgba(43,23,27,.2); border-radius:var(--r);
+    padding:30px; text-align:center; color:var(--muted); box-shadow:var(--sh-1);
   }
-  .empty svg{ width:34px; height:34px; fill:var(--gold); opacity:.55; display:block;
-    margin:0 auto 8px; }
+  .empty svg{ width:36px; height:36px; fill:var(--gold); opacity:.6; display:block;
+    margin:0 auto 10px; }
   .empty .word{ font-family:'Barlow Condensed'; font-weight:600; font-size:1.2rem;
     color:var(--gold-deep); text-transform:uppercase; letter-spacing:.1em; display:block;
     margin-bottom:4px; }
   /* section headings carry a small mark so the page has rhythm beyond type alone */
-  h2 .h2mark{ display:inline-grid; place-items:center; width:30px; height:30px;
-    border-radius:8px; background:var(--crimson); color:var(--gold);
-    vertical-align:-6px; margin-right:9px; }
-  h2 .h2mark svg{ width:18px; height:18px; fill:currentColor; }
-  h2 .h2mark svg.court{ width:22px; height:22px; fill:none; }
+  h2 .h2mark{ display:inline-grid; place-items:center; width:38px; height:38px;
+    border-radius:11px; background:var(--grad-crimson); color:var(--gold);
+    vertical-align:-8px; margin-right:12px; box-shadow:var(--sh-2); }
+  h2 .h2mark svg{ width:21px; height:21px; fill:currentColor; }
+  h2 .h2mark svg.court{ width:25px; height:25px; fill:none; }
   .banner{
-    max-width:1080px; margin:26px auto 0; border-radius:12px; padding:18px 22px;
-    background:#fff8e8; border:1px solid var(--gold); color:var(--ink);
+    max-width:1080px; margin:26px auto 0; border-radius:var(--r); padding:18px 22px;
+    background:#fff8e8; border:1px solid var(--gold); color:var(--ink); box-shadow:var(--sh-2);
   }
   .banner code{ background:var(--mid); padding:1px 6px; border-radius:5px; font-size:.9em; }
   .banner.error{ background:#fdeeee; border-color:#c0392b; }
 
   footer{
-    background:var(--wine); color:rgba(255,255,255,.75); padding:26px 22px;
-    font-size:.9rem; text-align:center;
+    background:linear-gradient(180deg, var(--wine), #380b14); color:rgba(255,255,255,.75);
+    padding:34px 22px; font-size:.9rem; text-align:center; border-top:3px solid var(--gold);
   }
   footer .gold{ color:var(--gold-soft); font-weight:600; }
 </style>
@@ -277,10 +364,11 @@
   <svg class="hero-court" viewBox="0 0 200 100" aria-hidden="true"><use href="#i-court"/></svg>
   <svg class="hero-ball" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#i-ball"/></svg>
   <div class="hero-body">
-    <div class="hero-kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ball"/></svg>Live draws &amp; results</div>
-    <h1 class="tourn-name" id="tournName">Pending</h1>
-    <div class="hero-meta" id="tournMeta"></div>
-    <div class="tourn-picker" id="tournPicker" hidden>
+    <div class="hero-kicker hero-anim d1"><span class="live"></span>Live draws &amp; results</div>
+    <h1 class="tourn-name hero-anim d2" id="tournName">Pending</h1>
+    <div class="hero-underline hero-anim d2"></div>
+    <div class="hero-meta hero-anim d3" id="tournMeta"></div>
+    <div class="tourn-picker hero-anim d4" id="tournPicker" hidden>
       <select id="tournSelect" aria-label="Choose tournament"></select>
     </div>
   </div>
@@ -296,7 +384,7 @@
 <section id="events">
   <div class="wrap">
     <h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-doubles"/></svg></span>Events</h2>
-    <p class="section-sub">Every competition in this tournament — who can enter, how it's scored.</p>
+    <p class="section-sub">Every competition in this tournament: who can enter, and how it's scored.</p>
     <div id="eventsBody"></div>
   </div>
 </section>
@@ -313,13 +401,13 @@
 <section id="schedule">
   <div class="wrap">
     <h2><span class="h2mark"><svg class="court" viewBox="0 0 200 100"><use href="#i-court"/></svg></span>Schedule</h2>
-    <p class="section-sub">Match order by time slot and court. Times are the organiser's plan — check in early.</p>
+    <p class="section-sub">Match order by time slot and court. Times are the organiser's plan, so check in early.</p>
     <div id="scheduleBody"></div>
   </div>
 </section>
 
 <footer>
-  <span class="gold">PBTable · Tournament Manager</span> — entries, draws, live scores.
+  <span class="gold">PBTable · Tournament Manager</span> &nbsp;·&nbsp; entries, draws, live scores.
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -702,7 +790,21 @@ function renderPool(pool){
 function renderBracket(matches){
   const main = matches.filter(m => m.bracket_kind === 'main');
   const cons = matches.filter(m => m.bracket_kind === 'consolation');
-  let html = `<div class="block-head">Knockout bracket
+  let html = '';
+  // Champions banner — the moment a finished event is really about. Only once the final
+  // is decided; the winner resolves through the same tournament-wide name map as the rest.
+  if (main.length){
+    const maxRound = Math.max(...main.map(m => m.round));
+    const final = main.find(m => m.round === maxRound && m.winner_entry_id);
+    const champ = final && entryName(final.winner_entry_id);
+    if (champ){
+      html += `<div class="champion-banner">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-trophy"/></svg>
+        <div><div class="lbl">Champions</div><div class="who">${esc(champ)}</div></div>
+      </div>`;
+    }
+  }
+  html += `<div class="block-head">Knockout bracket
     <span class="hint">Winners advance to the right. Bold gold marks the match winner.</span></div>`;
   html += renderBracketKind(main);
   if (cons.length){
@@ -778,6 +880,33 @@ function renderSchedule(){
   body.innerHTML = `<div class="card"><div class="table-scroll"><table>
     <thead><tr><th>Time</th><th>Court</th><th>Event</th><th>Match</th><th class="num">Result</th></tr></thead>
     <tbody>${rows}</tbody></table></div></div>`;
+}
+
+/* Scroll-reveal + hero entrance. Content is only ever hidden while html.reveal-ready is set,
+   and that is added here ONLY when IntersectionObserver exists — so no-JS and old browsers
+   render everything immediately. A MutationObserver tags cards/matches as each render lands. */
+const io = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+  for (const e of entries) if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+}, { rootMargin:'0px', threshold:.01 }) : null;
+if (io){
+  document.documentElement.classList.add('reveal-ready');
+  let safety;
+  const scan = (root) => {
+    root.querySelectorAll('.card,.bmatch,.empty').forEach(el => {
+      if (!el.hasAttribute('data-reveal')){ el.setAttribute('data-reveal',''); io.observe(el); }
+    });
+    // Belt and braces: if the observer never fires (a tab loaded in the background, an
+    // odd viewport), force everything visible a few seconds after the last render so
+    // content can NEVER be stranded invisible. On a visible page IO wins and this is moot.
+    clearTimeout(safety);
+    safety = setTimeout(() => {
+      document.querySelectorAll('[data-reveal]:not(.in)').forEach(el => el.classList.add('in'));
+    }, 4000);
+  };
+  for (const id of ['eventsBody','drawsBody','scheduleBody']){
+    const el = document.getElementById(id);
+    if (el) new MutationObserver(() => scan(el)).observe(el, { childList:true, subtree:true });
+  }
 }
 
 boot();

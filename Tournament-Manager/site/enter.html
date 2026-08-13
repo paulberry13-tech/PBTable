@@ -14,11 +14,32 @@
     --gold:#d9a441; --gold-deep:#b07f22; --gold-soft:#f2ddab;
     --cream:#fbf6ee; --mid:#f2e9db; --ink:#2b171b; --muted:#806a63;
     --hairline:rgba(43,23,27,.14); --card:#fff; --ok:#2c7a4b; --err:#b3261e; --warn:#a86a00;
+    /* elevated "finals day" language (bold pass, 2026-08-13). Palette above unchanged. */
+    --r-sm:8px; --r:14px; --r-lg:20px; --r-pill:999px; --edge:1px solid var(--hairline);
+    --sh-1:0 1px 3px rgba(70,16,28,.08);
+    --sh-2:0 12px 32px -10px rgba(70,16,28,.32), 0 3px 10px -4px rgba(70,16,28,.16);
+    --sh-3:0 40px 80px -26px rgba(70,16,28,.52), 0 16px 34px -18px rgba(70,16,28,.30);
+    --sh-gold:0 20px 46px -16px rgba(176,127,34,.55);
+    --ring:0 0 0 3px rgba(217,164,65,.5);
+    --grad-crimson:linear-gradient(150deg, var(--crimson-soft) 0%, var(--crimson) 42%, var(--wine) 100%);
+    --grad-gold:linear-gradient(100deg, var(--gold) 0%, #e7bd63 50%, var(--gold-deep) 100%);
+    --ease:cubic-bezier(.16,1,.3,1);
   }
   *{ box-sizing:border-box; margin:0; padding:0; }
   body{ font-family:'Barlow',sans-serif; color:var(--ink); background:var(--cream);
-    font-size:16px; line-height:1.5; }
-  h1,h2,h3,h4,.condensed{ font-family:'Barlow Condensed',sans-serif; }
+    font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  h1,h2,h3,h4,.condensed{ font-family:'Barlow Condensed',sans-serif; letter-spacing:-.015em; }
+  ::selection{ background:var(--gold); color:var(--wine); }
+  :focus-visible{ outline:none; box-shadow:var(--ring); border-radius:var(--r-sm); }
+  /* Motion, all one-shot so nothing can strand: the active view fades up when it renders,
+     the hero enters in a short stagger. Both collapse to static under reduced-motion. */
+  @media (prefers-reduced-motion: no-preference){
+    .view{ animation:riseIn .5s var(--ease) both; }
+    .hero-anim{ opacity:0; transform:translateY(14px); animation:riseIn .7s var(--ease) forwards; }
+    .hero-anim.d1{ animation-delay:.05s } .hero-anim.d2{ animation-delay:.14s }
+    .hero-anim.d3{ animation-delay:.24s } .hero-anim.d4{ animation-delay:.32s }
+  }
+  @keyframes riseIn{ from{ opacity:0; transform:translateY(14px) } to{ opacity:1; transform:none } }
 
   header.bar{ background:linear-gradient(160deg,var(--crimson),var(--wine)); color:#fff;
     display:flex; align-items:center; gap:12px; padding:12px 20px; flex-wrap:wrap; }
@@ -32,18 +53,31 @@
     background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3);
     border-radius:999px; padding:5px 13px; cursor:pointer; }
 
-  .hero{ background:linear-gradient(160deg,var(--crimson) 0%, var(--wine) 72%); color:#fff;
-    padding:26px 20px 30px; position:relative; overflow:hidden; }
+  .hero{ position:relative; overflow:hidden; color:#fff; padding:40px 20px 46px;
+    background:
+      radial-gradient(120% 90% at 84% -12%, rgba(217,164,65,.28) 0%, rgba(217,164,65,0) 46%),
+      radial-gradient(140% 120% at 8% 4%, rgba(160,42,61,.5) 0%, rgba(160,42,61,0) 52%),
+      linear-gradient(158deg, var(--crimson) 0%, #5c0f1f 48%, var(--wine) 100%); }
+  .hero::after{ content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:var(--grad-gold); }
   .hero .wrap{ max-width:940px; margin:0 auto; position:relative; z-index:1; }
-  .hero-court{ position:absolute; right:-60px; bottom:-40px; width:min(480px,58vw);
-    color:var(--gold); opacity:.13; pointer-events:none; transform:rotate(-8deg); }
-  .hero-ball{ position:absolute; right:8%; top:10px; width:88px; color:var(--gold);
-    opacity:.10; pointer-events:none; transform:rotate(14deg); }
-  .hero .kicker{ color:var(--gold); font-family:'Barlow Condensed'; font-weight:600;
-    text-transform:uppercase; letter-spacing:.14em; font-size:.9rem; }
-  .hero .kicker svg{ width:17px; height:17px; fill:currentColor; vertical-align:-4px; margin-right:6px; }
-  .hero h1{ font-size:clamp(1.9rem,4.5vw,2.8rem); font-weight:700; line-height:1.08; margin:4px 0 8px; }
-  .hero .meta{ color:rgba(255,255,255,.85); display:flex; gap:16px; flex-wrap:wrap; }
+  .hero-court{ position:absolute; right:-60px; bottom:-56px; width:min(520px,60vw);
+    color:var(--gold); opacity:.15; pointer-events:none; transform:rotate(-8deg); }
+  .hero-ball{ position:absolute; right:8%; top:10px; width:98px; color:var(--gold);
+    opacity:.12; pointer-events:none; transform:rotate(14deg); }
+  .hero .kicker{ display:inline-flex; align-items:center; gap:8px; color:var(--gold-soft);
+    font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase; letter-spacing:.16em;
+    font-size:.85rem; background:rgba(217,164,65,.12); border:1px solid rgba(217,164,65,.34);
+    padding:6px 14px; border-radius:var(--r-pill); }
+  .hero .kicker svg{ width:16px; height:16px; fill:currentColor; }
+  .hero h1{ font-size:clamp(2.3rem,6vw,3.9rem); font-weight:700; line-height:1;
+    letter-spacing:-.025em; margin:14px 0 0; text-shadow:0 2px 26px rgba(0,0,0,.24); }
+  .hero .hero-underline{ width:88px; height:6px; border-radius:var(--r-pill);
+    background:var(--grad-gold); margin:16px 0 12px; box-shadow:var(--sh-gold); }
+  .hero .meta{ color:rgba(255,255,255,.9); display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .hero .meta span{ display:inline-flex; align-items:center; }
+  .hero .meta span + span{ position:relative; padding-left:25px; }
+  .hero .meta span + span::before{ content:""; position:absolute; left:8px; top:50%; width:5px; height:5px;
+    margin-top:-2px; border-radius:50%; background:var(--gold); opacity:.75; }
   .hero .meta strong{ color:var(--gold-soft); }
   /* Deliberately NOT a picker: once a player has followed the organiser's link the
      tournament is settled. This is only an escape hatch back to the list. */
@@ -54,9 +88,9 @@
   .pick-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
     gap:14px; grid-auto-rows:1fr; align-items:stretch; }
   .pick{ display:flex; flex-direction:column; text-decoration:none; color:inherit;
-    background:var(--card); border:1px solid var(--hairline); border-radius:12px;
-    padding:18px; transition:border-color .15s, transform .15s; }
-  .pick:hover{ border-color:var(--gold); transform:translateY(-2px); }
+    background:var(--card); border:var(--edge); border-radius:var(--r); box-shadow:var(--sh-2);
+    padding:18px; transition:border-color .2s var(--ease), transform .25s var(--ease), box-shadow .25s var(--ease); }
+  .pick:hover{ border-color:var(--gold); transform:translateY(-4px); box-shadow:var(--sh-3); }
   .pick h3{ font-size:1.35rem; margin-bottom:3px; }
   .pick .when{ color:var(--muted); font-size:.9rem; }
   .pick .grow{ flex:1 1 auto; min-height:10px; }
@@ -65,14 +99,16 @@
   .pick .go .arrow{ margin-left:auto; color:var(--gold-deep); }
 
   main{ max-width:940px; margin:0 auto; padding:24px 20px 70px; }
-  h2{ font-size:1.6rem; color:var(--crimson); margin:26px 0 2px; }
+  h2{ font-size:clamp(1.7rem,3vw,2.3rem); color:var(--crimson); margin:26px 0 2px; line-height:1.04; }
+  main h2::after{ content:""; display:block; width:56px; height:4px; margin-top:11px;
+    border-radius:var(--r-pill); background:var(--grad-gold); box-shadow:var(--sh-gold); }
   h2:first-child{ margin-top:0; }
   h3{ font-size:1.2rem; color:var(--crimson); margin-bottom:6px; }
   .sub{ color:var(--muted); margin-bottom:14px; }
 
-  .card{ background:var(--card); border:1px solid var(--hairline); border-radius:12px;
-    padding:16px 18px; box-shadow:0 1px 2px rgba(43,23,27,.05); margin-bottom:14px; }
-  .card.gold{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(217,164,65,.25); }
+  .card{ background:linear-gradient(180deg, #ffffff, #fffdf8); border:var(--edge);
+    border-radius:var(--r); padding:18px 20px; box-shadow:var(--sh-2); margin-bottom:16px; }
+  .card.gold{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(217,164,65,.35), var(--sh-2); }
 
   label.f{ display:block; margin-bottom:12px; font-weight:600; }
   label.f .hint{ display:block; font-weight:400; font-size:.8rem; color:var(--muted); margin-bottom:3px; }
@@ -95,11 +131,14 @@
   .frow > label.f input, .frow > label.f select{
     margin-top:auto; max-width:none; height:42px; }
 
-  button.btn{ font:inherit; font-weight:600; cursor:pointer; border-radius:999px;
-    padding:9px 20px; border:1px solid var(--crimson); background:var(--crimson); color:#fff; }
-  button.btn:hover{ background:var(--crimson-soft); }
-  button.btn.ghost{ background:transparent; color:var(--crimson); }
-  button.btn.gold{ background:var(--gold); border-color:var(--gold); color:var(--wine); }
+  button.btn{ font:inherit; font-weight:600; cursor:pointer; border-radius:var(--r-pill);
+    padding:9px 20px; border:1px solid var(--crimson); background:var(--grad-crimson); color:#fff;
+    box-shadow:var(--sh-1); transition:transform .15s var(--ease), box-shadow .2s var(--ease), filter .2s var(--ease); }
+  button.btn:hover{ filter:brightness(1.06); box-shadow:var(--sh-2); }
+  button.btn:active{ transform:translateY(1px) scale(.98); }
+  button.btn.ghost{ background:transparent; color:var(--crimson); box-shadow:none; }
+  button.btn.ghost:hover{ background:rgba(125,21,39,.06); filter:none; }
+  button.btn.gold{ background:var(--grad-gold); border-color:var(--gold); color:var(--wine); }
   button.btn.small{ padding:5px 14px; font-size:.87rem; }
   button.btn.danger{ background:transparent; border-color:var(--err); color:var(--err); }
   button:disabled{ opacity:.45; cursor:not-allowed; }
@@ -235,6 +274,64 @@
   .step.done{ background:#eef7f1; border-color:var(--ok); color:var(--ok); }
   .step.now{ background:var(--gold); border-color:var(--gold); color:var(--wine); font-weight:600; }
 
+  /* ---- the player's top-level tabs. "Your entries" is now its own page, reached here,
+     rather than one more band in an endless scroll. */
+  .tabbar{ display:flex; flex-wrap:wrap; gap:2px 6px; margin-bottom:22px;
+    border-bottom:2px solid var(--hairline); }
+  .tabbar button{ position:relative; font:inherit; font-family:'Barlow Condensed',sans-serif;
+    font-weight:600; font-size:1.05rem; cursor:pointer; color:var(--muted); background:none;
+    border:none; border-bottom:3px solid transparent; padding:9px 6px; margin-bottom:-2px;
+    display:inline-flex; align-items:center; gap:7px; white-space:nowrap; }
+  .tabbar button:hover{ color:var(--crimson); }
+  .tabbar button.active{ color:var(--crimson); border-bottom-color:var(--gold); }
+  .tbadge{ font-family:'Barlow',sans-serif; font-size:.72rem; font-weight:700; line-height:1;
+    min-width:18px; height:18px; padding:0 5px; border-radius:999px; display:inline-grid;
+    place-items:center; background:var(--mid); color:var(--muted); }
+  .tbadge.gold{ background:var(--gold); color:var(--wine); }
+  .tbadge.warn{ background:var(--warn); color:#fff; }
+
+  /* ---- an entry card, rebuilt so a glance answers "what can I actually DO here?".
+     Three bands: who/what + a status chip, a plain progress read-out (NOT buttons),
+     then — only when something is still changeable — a labelled row of real buttons. */
+  .entry-card .entry-top{ display:flex; gap:12px; align-items:flex-start;
+    justify-content:space-between; flex-wrap:wrap; }
+  /* The event is the headline. On "My entries" every card is the same player, so what
+     tells the cards apart is WHICH event it is — not whose name is on it. */
+  .entry-card .entry-event{ font-family:'Barlow Condensed',sans-serif; font-weight:700;
+    font-size:1.42rem; line-height:1.12; color:var(--crimson); }
+  .entry-card .entry-event .band{ font-family:'Barlow',sans-serif; font-weight:600;
+    font-size:.72rem; color:var(--gold-deep); background:var(--mid); border-radius:999px;
+    padding:2px 9px; vertical-align:middle; margin-left:7px; white-space:nowrap; }
+  .entry-card .entry-who{ color:var(--muted); font-size:.95rem; margin-top:3px; }
+  .entry-card .statuschip{ flex:0 0 auto; }
+
+  /* progress: a status read-out, styled so it can never be mistaken for a control —
+     no button chrome, no pill shape, just ticked / not-yet items. */
+  .progress{ list-style:none; display:flex; flex-wrap:wrap; gap:8px 22px;
+    margin:13px 0 0; padding:13px 0 3px; border-top:1px solid var(--hairline); }
+  .progress li{ display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--muted); }
+  .progress li::before{ content:''; width:16px; height:16px; border-radius:50%;
+    border:2px solid var(--hairline); flex:0 0 auto; box-sizing:border-box; }
+  .progress li.done{ color:var(--ink); }
+  .progress li.done::before{ content:'✓'; border:none; background:var(--ok); color:#fff;
+    font-size:11px; font-weight:800; line-height:1; display:grid; place-items:center; }
+  .progress li.now{ color:var(--gold-deep); font-weight:600; }
+  .progress li.now::before{ border-color:var(--gold-deep); border-style:dashed; }
+
+  .enote{ font-size:.86rem; color:var(--muted); margin-top:9px; }
+  .enote.err{ color:var(--err); }
+
+  /* the ONLY interactive band on the card, fenced off and labelled so it reads as "here
+     are your controls". When nothing is changeable it is replaced by .locked, so there
+     are never buttons that look live but are not. */
+  .actions{ margin-top:14px; padding-top:13px; border-top:1px dashed var(--hairline); }
+  .actions-label{ font-family:'Barlow Condensed',sans-serif; font-weight:600;
+    text-transform:uppercase; letter-spacing:.09em; font-size:.78rem; color:var(--gold-deep);
+    margin-bottom:9px; }
+  .locked{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--hairline);
+    font-size:.9rem; color:var(--muted); }
+  .locked strong{ color:var(--ink); }
+
   .empty{ background:var(--card); border:1px dashed var(--hairline); border-radius:12px;
     padding:24px; text-align:center; color:var(--muted); }
   .empty svg{ width:32px; height:32px; fill:var(--gold); opacity:.55; display:block;
@@ -333,10 +430,11 @@
   <svg class="hero-court" viewBox="0 0 200 100" aria-hidden="true"><use href="#i-court"/></svg>
   <svg class="hero-ball" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#i-ball"/></svg>
   <div class="wrap">
-    <div class="kicker"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ball"/></svg>Enter online</div>
-    <h1 id="tName">Loading…</h1>
-    <div class="meta" id="tMeta"></div>
-    <div id="tSwitch" class="switch" hidden></div>
+    <div class="kicker hero-anim d1"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ball"/></svg>Enter online</div>
+    <h1 class="hero-anim d2" id="tName">Loading…</h1>
+    <div class="hero-underline hero-anim d2"></div>
+    <div class="meta hero-anim d3" id="tMeta"></div>
+    <div id="tSwitch" class="switch hero-anim d4" hidden></div>
   </div>
 </div>
 
@@ -366,6 +464,7 @@ const S = {
   user: null, profile: null,
   tournaments: [], tournament: null, isOpen: () => false,
   options: [], entries: [], invites: [], settings: null, fees: [], schedule: [], late: 0,
+  view: null,             // which player tab is showing (null = decide a default)
   authTab: 'in',
   authMode: 'otp',        // 'otp' (default, passwordless) | 'password'
   otpEmail: '', otpSent: false, otpBusy: false, otpNote: null,
@@ -553,48 +652,73 @@ async function refresh(){
 
 function render(){
   const main = $('main');
-  const parts = [];
 
   if (!S.user){ main.innerHTML = signInHtml(); wireSignIn(); return; }
   if (!S.profile){ main.innerHTML = profileHtml(true); wireProfile(); return; }
 
-  const inviteToken = new URLSearchParams(location.search).get('invite');
-
-  // Your details comes FIRST. Eligibility for every event is computed from gender,
-  // rating and date of birth, so it is the thing that decides what the rest of the page
-  // can even offer. Collapsed it costs one line; when it is missing something that
-  // blocks events it opens itself and says which.
+  // Profile gaps decide what the player may enter, so they are surfaced two ways: a count
+  // on the "My details" tab, and a nudge at the top of "Enter events".
   const gapped = S.options.filter(o => o.problem && /your profile/i.test(o.problem));
-  const reasons = [...new Set(gapped.map(o => o.problem))];
-  parts.push(`<details class="tuck" id="detailsBlock" ${gapped.length ? 'open' : ''}>
-      <summary>Your details — ${esc(S.profile.full_name)}${S.profile.dupr_rating
-        ? ' · DUPR ' + Number(S.profile.dupr_rating).toFixed(2) : ''}
-        ${gapped.length
-          ? `<span class="pill warn" style="margin-left:8px">${gapped.length} event${gapped.length === 1 ? '' : 's'} blocked</span>`
-          : '<span class="pill ok" style="margin-left:8px">Complete</span>'}</summary>
-      ${gapped.length
-        ? msg('warn', `Add the missing details below to open these up. ${reasons.join(' ')}`)
-        : '<p class="sub small">Used for seeding and to check you fit each event’s band. Keep it current.</p>'}
-      ${profileHtml(false)}
-    </details>`);
+  const gapReasons = [...new Set(gapped.map(o => o.problem))];
 
-  // Then what they came to do: answer an invitation, see what they already have (only if
-  // they have any), then add more.
-  if (S.invites.length) parts.push(invitesHtml());
-  parts.push(scheduleHtml());     // on the day this is the only thing they want
-  parts.push(entriesHtml());
-  parts.push(paymentsHtml());
-  parts.push(builderHtml());
+  const feeRows  = S.fees.filter(f => f.amount_pence > 0 || f.status === 'refunded');
+  const dueCount = feeRows.filter(f => f.status === 'pending' || f.status === 'failed').length;
 
-  main.innerHTML = parts.join('');
+  // Tabs are built from what actually exists — no dead "Fees" tab before there are any
+  // fees, no "My matches" before there is a schedule. Badges flag what wants attention.
+  const tabs = [{ key:'enter', label:'Enter events' }];
+  tabs.push({ key:'entries', label:'My entries',
+    badge: S.invites.length ? { n:S.invites.length, cls:'gold' } : null });
+  if (feeRows.length) tabs.push({ key:'fees', label:'Fees',
+    badge: dueCount ? { n:dueCount, cls:'warn' } : null });
+  if (S.schedule.length) tabs.push({ key:'matches', label:'My matches' });
+  tabs.push({ key:'details', label:'My details',
+    badge: gapped.length ? { n:gapped.length, cls:'warn' } : null });
+
+  // First load with an invitation waiting? Land on it. Otherwise the builder. If the
+  // remembered tab has since vanished (last entry withdrawn, say) fall back safely.
+  const valid = new Set(tabs.map(t => t.key));
+  if (!S.view || !valid.has(S.view))
+    S.view = (S.invites.length && valid.has('entries')) ? 'entries' : 'enter';
+
+  const nav = `<nav class="tabbar" role="tablist">` + tabs.map(t =>
+    `<button role="tab" data-view="${t.key}" class="${t.key === S.view ? 'active' : ''}">${esc(t.label)}`
+    + (t.badge ? `<span class="tbadge ${t.badge.cls}">${t.badge.n}</span>` : '')
+    + `</button>`).join('') + `</nav>`;
+
+  let body = '';
+  switch (S.view){
+    case 'entries':
+      body = (S.invites.length ? invitesHtml() : '') + entriesHtml();
+      break;
+    case 'fees':
+      body = paymentsHtml();
+      break;
+    case 'matches':
+      body = scheduleHtml();
+      break;
+    case 'details':
+      body = detailsViewHtml(gapped.length, gapReasons);
+      break;
+    default: // 'enter'
+      body = (gapped.length
+        ? `<div class="msg warn">Some events need more from you before you can enter them. Open the
+             <strong>My details</strong> tab to add: ${esc(gapReasons.join(' '))}</div>`
+        : '')
+        + builderHtml();
+  }
+
+  main.innerHTML = nav + '<div class="view">' + body + '</div>';
+
+  main.querySelectorAll('[data-view]').forEach(b =>
+    b.onclick = () => { S.view = b.dataset.view; render(); });
+
   wireInvites(); wireEntries(); wirePayments(); wireBuilder(); wireProfile();
 
-
-  if (inviteToken){
-    const row = S.invites.find(i => i.token === inviteToken);
-    if (row) document.querySelector(`[data-inv="${inviteToken}"]`)
+  // Deep-linked from an invitation email — scroll it into view on the entries tab.
+  if (S.inviteToken && S.view === 'entries')
+    document.querySelector(`[data-inv="${S.inviteToken}"]`)
       ?.scrollIntoView({ behavior:'smooth', block:'center' });
-  }
 }
 
 /* ---------------------------------------------------- sign in / sign up */
@@ -885,54 +1009,102 @@ function entryStage(e){
 function entriesHtml(){
   const mine = S.entries.filter(e => e.tournament_id === S.tournament.id);
   const h = `<h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-trophy"/></svg></span>Your entries</h2>`;
-  // Nothing yet? Say nothing — the builder below is the whole page for a new player.
-  if (!mine.length) return '';
+
+  if (!mine.length)
+    return h + empty('No entries yet',
+      'You have not entered any events for this tournament. Use the Enter events tab to sign up — you can pick several at once.');
 
   return h + `
-    <p class="sub">Change partners or withdraw yourself right up to the deadline; after the draw is
-      made the organiser has to do it for you.</p>` +
+    <p class="sub">The <strong>Manage this entry</strong> buttons are the only things to click here —
+      the ticks above them just show how far each entry has got. Change partners or withdraw right up
+      to the deadline; after the draw is made the organiser does it for you.</p>` +
     mine.map(e => {
       const st = entryStage(e);
       const hasPartner = e.roster >= e.roster_needed;
       const paid = e.my_payment_status === 'paid' || e.my_payment_status === 'waived';
       const canEdit = e.status !== 'withdrawn' && !e.draw_made;
       const deadline = fmtWhen(e.withdrawal_deadline);
-      return `<div class="card" data-entry="${e.entry_id}">
-        <div class="entry">
-          <div class="body">
-            <div class="lineup">${esc(e.line_up || 'You')}
-              ${e.roster < e.roster_needed ? '<span class="muted"> + partner TBC</span>' : ''}</div>
-            <div class="where">${esc(e.event_name)}${e.band_label ? ' · ' + esc(e.band_label) : ''}</div>
-            <div class="steps">
-              <span class="step done">Entered</span>
-              <span class="step ${hasPartner ? 'done' : 'now'}">${e.roster_needed === 1 ? 'Singles' : (hasPartner ? 'Partner confirmed' : 'Partner pending')}</span>
-              <span class="step ${paid ? 'done' : (hasPartner ? 'now' : '')}">${e.entry_fee_pence ? (paid ? 'Paid' : 'Fee ' + money(e.entry_fee_pence, e.currency)) : 'No fee'}</span>
-              <span class="step ${e.status === 'entered' ? 'done' : ''}">In the draw</span>
-            </div>
-            ${e.invite_status === 'pending'
-              ? `<div class="small muted">Invitation sent to <strong>${esc(e.invited_email)}</strong> — waiting for them to accept.</div>` : ''}
-            ${e.invite_status === 'declined'
-              ? `<div class="small" style="color:var(--err)">${esc(e.invited_email)} declined — invite someone else.</div>` : ''}
-            ${e.status === 'waitlisted'
-              ? `<div class="small muted">This event is full. You keep your place in the queue and move up automatically if someone withdraws.</div>` : ''}
-            ${e.draw_made && e.status !== 'withdrawn'
-              ? `<div class="small muted">The draw has been made — contact the organiser for any change.</div>` : ''}
-          </div>
-          <div class="act"><span class="pill ${st.cls}">${st.label}</span></div>
-        </div>
-        ${canEdit ? `<div class="btnrow" style="margin-top:10px">
-          ${e.roster_needed > 1 ? `<button class="btn ghost small" data-partner="${e.entry_id}">${hasPartner ? 'Change partner' : (e.invite_status === 'pending' ? 'Invite someone else' : 'Invite a partner')}</button>` : ''}
-          ${e.invite_status === 'pending' ? `<button class="btn ghost small" data-cancelinv="${e.entry_id}">Cancel invitation</button>` : ''}
-          <span style="flex:1"></span>
-          ${hasPartner && e.roster_needed > 1
+      const singles = e.roster_needed === 1;
+      const hasFee = !!e.entry_fee_pence;
+
+      // A plain checklist of where this entry has got to — read-only by design, so it can
+      // never be mistaken for the buttons.
+      const steps = [
+        { done:true, label:'Entered' },
+        singles ? { done:true, label:'Singles — no partner needed' }
+          : (hasPartner ? { done:true, label:'Partner confirmed' }
+                        : { now:true,  label:'Partner still needed' }),
+        !hasFee ? { done:true, label:'No entry fee' }
+          : (paid ? { done:true, label:'Fee paid' }
+                  : { now:hasPartner, label:'Fee ' + money(e.entry_fee_pence, e.currency) + ' due' }),
+        e.status === 'entered' ? { done:true, label:'In the draw' }
+                               : { label:'Not yet in the draw' },
+      ];
+      const progress = `<ul class="progress">` + steps.map(s =>
+        `<li class="${s.done ? 'done' : (s.now ? 'now' : '')}">${esc(s.label)}</li>`).join('') + `</ul>`;
+
+      const notes = [
+        e.invite_status === 'pending'
+          ? `<div class="enote">Invitation sent to <strong>${esc(e.invited_email)}</strong> — waiting for them to accept.</div>` : '',
+        e.invite_status === 'declined'
+          ? `<div class="enote err">${esc(e.invited_email)} declined — invite someone else below.</div>` : '',
+        e.status === 'waitlisted'
+          ? `<div class="enote">This event is full. You keep your place in the queue and move up automatically if someone withdraws.</div>` : '',
+      ].filter(Boolean).join('');
+
+      let controls;
+      if (canEdit){
+        const btns = [
+          e.roster_needed > 1
+            ? `<button class="btn ghost small" data-partner="${e.entry_id}">${hasPartner ? 'Change partner' : (e.invite_status === 'pending' ? 'Invite someone else' : 'Invite a partner')}</button>` : '',
+          e.invite_status === 'pending'
+            ? `<button class="btn ghost small" data-cancelinv="${e.entry_id}">Cancel invitation</button>` : '',
+          hasPartner && e.roster_needed > 1
             ? `<button class="btn ghost small" data-leave="${e.entry_id}"
-                 title="You drop out; your partner keeps the entry and can invite someone else">Leave this pairing</button>` : ''}
-          <button class="btn danger small" data-withdraw="${e.entry_id}">Withdraw${hasPartner && e.roster_needed > 1 ? ' both' : ''}</button>
-        </div>
-        ${deadline ? `<div class="small muted" style="margin-top:6px">Free withdrawal until ${esc(deadline)}.</div>` : ''}
-        <div data-slot="${e.entry_id}"></div>` : ''}
-      </div>`;
+                 title="You drop out; your partner keeps the entry and can invite someone else">Leave this pairing</button>` : '',
+          `<button class="btn danger small" data-withdraw="${e.entry_id}">Withdraw${hasPartner && e.roster_needed > 1 ? ' both' : ''}</button>`,
+        ].filter(Boolean).join('');
+        controls = `<div class="actions">
+            <div class="actions-label">Manage this entry</div>
+            <div class="btnrow">${btns}</div>
+            ${deadline ? `<div class="small muted" style="margin-top:8px">Free withdrawal until ${esc(deadline)}.</div>` : ''}
+            <div data-slot="${e.entry_id}"></div>
+          </div>`;
+      } else {
+        controls = `<div class="locked">${e.status === 'withdrawn'
+          ? '<strong>Withdrawn.</strong> You are no longer in this event.'
+          : '<strong>Locked.</strong> The draw has been made — contact the organiser for any change.'}</div>`;
+      }
+
+      // Show the band only when the event name does not already carry it, so a
+      // "Mixed Doubles 50+" event with a "50+" band does not read "50+ · 50+".
+      const bandExtra = (e.band_label && !(e.event_name || '').includes(e.band_label)) ? e.band_label : '';
+      return `<div class="card entry-card" data-entry="${e.entry_id}">
+          <div class="entry-top">
+            <div class="entry-head">
+              <div class="entry-event">${esc(e.event_name)}${bandExtra ? ` <span class="band">${esc(bandExtra)}</span>` : ''}</div>
+              <div class="entry-who">${esc(e.line_up || 'You')}${e.roster < e.roster_needed
+                ? '<span class="muted"> · partner to be confirmed</span>' : ''}</div>
+            </div>
+            <span class="pill ${st.cls} statuschip" title="Current status of this entry">${esc(st.label)}</span>
+          </div>
+          ${progress}
+          ${notes}
+          ${controls}
+        </div>`;
     }).join('');
+}
+
+/* The "My details" tab. On its own page the profile no longer needs the collapsible
+   wrapper it had when it sat atop a scroll — just the form, with the same gap warning. */
+function detailsViewHtml(gapCount, reasons){
+  return `<h2><span class="h2mark"><svg viewBox="0 0 24 24"><use href="#i-user"/></svg></span>Your details</h2>
+    <p class="sub">One profile, every tournament. Your rating and date of birth decide which bands you
+      may enter, so they are worth getting right.</p>
+    ${gapCount
+      ? `<div class="msg warn">Add the missing details below to open up ${gapCount} more event${gapCount === 1 ? '' : 's'}: ${esc(reasons.join(' '))}</div>`
+      : ''}
+    ${profileHtml(false)}`;
 }
 
 function wireEntries(){
@@ -1145,6 +1317,7 @@ async function handlePaymentReturn(){
   params.delete('paid');
   const clean = location.pathname + (params.toString() ? '?' + params : '');
   history.replaceState({}, '', clean);
+  S.view = 'fees';   // show them the fees tab they just came back to, either outcome
 
   if (paid === '0'){
     $('main').insertAdjacentHTML('afterbegin',
