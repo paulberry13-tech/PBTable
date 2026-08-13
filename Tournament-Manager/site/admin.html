@@ -167,6 +167,21 @@
   .muted{ color:var(--muted); } .small{ font-size:.85rem; }
   .flexrow{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   .grow{ flex:1; }
+
+  /* overview dashboard — Score7-style central hub */
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:16px; }
+  .stat{ background:linear-gradient(180deg,#fff,#fffdf8); border:var(--edge); border-radius:var(--r);
+    box-shadow:var(--sh-2); padding:16px 18px; }
+  .statbig{ font-family:'Barlow Condensed'; font-weight:700; font-size:2.4rem; color:var(--crimson); line-height:1; }
+  .statlbl{ font-family:'Barlow Condensed'; font-weight:600; text-transform:uppercase; letter-spacing:.06em;
+    font-size:.82rem; color:var(--muted); margin-top:4px; }
+  .statsub{ font-size:.82rem; color:var(--gold-deep); margin-top:3px; font-weight:600; }
+  .cardgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; }
+  .ov-head{ display:flex; gap:18px; align-items:center; }
+  .ov-logo{ width:64px; height:64px; object-fit:contain; border-radius:10px; background:#fff; border:var(--edge); flex:0 0 auto; }
+  .ov-when{ font-weight:600; color:var(--ink); margin-bottom:8px; }
+  .ov-prog{ height:10px; border-radius:999px; background:var(--mid); overflow:hidden; margin-bottom:6px; }
+  .ov-bar{ height:100%; background:var(--grad-gold); border-radius:999px; transition:width .5s var(--ease); }
 </style>
 </head>
 <body>
@@ -208,7 +223,7 @@ const S = {
   pools: [], poolEntries: new Map(), matches: [], gamesByMatch: new Map(),
   standings: [], ratings: [],   // player_current_ratings rows
   payments: new Map(), invitations: new Map(),
-  tab: 'setup', activeEventId: null, dirty: 0,
+  tab: 'overview', activeEventId: null, dirty: 0,
 };
 
 window.addEventListener('beforeunload', (e) => {
@@ -554,7 +569,7 @@ function renderHome(){
 /* ------------------------------------------------------------------ tournament shell */
 
 const TABS = [
-  ['setup', 'Setup'], ['events', 'Events'], ['players', 'Players'],
+  ['overview', 'Overview'], ['setup', 'Setup'], ['events', 'Events'], ['players', 'Players'],
   ['entries', 'Entries'], ['draw', 'Draw'], ['schedule', 'Schedule'], ['scores', 'Scores'],
 ];
 
@@ -581,7 +596,7 @@ function renderTournament(){
     S.dirty = 0; S.tab = b.dataset.tab; renderTournament();
   });
   const render = {
-    setup: renderSetup, events: renderEventsTab, players: renderPlayersTab,
+    overview: renderOverview, setup: renderSetup, events: renderEventsTab, players: renderPlayersTab,
     entries: renderEntriesTab, draw: renderDrawTab, schedule: renderScheduleTab,
     scores: renderScoresTab,
   }[S.tab];
@@ -599,6 +614,105 @@ function eventChips(body, onPick){
     S.activeEventId = b.dataset.ev; onPick();
   });
   return true;
+}
+
+/* ------------------------------------------------------------------ overview tab
+   The Score7-style central hub: the whole tournament at a glance, the share block, and
+   quick jumps into the working tabs. Pure read-only aggregation over already-loaded data. */
+
+function renderOverview(body){
+  const t = S.tournament;
+  const players = [...S.playersById.values()];
+  const checkedIn = players.filter(p => p.checked_in).length;
+  const status = {};
+  for (const e of S.entries) status[e.status] = (status[e.status] || 0) + 1;
+  const activeEntries = S.entries.filter(e => e.status !== 'withdrawn').length;
+  const total = S.matches.length;
+  const decided = S.matches.filter(m => m.winner_entry_id).length;
+  const pct = total ? Math.round(decided / total * 100) : 0;
+  const upcoming = S.matches
+    .filter(m => m.scheduled_at && !m.winner_entry_id && m.home_entry_id && m.away_entry_id)
+    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at)).slice(0, 6);
+  const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-GB',
+    { weekday:'short', day:'numeric', month:'long', year:'numeric' }) : '';
+  const fmtT = (ts) => new Date(ts).toLocaleString('en-GB', { weekday:'short', hour:'2-digit', minute:'2-digit' });
+  const tile = (label, big, sub) => `<div class="stat">
+    <div class="statbig">${big}</div><div class="statlbl">${esc(label)}</div>
+    ${sub ? `<div class="statsub">${esc(sub)}</div>` : ''}</div>`;
+  const url = entryUrl(t);
+  const qr = qrSvg(url, 128);
+
+  body.innerHTML = `
+    <div class="card ov-head">
+      ${t.logo_url ? `<img class="ov-logo" src="${esc(t.logo_url)}" alt="">` : ''}
+      <div style="flex:1;min-width:0">
+        <div class="ov-when">${esc(fmtDate(t.start_date))}${t.end_date && t.end_date !== t.start_date ? ' – ' + esc(fmtDate(t.end_date)) : ''}${t.venue ? ' · ' + esc(t.venue) : ''}</div>
+        <div class="ov-prog"><div class="ov-bar" style="width:${pct}%"></div></div>
+        <div class="small muted">${decided} of ${total} match${total === 1 ? '' : 'es'} played · ${pct}% complete</div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      ${tile('Players', players.length, `${checkedIn} checked in`)}
+      ${tile('Events', S.events.length, '')}
+      ${tile('Entries', activeEntries, `${status.entered || 0} in the draw`)}
+      ${tile('Matches', total, `${total - decided} to play`)}
+    </div>
+
+    <div class="cardgrid">
+      <div class="card">
+        <h3>Next on court</h3>
+        ${upcoming.length ? `<div class="table-scroll"><table><tbody>${upcoming.map(m => `<tr>
+            <td class="small"><strong>${esc(fmtT(m.scheduled_at))}</strong></td>
+            <td class="small">${m.court ? 'Court ' + esc(m.court) : 'TBC'}</td>
+            <td>${esc(entryName(m.home_entry_id) || 'TBC')} v ${esc(entryName(m.away_entry_id) || 'TBC')}
+              <span class="muted small">· ${esc(eventById(m.event_id)?.name || '')}</span></td>
+          </tr>`).join('')}</tbody></table></div>`
+          : '<div class="empty"><span class="word">Pending</span>No scheduled matches yet. Generate a draw, then set times on the Schedule tab.</div>'}
+        <div id="ovClash" class="small" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <h3>Share &amp; watch</h3>
+        <p class="sub small">The public results page updates live — no login needed to watch.</p>
+        <div class="flexrow">
+          <input type="text" readonly value="${esc(url)}" style="flex:1 1 200px">
+          <button class="btn small" id="ovCopy">Copy link</button>
+        </div>
+        <div class="flexrow" style="margin-top:10px">
+          <a class="btn ghost small" href="index.html?t=${esc(t.slug || t.id)}" target="_blank">Public page</a>
+          <a class="btn gold small" href="display.html?t=${esc(t.slug || t.id)}" target="_blank">📺 Court-side display</a>
+        </div>
+        ${qr ? `<div style="margin-top:14px;text-align:center">${qr}
+          <div class="small muted" style="margin-top:5px">Scan to enter or watch</div></div>` : ''}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Jump to</h3>
+      <div class="flexrow">
+        <button class="btn ghost small" data-goto="players">Add players</button>
+        <button class="btn ghost small" data-goto="entries">Manage entries</button>
+        <button class="btn ghost small" data-goto="draw">Generate draw</button>
+        <button class="btn ghost small" data-goto="schedule">Schedule</button>
+        <button class="btn ghost small" data-goto="scores">Enter scores</button>
+      </div>
+    </div>`;
+
+  $('ovCopy').onclick = () => {
+    navigator.clipboard?.writeText(url);
+    $('ovCopy').textContent = 'Copied';
+    setTimeout(() => { const b = $('ovCopy'); if (b) b.textContent = 'Copy link'; }, 1500);
+  };
+  body.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => { S.tab = b.dataset.goto; renderTournament(); });
+
+  client.from('schedule_clashes').select('*').eq('tournament_id', t.id).then(({ data, error }) => {
+    const el = $('ovClash'); if (!el) return;
+    if (error || !data){ el.textContent = ''; return; }
+    if (data.length) el.innerHTML = `<span style="color:var(--warn)">⚠ ${data.length} scheduling clash${data.length > 1 ? 'es' : ''} — see the Schedule tab.</span>`;
+    else if (S.matches.some(m => m.scheduled_at)) el.innerHTML = '<span style="color:var(--ok)">✓ No scheduling clashes.</span>';
+    else el.textContent = '';
+  });
 }
 
 /* ------------------------------------------------------------------ setup tab */
@@ -623,6 +737,29 @@ function renderSetup(body){
           <input type="date" id="tEnd" value="${esc(t.end_date || '')}"></label>
       </div>
       <button class="btn" id="tSave">Save details</button>
+    </div>
+    <div class="card">
+      <h3>Branding</h3>
+      <p class="sub small">Add a tournament logo — it shows on the public results page, the entry
+        page and the court-side display. A square PNG or JPG works best; it is resized automatically
+        and stored with the tournament, so there is nothing else to host.</p>
+      <div class="flexrow" style="align-items:flex-start;gap:18px">
+        <div style="text-align:center">
+          <img id="logoPreview" src="${t.logo_url || ''}" alt=""
+            style="width:96px;height:96px;object-fit:contain;border:var(--edge);border-radius:12px;background:#fff;${t.logo_url ? '' : 'display:none'}">
+          <div id="logoNone" class="empty" style="width:96px;height:96px;place-items:center;padding:0;font-size:.72rem;display:${t.logo_url ? 'none' : 'grid'}">No logo</div>
+        </div>
+        <div class="grow">
+          <label class="f" style="max-width:360px">Logo image
+            <span class="hint">PNG, JPG or WebP. Resized to fit — a small file is fine.</span>
+            <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp"></label>
+          <div class="flexrow">
+            <button class="btn" id="logoSave" disabled>Save logo</button>
+            ${t.logo_url ? '<button class="btn danger small" id="logoRemove">Remove logo</button>' : ''}
+          </div>
+          <div id="logoMsg" class="small muted" style="margin-top:6px"></div>
+        </div>
+      </div>
     </div>
     <div class="card">
       <h3>Settings</h3>
@@ -755,6 +892,45 @@ function renderSetup(body){
       name: $('tName').value.trim(), venue: $('tVenue').value.trim() || null,
       start_date: $('tStart').value, end_date: $('tEnd').value || null,
     }).eq('id', t.id);
+    if (error){ flash(body, 'err', error.message); return; }
+    await loadTournaments(); await refresh();
+  };
+  // Branding: resize the chosen image to a small data URL client-side, then store it on the
+  // tournament row. Self-contained (no storage bucket), and previews before saving.
+  let pendingLogo = null;
+  if ($('logoFile')) $('logoFile').onchange = () => {
+    const f = $('logoFile').files[0];
+    $('logoMsg').textContent = '';
+    if (!f){ pendingLogo = null; $('logoSave').disabled = true; return; }
+    if (f.size > 8 * 1024 * 1024){ $('logoMsg').textContent = 'That image is very large — pick one under 8 MB.'; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 256; let w = img.width, h = img.height;
+        if (w > max || h > max){ const k = max / Math.max(w, h); w = Math.round(w * k); h = Math.round(h * k); }
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        pendingLogo = cv.toDataURL(f.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.85);
+        const pv = $('logoPreview'); pv.src = pendingLogo; pv.style.display = '';
+        $('logoNone').style.display = 'none';
+        $('logoSave').disabled = false;
+      };
+      img.onerror = () => { $('logoMsg').textContent = 'That file could not be read as an image.'; };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(f);
+  };
+  if ($('logoSave')) $('logoSave').onclick = async () => {
+    if (!pendingLogo) return;
+    $('logoSave').disabled = true; $('logoMsg').textContent = 'Saving…';
+    const { error } = await client.from('tournaments').update({ logo_url: pendingLogo }).eq('id', t.id);
+    if (error){ $('logoSave').disabled = false; $('logoMsg').textContent = error.message; return; }
+    await loadTournaments(); await refresh();
+  };
+  if ($('logoRemove')) $('logoRemove').onclick = async () => {
+    if (!confirm('Remove the tournament logo?')) return;
+    const { error } = await client.from('tournaments').update({ logo_url: null }).eq('id', t.id);
     if (error){ flash(body, 'err', error.message); return; }
     await loadTournaments(); await refresh();
   };
@@ -1038,6 +1214,29 @@ function renderPlayersTab(body){
           </div></label>
       </div>
       <button class="btn" id="plAdd">Add player</button>
+    </div>
+    <div class="card">
+      <h3>Bulk add players</h3>
+      <p class="sub small">Paste a whole list at once — one player per line, the fast way to load a
+        field. A line can be just a name, or add gender and a rating after commas:
+        <code>Priya Raval, female, 4.1</code>. Lines with no gender use the default below.</p>
+      <div class="frow">
+        <label class="f">Default gender
+          <span class="hint">Applied to any line that doesn't name one. Paste your men's and women's lists separately, or override per line.</span>
+          <select id="bkGender">
+            <option value="female">female</option><option value="male">male</option><option value="other">other</option>
+          </select></label>
+        <label class="f">Rating source
+          <span class="hint">Used when a line ends in a rating number, e.g. DUPR or self.</span>
+          <input type="text" id="bkSource" value="organiser"></label>
+      </div>
+      <label class="f" style="max-width:none">Players, one per line
+        <span class="hint">Name &nbsp;·&nbsp; or &nbsp;·&nbsp; Name, gender &nbsp;·&nbsp; or &nbsp;·&nbsp; Name, gender, rating</span>
+        <textarea id="bkText" rows="7" style="max-width:none;width:100%;font-family:ui-monospace,Menlo,Consolas,monospace"
+          placeholder="Jane Doe
+John Smith, male
+Priya Raval, female, 4.1"></textarea></label>
+      <button class="btn" id="bkAdd">Add players</button>
     </div>`;
   body.querySelectorAll('[data-checkin]').forEach(b => b.onclick = async () => {
     const p = S.playersById.get(b.dataset.checkin);
@@ -1118,6 +1317,43 @@ function renderPlayersTab(body){
         player_id: data.id, source: rsrc, value: Number(rv),
         captured_on: new Date().toISOString().slice(0, 10) });
       if (e2){ flash(body, 'err', 'Player added but rating failed: ' + e2.message); }
+    }
+    await refresh();
+  };
+
+  $('bkAdd').onclick = async () => {
+    const lines = ($('bkText').value || '').split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length){ flash(body, 'err', 'Paste at least one name.'); return; }
+    const defGender = $('bkGender').value;
+    const source = $('bkSource').value.trim() || 'organiser';
+    const valid = new Set(['male', 'female', 'other']);
+    const rows = [], ratingFor = [];
+    for (const line of lines){
+      const parts = line.split(',').map(s => s.trim());
+      const name = parts[0];
+      if (!name) continue;
+      let gender = defGender, rating = null;
+      for (let i = 1; i < parts.length; i++){         // after the name: gender word or rating number, any order
+        const low = parts[i].toLowerCase();
+        if (valid.has(low)) gender = low;
+        else if (parts[i] !== '' && !isNaN(Number(parts[i]))) rating = Number(parts[i]);
+      }
+      rows.push({ tournament_id: S.tournament.id, name, gender });
+      ratingFor.push(rating);
+    }
+    if (!rows.length){ flash(body, 'err', 'No names found.'); return; }
+    const btn = $('bkAdd'); btn.disabled = true; btn.textContent = 'Adding…';
+    const { data, error } = await client.from('players').insert(rows).select();
+    if (error){ btn.disabled = false; btn.textContent = 'Add players'; flash(body, 'err', error.message); return; }
+    // Ratings for any line that carried a number. A batch insert returns rows in insert order.
+    const rrows = [];
+    (data || []).forEach((pl, i) => {
+      if (ratingFor[i] != null) rrows.push({ player_id: pl.id, source,
+        value: ratingFor[i], captured_on: new Date().toISOString().slice(0, 10) });
+    });
+    if (rrows.length){
+      const { error: e2 } = await client.from('player_ratings').insert(rrows);
+      if (e2){ flash(body, 'warn', `${rows.length} players added, but ratings failed: ${e2.message}`); return; }
     }
     await refresh();
   };
@@ -1493,6 +1729,58 @@ async function fillBracketFromPools(ev, body){
 
 /* ------------------------------------------------------------------ schedule tab */
 
+/* Auto-scheduler (Score7-inspired). Greedy earliest-fit over a courts × time-slot grid:
+   each match is placed at the earliest slot on the earliest court where BOTH the court is
+   free AND none of its players are already committed in that window — across ALL events, so
+   nobody is ever on two courts at once. That guarantee is structural: we only ever place in
+   a free window, so the schedule_clashes view can find nothing. A best-of-3 occupies two
+   slots (matching the clash view's window rule); an optional rest keeps a player off
+   back-to-back courts. Pure function — no writes — so it can be dry-run and verified. */
+function computeSchedule(matches, opts){
+  const courts  = Math.max(1, opts.courts | 0);
+  const slotMin = Math.max(1, opts.slotMin | 0);
+  const rest    = Math.max(0, opts.restSlots | 0);
+  const start   = new Date(opts.startISO).getTime();
+  const dur = (m) => (m.best_of && m.best_of > 1) ? 2 : 1;
+  const playersOf = (m) => [
+    ...(S.entryPlayers.get(m.home_entry_id) || []),
+    ...(S.entryPlayers.get(m.away_entry_id) || []),
+  ];
+  const stageRank = (m) => m.stage === 'pool' ? 0 : 1;   // pools first, then knockout rounds in order
+  const ordered = [...matches].sort((a, b) =>
+    stageRank(a) - stageRank(b)
+    || (a.round ?? 0) - (b.round ?? 0)
+    || ((eventById(a.event_id)?.display_order ?? 0) - (eventById(b.event_id)?.display_order ?? 0))
+    || (a.slot ?? 0) - (b.slot ?? 0));
+  const courtBusy = Array.from({ length: courts }, () => new Set());
+  const playerBusy = new Map();
+  const busyOf = (pid) => { let s = playerBusy.get(pid); if (!s){ s = new Set(); playerBusy.set(pid, s); } return s; };
+  const out = [];
+  for (const m of ordered){
+    const d = dur(m), ps = playersOf(m);
+    for (let t = 0; t < 100000; t++){
+      let placedCourt = -1;
+      for (let c = 0; c < courts; c++){
+        let ok = true;
+        for (let s = t; s < t + d && ok; s++) if (courtBusy[c].has(s)) ok = false;
+        for (let i = 0; ok && i < ps.length; i++){
+          const set = playerBusy.get(ps[i]);
+          if (set) for (let s = t; s < t + d; s++) if (set.has(s)){ ok = false; break; }
+        }
+        if (ok){ placedCourt = c; break; }
+      }
+      if (placedCourt >= 0){
+        for (let s = t; s < t + d; s++) courtBusy[placedCourt].add(s);
+        for (const pid of ps){ const set = busyOf(pid); for (let s = t; s < t + d + rest; s++) set.add(s); }
+        out.push({ id: m.id, court: String(placedCourt + 1),
+          scheduled_at: new Date(start + t * slotMin * 60000).toISOString() });
+        break;
+      }
+    }
+  }
+  return out;
+}
+
 function renderScheduleTab(body){
   const all = [...S.matches].sort((a, b) =>
     (a.scheduled_at || '9999').localeCompare(b.scheduled_at || '9999')
@@ -1508,6 +1796,11 @@ function renderScheduleTab(body){
     const pad = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
+  const undecided = S.matches.filter(m => !m.winner_entry_id);
+  const earliest = S.matches.map(m => m.scheduled_at).filter(Boolean).sort()[0];
+  const defaultStart = earliest ? toLocal(earliest)
+    : (S.tournament.start_date ? S.tournament.start_date + 'T09:00' : '');
+  const s = S.settings || {};
   const rows = all.map(m => `<tr data-mid="${m.id}">
     <td class="small">${esc(eventById(m.event_id)?.name || '')}</td>
     <td class="small">${esc(matchLabel(m))}</td>
@@ -1517,6 +1810,30 @@ function renderScheduleTab(body){
     <td><span class="dot" id="sd-${m.id}"></span> <span class="rowerr" id="se-${m.id}"></span></td>
   </tr>`).join('');
   body.innerHTML = `
+    <div class="card">
+      <h3>Auto-schedule</h3>
+      <p class="sub small">Fill the whole schedule in one go. Every unplayed match is placed on a
+        court and time so that no player is ever on two courts at once and no court is double-booked
+        — across every event. You can still fine-tune any row by hand below.</p>
+      <div class="frow">
+        <label class="f">Start
+          <span class="hint">When the first matches begin.</span>
+          <input type="datetime-local" id="asStart" value="${defaultStart}"></label>
+        <label class="f">Courts
+          <span class="hint">How many run at once.</span>
+          <input type="number" id="asCourts" min="1" max="32" value="${s.courts_count ?? 4}"></label>
+        <label class="f">Minutes per match
+          <span class="hint">A best-of-3 is given two of these.</span>
+          <input type="number" id="asSlot" min="5" max="120" value="${s.slot_minutes ?? 20}"></label>
+        <label class="f">Rest between matches
+          <span class="hint">Slots left free after each of a player's matches, so nobody plays back-to-back. 0 packs tightest.</span>
+          <input type="number" id="asRest" min="0" max="6" value="0"></label>
+      </div>
+      <div class="flexrow">
+        <button class="btn gold" id="asRun">Auto-schedule ${undecided.length} match${undecided.length === 1 ? '' : 'es'}</button>
+        <span class="small muted" id="asNote"></span>
+      </div>
+    </div>
     <div id="clashPanel"></div>
     <div class="card">
       <h3>Schedule</h3>
@@ -1539,6 +1856,31 @@ function renderScheduleTab(body){
     save(inp.dataset.court, { court: inp.value.trim() || null }));
   body.querySelectorAll('[data-time]').forEach(inp => inp.onchange = () =>
     save(inp.dataset.time, { scheduled_at: inp.value ? new Date(inp.value).toISOString() : null }));
+
+  const asRun = $('asRun');
+  if (asRun) asRun.onclick = async () => {
+    const startVal = $('asStart').value;
+    if (!startVal){ flash(body, 'err', 'Pick a start time.'); return; }
+    if (!undecided.length){ flash(body, 'err', 'Every match already has a result — nothing to schedule.'); return; }
+    if (!confirm(`Auto-schedule ${undecided.length} match${undecided.length === 1 ? '' : 'es'} from `
+      + `${new Date(startVal).toLocaleString('en-GB')}? This replaces the court and time on those matches.`)) return;
+    const plan = computeSchedule(undecided, {
+      startISO: new Date(startVal).toISOString(),
+      courts: Number($('asCourts').value) || 1,
+      slotMin: Number($('asSlot').value) || 20,
+      restSlots: Number($('asRest').value) || 0,
+    });
+    asRun.disabled = true;
+    let done = 0, failed = 0;
+    for (let i = 0; i < plan.length; i += 12){          // chunked so a big draw doesn't fire hundreds of requests at once
+      const res = await Promise.all(plan.slice(i, i + 12).map(p =>
+        client.from('matches').update({ court: p.court, scheduled_at: p.scheduled_at }).eq('id', p.id)));
+      for (const r of res){ if (r.error) failed++; else done++; }
+      $('asNote').textContent = `Scheduling ${done}/${plan.length}…`;
+    }
+    if (failed) flash(body, 'err', `${done} scheduled, ${failed} could not be saved.`);
+    await refresh();
+  };
   renderClashes();
 }
 

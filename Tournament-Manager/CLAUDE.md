@@ -733,6 +733,42 @@ disk from the applied ledger 2026-08-12; each byte-identical to what ran):
      screen a stronger gold spotlight + bigger champions + thicker court accents. All four
      still verified: no console errors, brand hexes unchanged, functionality intact.
   **Still unseen from here** (pane won't display) — Paul is calibrating live and steering.
+- 2026-08-13: **Score7-inspired features built on branch `bold-rework`** (Paul: "rework this
+  app… make all the best elements from this software", pointing at score7.io's tutorial;
+  understood via the pasted transcript + `kb.score7.io`, since video can't be watched here).
+  Framing kept honest first: the app is already a SUPERSET of most of Score7 (knockout +
+  auto-advance, pools/standings, multi-stage, live scores, share-link + QR + public no-login) —
+  so a literal "rework to match" would REMOVE capability. Only the genuinely additive elements
+  were built, all on the branch (`main` untouched):
+  1. **Bulk-add players** (Players tab): paste a list, one per line — `Name` / `Name, gender`
+     / `Name, gender, rating` — with a default-gender select; one batch insert, plus ratings
+     for any line that carries a number.
+  2. **Overview dashboard** — a new FIRST admin tab and the default landing (`renderOverview`):
+     stat tiles (players + checked-in, events, entries + in-draw, matches + to-play), a
+     completion bar, next-on-court, a live clash indicator (reads `schedule_clashes`), the
+     share block (link + QR + public/display links) and jump buttons. Pure read-only aggregation.
+  3. **Tournament logo / branding** — `011_tournament_logo.sql` adds nullable
+     `tournaments.logo_url` (applied via MCP + on disk; harmless if the branch is reverted).
+     Admin Setup gained a Branding card: pick an image → resized client-side to ≤256px → stored
+     as a data URL on the row (self-contained, no storage bucket). Shown on the public hero,
+     entry hero and display header (each on a white chip so any logo stays legible) and the
+     admin overview.
+  4. **Auto-scheduling** (Schedule tab) — `computeSchedule()`, a pure greedy earliest-fit over a
+     courts × time-slot grid: each unplayed match is placed at the earliest slot/court where the
+     court is free AND none of its players are busy in that window, across ALL events (the
+     cross-event no-double-booking guarantee is structural). Inputs: start datetime, courts,
+     minutes/match (best-of-3 = 2 slots), optional rest slots. Writes court + time in chunked
+     batches; every row is still hand-editable below.
+  - **Verified** as far as possible without a login: admin parses; Overview + bulk UI render
+    (injected state); logo slot reveals on a white chip when set. The scheduler was **dry-run
+    against real Cotswold data** (3 events, 35 matches, players shared across mixed + men's
+    doubles) → **0 court clashes, 0 player clashes**, ~260-min day on 5 courts, windows matching
+    the `schedule_clashes` rule exactly. **Not yet driven as a signed-in admin** — Paul should
+    walk bulk-add → auto-schedule → logo-upload once on the branch (needs the organiser login,
+    which isn't enterable from here).
+  - Branch topology: `main` = pre-rework stable; `bold-rework` = design overhaul (`373e461`)
+    then these features. Revert just the video rework by resetting to `373e461`; drop the whole
+    lot with `git checkout main`.
 - **Next:** Paul sets `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` in Edge Function
   secrets, points a Stripe webhook at `/functions/v1/entry-webhook`
   (`checkout.session.completed`, `charge.refunded`, `checkout.session.expired`) and

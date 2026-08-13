@@ -110,6 +110,9 @@
     letter-spacing:-.025em; margin:16px 0 0; max-width:17ch; text-shadow:0 2px 30px rgba(0,0,0,.24); }
   .hero-underline{ width:104px; height:6px; border-radius:var(--r-pill);
     background:var(--grad-gold); margin:18px 0 14px; box-shadow:var(--sh-gold); }
+  /* per-tournament logo, on a white chip so any logo stays legible on the crimson hero */
+  .hero-logo{ height:66px; width:auto; max-width:230px; object-fit:contain; background:#fff;
+    padding:8px 12px; border-radius:12px; box-shadow:var(--sh-2); margin-bottom:16px; display:block; }
   .hero-meta{ color:rgba(255,255,255,.9); font-size:1.08rem; display:flex; gap:14px;
     flex-wrap:wrap; align-items:center; }
   .hero-meta span{ display:inline-flex; align-items:center; }
@@ -364,6 +367,7 @@
   <svg class="hero-court" viewBox="0 0 200 100" aria-hidden="true"><use href="#i-court"/></svg>
   <svg class="hero-ball" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#i-ball"/></svg>
   <div class="hero-body">
+    <img id="tLogo" class="hero-logo hero-anim d1" alt="" hidden>
     <div class="hero-kicker hero-anim d1"><span class="live"></span>Live draws &amp; results</div>
     <h1 class="tourn-name hero-anim d2" id="tournName">Pending</h1>
     <div class="hero-underline hero-anim d2"></div>
@@ -578,6 +582,8 @@ async function loadTournament(t){
   S.tournament = t;
   $('tournSelect').value = t.id;
   $('tournName').textContent = t.name;
+  const lg = $('tLogo');
+  if (lg){ if (t.logo_url){ lg.src = t.logo_url; lg.hidden = false; } else { lg.hidden = true; lg.removeAttribute('src'); } }
   $('tournMeta').innerHTML =
     `<span><strong>${esc(fmtDateRange(t))}</strong></span>`
     + (t.venue ? `<span>${esc(t.venue)}</span>` : '');

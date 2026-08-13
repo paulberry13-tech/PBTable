@@ -73,6 +73,8 @@
     letter-spacing:-.025em; margin:14px 0 0; text-shadow:0 2px 26px rgba(0,0,0,.24); }
   .hero .hero-underline{ width:88px; height:6px; border-radius:var(--r-pill);
     background:var(--grad-gold); margin:16px 0 12px; box-shadow:var(--sh-gold); }
+  .hero-logo{ height:60px; width:auto; max-width:220px; object-fit:contain; background:#fff;
+    padding:7px 11px; border-radius:12px; box-shadow:var(--sh-2); margin-bottom:14px; display:block; }
   .hero .meta{ color:rgba(255,255,255,.9); display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
   .hero .meta span{ display:inline-flex; align-items:center; }
   .hero .meta span + span{ position:relative; padding-left:25px; }
@@ -430,6 +432,7 @@
   <svg class="hero-court" viewBox="0 0 200 100" aria-hidden="true"><use href="#i-court"/></svg>
   <svg class="hero-ball" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><use href="#i-ball"/></svg>
   <div class="wrap">
+    <img id="tLogo" class="hero-logo hero-anim d1" alt="" hidden>
     <div class="kicker hero-anim d1"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-ball"/></svg>Enter online</div>
     <h1 class="hero-anim d2" id="tName">Loading…</h1>
     <div class="hero-underline hero-anim d2"></div>
@@ -598,6 +601,8 @@ async function selectTournament(id){
   history.replaceState({}, '', url);
 
   $('tName').textContent = t.name;
+  const lg = $('tLogo');
+  if (lg){ if (t.logo_url){ lg.src = t.logo_url; lg.hidden = false; } else { lg.hidden = true; lg.removeAttribute('src'); } }
   const closes = fmtWhen(t.registration_closes_at);
   $('tMeta').innerHTML =
     `<span><strong>${esc(fmtDate(t.start_date))}</strong></span>`

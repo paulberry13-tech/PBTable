@@ -44,6 +44,7 @@
     border-bottom:1px solid rgba(217,164,65,.32); flex:0 0 auto;
     box-shadow:0 2px 26px rgba(0,0,0,.3); }
   header img{ height:5.2vh; }
+  header #tLogo{ background:#fff; padding:.4vh .7vw; border-radius:.9vh; box-sizing:border-box; object-fit:contain; }
   header .t{ min-width:0; }
   header .t h1{ font-size:3.4vh; font-weight:700; line-height:1; white-space:nowrap;
     overflow:hidden; text-overflow:ellipsis; }
@@ -211,6 +212,7 @@
 
 <header>
   <img src="pbtable-logo.png" alt="">
+  <img id="tLogo" alt="" hidden>
   <div class="t">
     <h1 id="tName">…</h1>
     <div class="v" id="tVenue"></div>
@@ -452,6 +454,8 @@ function fail(m){
 function paintChrome(){
   const t = S.tournament;
   $('tName').textContent = t.name;
+  const lg = $('tLogo');
+  if (lg){ if (t.logo_url){ lg.src = t.logo_url; lg.hidden = false; } else { lg.hidden = true; lg.removeAttribute('src'); } }
   $('tVenue').textContent = [t.venue, new Date(t.start_date + 'T00:00:00')
     .toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' })]
     .filter(Boolean).join(' · ') + (S.courtFilter ? ` · COURT ${S.courtFilter}` : '');
