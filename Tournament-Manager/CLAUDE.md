@@ -769,6 +769,27 @@ disk from the applied ledger 2026-08-12; each byte-identical to what ran):
   - Branch topology: `main` = pre-rework stable; `bold-rework` = design overhaul (`373e461`)
     then these features. Revert just the video rework by resetting to `373e461`; drop the whole
     lot with `git checkout main`.
+- 2026-08-13: **React rebuild started — proof of concept on branch `react-rebuild`** (Paul:
+  "rebuild with React… future-proof… enhance in a modular fashion"; chose the PoC-first path).
+  Branched off `bold-rework`, built in a NEW `app/` folder so `site/` stays intact until parity
+  is signed off. Stack: **Vite + React 18 + TypeScript**, deploys as static files to Netlify
+  exactly as now (same Supabase, same publishable key, same RLS) — only a build step is added.
+  Design ported VERBATIM (crimson+gold CSS split into `tokens.css` + `public.css`), so it is
+  pixel-identical, not a redesign.
+  - **Modular structure** (the point of the move): `lib/` (config, supabase client, typed row
+    interfaces, pure formatters, `tournamentData` fetch+resolver — the 1000-row `fetchAllIn`
+    guard is preserved) · `components/` (Sprite, Icon, Reveal, Empty, Hero, EventsSection,
+    DrawsSection incl. PoolCard/Bracket/ChampionBanner, ScheduleSection) · `pages/Public.tsx`.
+    Names still resolve through tournament-wide maps loaded once.
+  - **Verified against Cotswold**: identical to `site/index.html` — hero name 83.2px, 3 event
+    cards, 3 draw chips, 2 pools, 3 bracket matches + gilded final, champion "Dan Prescott &
+    Megan Coleford", 35 schedule rows, cream/gradient/cream section alternation, gold footer.
+    Chip switching works (→ "Ollie Marsh & Dan Prescott" for men's doubles). No console errors.
+    **`npm run build` passes** (tsc clean; ~108 kB gzipped) → a deployable `dist/`. Dev server:
+    `npm --prefix app run dev` on :5173 (launch.json config `tournament-react`).
+  - `app/.gitignore` keeps `node_modules`/`dist` out of git. **Next surfaces** (same pattern,
+    awaiting Paul's OK on the PoC): enter, display, admin. Admin is the big one and needs Paul's
+    login to fully verify.
 - **Next:** Paul sets `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` in Edge Function
   secrets, points a Stripe webhook at `/functions/v1/entry-webhook`
   (`checkout.session.completed`, `charge.refunded`, `checkout.session.expired`) and

@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["http-server", "site", "-p", "8199", "-c-1"],
       "port": 8199
+    },
+    {
+      "name": "tournament-react",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "app", "run", "dev"],
+      "port": 5173
     }
   ]
 }
