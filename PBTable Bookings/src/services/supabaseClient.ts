@@ -1,14 +1,10 @@
 // Supabase client for the booking app. Points at the PBTable platform (the same
 // project that holds clubs / players / matches / social_sessions).
 //
-// Config comes from Expo public env vars so no secrets are committed:
-//   EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY
-// Set them in an .env file or app config. The ANON key is safe to ship — RLS
-// (see the migrations) is what actually protects the data.
-//
-// PBTable Production ref: kxvtqsmjlhlajkoyejwk
-//   URL:  https://kxvtqsmjlhlajkoyejwk.supabase.co
-// Use the DEMO project (ezfpoyuebqjebxdcxyzy) while developing.
+// Which project it points at is decided by the hostname at runtime (backend.ts):
+// demo / netlify previews / localhost -> demo (ezfpoyuebqjebxdcxyzy), club
+// subdomains -> production (kxvtqsmjlhlajkoyejwk). The ANON key is safe to ship —
+// RLS (see the migrations) is what actually protects the data.
 
 // Must be first: polyfills the global URL/URLSearchParams API that
 // @supabase/supabase-js relies on but React Native's engine doesn't fully
@@ -19,13 +15,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 
-// Fallbacks keep createClient() from throwing when the app runs in mock mode
-// with no env set (this module is still imported by the data switcher). The
-// client is only actually used when USE_SUPABASE is true.
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+// Backend comes from the hostname, not from build-time env — see backend.ts for
+// why (one committed bundle has to serve demo and every club subdomain).
+import { BACKEND } from './backend';
 
-export const supabase = createClient(url, anonKey, {
+export const supabase = createClient(BACKEND.url, BACKEND.anonKey, {
   auth: {
     // On native, persist the session; on web the default (localStorage) is fine.
     storage: Platform.OS === 'web' ? undefined : AsyncStorage,

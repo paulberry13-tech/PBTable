@@ -134,7 +134,9 @@ export function buildSeed(): SeedData {
   const paul: Member = {
     id: 'm-paul',
     name: 'Paul Berry',
-    email: 'paul@pbtable.co.uk',
+    // Deliberately not a real address: the mock seed is bundled into the
+    // production build, so anything here ships publicly on the club sites.
+    email: 'paul.berry@example.invalid',
     memberType: 'member',
     ratingState: 'rated',
     rating: 3.72,

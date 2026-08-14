@@ -8,6 +8,7 @@
 
 import { Linking, Platform } from 'react-native';
 
+import { BACKEND } from '@/services/backend';
 import { STRIPE_TOPUP } from '@/services/config';
 import { InsufficientBalanceError } from '@/services/contracts';
 import { supabase } from '@/services/supabaseClient';
@@ -34,10 +35,12 @@ import type { RatingChange } from '@/domain/ratings';
 
 export { InsufficientBalanceError };
 
-/** Single-club app: whose sessions/leaderboard we show. Slug-drift resilience lives
- *  in the demo's rdr_leaderboard (single-tenant: it returns the one club's standings
- *  regardless of the slug passed), so the client just passes the configured slug. */
-const CLUB_SLUG = process.env.EXPO_PUBLIC_CLUB_SLUG ?? '';
+/** Whose leaderboard we show. Comes from the hostname (backend.ts) so one built
+ *  bundle serves demo and every club subdomain. Slug-drift resilience lives in the
+ *  demo's rdr_leaderboard (single-tenant: it returns the one club's standings
+ *  regardless of the slug passed), so the client just passes the resolved slug.
+ *  Everything else scopes by the signed-in member's club_id — see myClubId. */
+const CLUB_SLUG = BACKEND.slug;
 
 const notBuiltYet = (what: string): never => {
   throw new Error(`${what} isn't wired to the backend yet (reuses the existing web planner).`);
