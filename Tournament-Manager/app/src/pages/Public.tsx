@@ -4,6 +4,7 @@ import { loadPublicData } from '../lib/tournamentData'
 import type { PublicData } from '../lib/tournamentData'
 import type { Tournament } from '../lib/types'
 import { Sprite } from '../components/Sprite'
+import { Nav } from '../components/Nav'
 import { Hero } from '../components/Hero'
 import { EventsSection } from '../components/EventsSection'
 import { DrawsSection } from '../components/DrawsSection'
@@ -68,11 +69,13 @@ export default function Public() {
   const entryOpen = !!(data?.settings?.self_service_entries
     && (!active.registration_opens_at || active.registration_opens_at <= nowIso)
     && (!active.registration_closes_at || active.registration_closes_at >= nowIso))
+  const enterHref = `enter.html?t=${encodeURIComponent(active.slug || active.id)}`
 
   return (
     <>
       <Sprite />
-      <Hero tournament={active} entryOpen={entryOpen} tournaments={tournaments} onSelect={setActiveId} />
+      <Nav entryHref={enterHref} entryOpen={entryOpen} />
+      <Hero tournament={active} tournaments={tournaments} onSelect={setActiveId} />
       {data && (
         <>
           <EventsSection data={data} />
