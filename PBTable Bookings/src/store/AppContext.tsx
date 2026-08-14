@@ -10,7 +10,8 @@ import React, {
 
 import { PICKLEBALL, SPORT_PROFILES } from '@/domain/sportProfile';
 import * as auth from '@/services/auth';
-import { Member, Role, SportProfile } from '@/types';
+import { DEMO_AUTOLOGIN } from '@/services/config';
+import { Member, SportProfile } from '@/types';
 
 /** In-app banner (stands in for push notifications — out of scope). */
 export interface Banner {
@@ -23,11 +24,10 @@ interface AppContextValue {
   currentUser: Member | null;
   /** True until the initial session check completes (avoids a sign-in flash). */
   authLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
+  /** Passwordless sign-in: email an 8-digit code, then verify it. */
+  sendOtp: (email: string) => Promise<void>;
+  verifyOtp: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
-  role: Role;
-  switchRole: (role: Role) => void;
   sportProfile: SportProfile;
   setSport: (sport: string) => void;
   /** Bumps whenever any mutation happens — screens refetch on change. */
@@ -44,7 +44,6 @@ let bannerSeq = 1;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<Member | null>(null);
-  const [role, setRoleState] = useState<Role>('member');
   const [sportProfile, setSportProfile] = useState<SportProfile>(PICKLEBALL);
   const [dataVersion, setDataVersion] = useState(0);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -55,10 +54,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         if (await auth.hasSession()) {
           setCurrentUser(await auth.getCurrentUser());
+        } else if (DEMO_AUTOLOGIN) {
+          // Demo build: silently sign in as the fixed demo member so /app/ opens
+          // with no sign-in screen. Falls through to null (→ SignIn) if it fails.
+          await auth.demoSignIn();
+          setCurrentUser(await auth.getCurrentUser());
         } else {
           setCurrentUser(null);
         }
-        setRoleState(await auth.getRole());
       } catch {
         setCurrentUser(null);
       } finally {
@@ -67,26 +70,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    await auth.signIn(email, password);
-    setCurrentUser(await auth.getCurrentUser());
-    setRoleState(await auth.getRole());
+  // Every session/player read is scoped to the signed-in member's club, so a fetch
+  // that raced sign-in resolves to nothing and — with no dependency on the user —
+  // would stay that way. Bump the data version whenever the signed-in member
+  // changes so those reads re-run against the right club. Skips the first pass:
+  // useAsyncData already fetches on mount.
+  const lastUserId = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    const id = currentUser?.id ?? null;
+    if (lastUserId.current !== undefined && lastUserId.current !== id) {
+      setDataVersion((v) => v + 1);
+    }
+    lastUserId.current = id;
+  }, [currentUser?.id]);
+
+  const sendOtp = useCallback(async (email: string) => {
+    await auth.sendOtp(email);
   }, []);
 
-  const signUp = useCallback(async (name: string, email: string, password: string) => {
-    await auth.signUp(name, email, password);
+  const verifyOtp = useCallback(async (email: string, code: string) => {
+    await auth.verifyOtp(email, code);
     setCurrentUser(await auth.getCurrentUser());
-    setRoleState(await auth.getRole());
   }, []);
 
   const signOut = useCallback(async () => {
     await auth.signOut();
     setCurrentUser(null);
-  }, []);
-
-  const switchRole = useCallback((next: Role) => {
-    setRoleState(next);
-    void auth.setRole(next);
   }, []);
 
   const setSport = useCallback((sport: string) => {
@@ -113,11 +122,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     () => ({
       currentUser,
       authLoading,
-      signIn,
-      signUp,
+      sendOtp,
+      verifyOtp,
       signOut,
-      role,
-      switchRole,
       sportProfile,
       setSport,
       dataVersion,
@@ -126,7 +133,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       showBanner,
       dismissBanner,
     }),
-    [currentUser, authLoading, signIn, signUp, signOut, role, switchRole, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
+    [currentUser, authLoading, sendOtp, verifyOtp, signOut, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

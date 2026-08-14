@@ -171,8 +171,40 @@ async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Prom
   return counts;
 }
 
+/** The signed-in member's club id. EVERY session and player read must be scoped by
+ *  this: the tables hold every club's rows, so an unscoped read shows a member other
+ *  clubs' sessions — which book_spot would then refuse anyway. Invisible on a
+ *  single-club backend like the demo; wrong the moment a second club takes up booking.
+ *  Cached per sign-in and cleared on any auth change, so switching accounts can't
+ *  carry the previous member's club across. */
+let _clubId: string | null = null;
+supabase.auth.onAuthStateChange(() => {
+  _clubId = null;
+});
+
+async function myClubId(): Promise<string | null> {
+  if (_clubId) return _clubId;
+  const { data: sess } = await supabase.auth.getSession();
+  const uid = sess.session?.user?.id;
+  if (!uid) return null;
+  const { data } = await supabase
+    .from('booking_members')
+    .select('club_id')
+    .eq('auth_user_id', uid)
+    .maybeSingle();
+  _clubId = (data as { club_id: string } | null)?.club_id ?? null;
+  return _clubId;
+}
+
 async function resolveKind(sessionId: string): Promise<SessionKind> {
-  const social = await supabase.from('social_sessions').select('id').eq('id', sessionId).maybeSingle();
+  const club = await myClubId();
+  if (!club) return 'graded';
+  const social = await supabase
+    .from('social_sessions')
+    .select('id')
+    .eq('id', sessionId)
+    .eq('club_id', club)
+    .maybeSingle();
   return social.data ? 'social' : 'graded';
 }
 
@@ -200,15 +232,19 @@ export async function getSessions(): Promise<Session[]> {
   // "Upcoming" means upcoming: only sessions from today onward. Past sessions that were
   // left booking_open shouldn't clutter the list.
   const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const club = await myClubId();
+  if (!club) return [];
   const [social, graded] = await Promise.all([
     supabase
       .from('social_sessions')
       .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,location')
+      .eq('club_id', club)
       .eq('booking_open', true)
       .gte('played_on', today),
     supabase
       .from('session_plans')
       .select('id,name,played_on,start_time,end_time,capacity,courts,format,price_pennies,booking_open,location')
+      .eq('club_id', club)
       .eq('booking_open', true)
       .gte('played_on', today),
   ]);
@@ -228,10 +264,15 @@ export async function getSessions(): Promise<Session[]> {
 }
 
 export async function getSession(id: string): Promise<Session> {
+  // Scoped like the list above, so a session id from another club can't be opened
+  // by deep-linking straight to /session/<id>.
+  const club = await myClubId();
+  if (!club) throw new Error('Not signed in.');
   const social = await supabase
     .from('social_sessions')
     .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,location')
     .eq('id', id)
+    .eq('club_id', club)
     .maybeSingle();
   const kind: SessionKind = social.data ? 'social' : 'graded';
   let row = social.data as SessionRow | null;
@@ -240,6 +281,7 @@ export async function getSession(id: string): Promise<Session> {
       .from('session_plans')
       .select('id,name,played_on,start_time,end_time,capacity,courts,format,price_pennies,booking_open,location')
       .eq('id', id)
+      .eq('club_id', club)
       .single();
     if (graded.error) throw graded.error;
     row = graded.data as SessionRow;
@@ -516,8 +558,10 @@ async function standings(): Promise<StandingRow[]> {
 }
 
 export async function getMembers(): Promise<Member[]> {
+  const club = await myClubId();
+  if (!club) return [];
   const [{ data: players, error }, ranks] = await Promise.all([
-    supabase.from('players').select('id,name,guest').order('name', { ascending: true }),
+    supabase.from('players').select('id,name,guest').eq('club_id', club).order('name', { ascending: true }),
     standings(),
   ]);
   if (error) throw error;
@@ -544,9 +588,10 @@ export async function getMember(id: string): Promise<Member> {
 }
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  const club = await myClubId();
   const [ranks, { data: players }] = await Promise.all([
     standings(),
-    supabase.from('players').select('id,name'),
+    club ? supabase.from('players').select('id,name').eq('club_id', club) : Promise.resolve({ data: [] }),
   ]);
   const idByName = new Map((players as { id: string; name: string }[]).map((p) => [p.name, p.id]));
   return ranks
