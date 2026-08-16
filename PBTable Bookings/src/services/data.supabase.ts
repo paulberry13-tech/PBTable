@@ -84,12 +84,12 @@ function sessionStatus(r: SessionRow): SessionStatus {
   return 'upcoming';
 }
 
-function mapSession(r: SessionRow, kind: SessionKind, bookedCount: number, mine: Booking[]): Session {
+function mapSession(r: SessionRow, kind: SessionKind, spots: Spots, mine: Booking[]): Session {
   // The caller's own bookings are real (so "you're booked" detection works);
   // the rest of the roster is anonymous placeholders up to the true booked
   // count (RLS hides other members' rows).
   const mineBooked = mine.filter((b) => b.status === 'booked' || b.status === 'attended');
-  const placeholders = Math.max(0, bookedCount - mineBooked.length);
+  const placeholders = Math.max(0, spots.booked - mineBooked.length);
   const bookings: Booking[] = [...mine];
   for (let i = 0; i < placeholders; i += 1) {
     bookings.push({
@@ -113,6 +113,9 @@ function mapSession(r: SessionRow, kind: SessionKind, bookedCount: number, mine:
     format: (r.format as Session['format']) ?? 'round_robin',
     affectsRating: kind === 'graded',
     pricePence: r.price_pennies ?? 0,
+    yourPricePence: spots.yourPricePence,
+    tasterApplies: spots.tasterApplies,
+    youAreMember: spots.youAreMember,
     isRecurring: false,
     bookings,
     waitlist,
@@ -160,15 +163,29 @@ async function myBookingsForSessions(ids: string[]): Promise<Map<string, Booking
   return map;
 }
 
-/** Accurate booked-count per session via the SECURITY DEFINER RPC (counts all
- *  bookings, not just the caller's). Returns session_id → booked count. */
-async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Promise<Map<string, number>> {
-  const counts = new Map<string, number>();
+/** Per-session facts only the server can tell us: the true booked count (all
+ *  bookings, not just the caller's) AND what THIS member would actually pay.
+ *  The price matters — price_pennies on the session row is the MEMBER price, so a
+ *  non-member shown that figure is quoted one price and charged another, and
+ *  someone holding a free taster is quoted a fee they will not be charged.
+ *  session_spots resolves both against auth.uid(), so it is always the caller's own. */
+type Spots = { booked: number; yourPricePence: number; tasterApplies: boolean; youAreMember: boolean | null };
+
+async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Promise<Map<string, Spots>> {
+  const counts = new Map<string, Spots>();
   await Promise.all(
     sessions.map(async ({ id, kind }) => {
       const { data } = await supabase.rpc('session_spots', { p_session_kind: kind, p_session_id: id });
-      const booked = (data as { booked?: number } | null)?.booked ?? 0;
-      counts.set(id, booked);
+      const d = (data ?? {}) as {
+        booked?: number; your_price_pennies?: number; price_pennies?: number;
+        taster_applies?: boolean; you_are_member?: boolean | null;
+      };
+      counts.set(id, {
+        booked: d.booked ?? 0,
+        yourPricePence: d.your_price_pennies ?? d.price_pennies ?? 0,
+        tasterApplies: !!d.taster_applies,
+        youAreMember: d.you_are_member ?? null,
+      });
     })
   );
   return counts;
@@ -262,7 +279,7 @@ export async function getSessions(): Promise<Session[]> {
     myBookingsForSessions(rows.map(([r]) => r.id)),
   ]);
   return rows
-    .map(([r, kind]) => mapSession(r, kind, counts.get(r.id) ?? 0, mine.get(r.id) ?? []))
+    .map(([r, kind]) => mapSession(r, kind, counts.get(r.id) ?? { booked: 0, yourPricePence: r.price_pennies ?? 0, tasterApplies: false, youAreMember: null }, mine.get(r.id) ?? []))
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
 }
 
@@ -294,7 +311,7 @@ export async function getSession(id: string): Promise<Session> {
     myBookingsForSessions([id]),
     fetchAttendees(kind, id),
   ]);
-  return { ...mapSession(row, kind, counts.get(id) ?? 0, mine.get(id) ?? []), attendees };
+  return { ...mapSession(row, kind, counts.get(id) ?? { booked: 0, yourPricePence: row.price_pennies ?? 0, tasterApplies: false, youAreMember: null }, mine.get(id) ?? []), attendees };
 }
 
 export async function createSession(input: CreateSessionInput): Promise<Session> {

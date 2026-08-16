@@ -39,8 +39,14 @@ export function SessionCard({ session, profile }: { session: Session; profile: S
             <Text style={styles.title} numberOfLines={2}>
               {session.title}
             </Text>
-            <Text style={[styles.price, session.pricePence === 0 && { color: colors.upText }]}>
-              {session.pricePence === 0 ? 'FREE' : formatMoneyShort(session.pricePence)}
+            {/* The price THIS member pays — a non-member quoted the member rate here
+                would be charged more at the tap, and a free taster would look chargeable. */}
+            <Text style={[styles.price, (session.yourPricePence ?? session.pricePence) === 0 && { color: colors.upText }]}>
+              {session.tasterApplies
+                ? 'FREE TASTER'
+                : (session.yourPricePence ?? session.pricePence) === 0
+                ? 'FREE'
+                : formatMoneyShort(session.yourPricePence ?? session.pricePence)}
             </Text>
           </Row>
           <Row style={{ marginTop: 3, flexWrap: 'wrap' }} gap={spacing.sm}>

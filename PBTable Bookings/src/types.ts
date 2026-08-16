@@ -66,7 +66,17 @@ export interface Session {
   skillMin?: number;
   skillMax?: number;
   /** 0 = free. */
+  /** The MEMBER price on the session row. Display only where the audience is
+   *  the club at large; for anything the signed-in person will actually pay, use
+   *  yourPricePence. */
   pricePence: number;
+  /** What the signed-in member would be charged: member vs non-member price, and
+   *  0 when a free taster applies. Resolved server-side against auth.uid(). */
+  yourPricePence?: number;
+  /** True when this booking would use up their free taster. */
+  tasterApplies?: boolean;
+  /** null when signed out. */
+  youAreMember?: boolean | null;
   isRecurring: boolean;
   bookings: Booking[];
   /** memberIds, in order. */

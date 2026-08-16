@@ -59,7 +59,12 @@ export default function SessionDetailScreen() {
     (currentUser.rating < (session.skillMin ?? 0) || currentUser.rating > (session.skillMax ?? 99));
 
   const balancePence = balance ?? 0;
-  const cost = session.pricePence;
+  // What THIS member pays: member vs non-member rate, and £0 when a free taster
+  // applies. Falls back to the session's member price in mock mode, which has no
+  // server-side pricing. Quoting session.pricePence here showed a non-member the
+  // member rate and then charged them the higher one at the tap.
+  const cost = session.yourPricePence ?? session.pricePence;
+  const taster = !!session.tasterApplies;
   const canAfford = balancePence >= cost;
 
   const completeBooking = async () => {
@@ -227,7 +232,19 @@ export default function SessionDetailScreen() {
         ) : (
           <>
             {/* The money, laid out BEFORE the button — no surprises at the tap. */}
-            {!full && cost > 0 ? (
+            {!full && taster ? (
+              <Card style={{ paddingVertical: spacing.md }}>
+                <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={type.bodyBold}>Free taster</Text>
+                  <Text style={[type.bodyBold, { color: colors.upText }]}>
+                    {formatMoneyShort(0)}
+                  </Text>
+                </Row>
+                <Text style={[type.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                  Your first session is on the club — nothing comes off your balance.
+                </Text>
+              </Card>
+            ) : !full && cost > 0 ? (
               <Card style={{ paddingVertical: spacing.md }}>
                 <MathsRow label="Price" value={formatMoneyShort(cost)} />
                 <MathsRow label="Your balance" value={formatMoney(balancePence)} />
