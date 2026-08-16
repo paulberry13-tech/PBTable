@@ -22,6 +22,8 @@ export interface Banner {
 
 interface AppContextValue {
   currentUser: Member | null;
+  /** Re-read the signed-in member — used by the demo person switcher. */
+  refreshUser: () => Promise<void>;
   /** True until the initial session check completes (avoids a sign-in flash). */
   authLoading: boolean;
   /** Passwordless sign-in: email an 8-digit code, then verify it. */
@@ -105,6 +107,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(() => setDataVersion((v) => v + 1), []);
 
+  // Pull the member record again after an out-of-band sign-in (the demo switcher
+  // signs in directly rather than through verifyOtp). Changing currentUser also
+  // bumps dataVersion via the effect above, so every screen refetches for the
+  // new person without needing to know a switch happened.
+  const refreshUser = useCallback(async () => {
+    try { setCurrentUser(await auth.getCurrentUser()); }
+    catch { setCurrentUser(null); }
+  }, []);
+
   const dismissBanner = useCallback((id: number) => {
     setBanners((bs) => bs.filter((b) => b.id !== id));
   }, []);
@@ -121,6 +132,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       currentUser,
+      refreshUser,
       authLoading,
       sendOtp,
       verifyOtp,
@@ -133,7 +145,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       showBanner,
       dismissBanner,
     }),
-    [currentUser, authLoading, sendOtp, verifyOtp, signOut, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
+    [currentUser, refreshUser, authLoading, sendOtp, verifyOtp, signOut, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
