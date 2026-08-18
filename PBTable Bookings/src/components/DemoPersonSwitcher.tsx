@@ -9,8 +9,13 @@
 // production backend, where isDemo is false and this never mounts. The people
 // list comes from the demo_people() RPC, which is itself gated to the club whose
 // slug is 'demo' (migration 33), so even on a demo-configured build pointed at
-// production it would return nothing. The passwords below are the demo sandbox's
-// two shared credentials; they unlock nothing outside that sandbox.
+// production it would return nothing.
+//
+// The two demo passwords are NOT in this file. They come from EXPO_PUBLIC_DEMO_*
+// env vars, which the production stager blanks — a string literal here would be
+// inlined into the club-site bundle regardless of the isDemo guard, because the
+// component still ships even though it renders nothing there. The prod stage
+// script greps the output for exactly this and refuses to stage if it finds it.
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -29,9 +34,12 @@ type Person = {
   active_bookings: number;
 };
 
-/** The demo sandbox uses two shared passwords, split by address family. */
+/** The demo sandbox uses two shared passwords, split by address family. Both are
+ *  build-time env (blank in the production bundle), never literals — see header. */
+const DEMO_PW_MAIN = process.env.EXPO_PUBLIC_DEMO_PASSWORD ?? '';
+const DEMO_PW_SHOW = process.env.EXPO_PUBLIC_DEMO_SHOWCASE_PASSWORD ?? '';
 function passwordFor(email: string): string {
-  return email.includes('+show-') ? 'showcase-Pw-2026' : 'pbtabledemo1';
+  return email.includes('+show-') ? DEMO_PW_SHOW : DEMO_PW_MAIN;
 }
 
 export function DemoPersonSwitcher() {
@@ -76,7 +84,7 @@ export function DemoPersonSwitcher() {
     [currentUser?.name]
   );
 
-  if (!BACKEND.isDemo) return null;
+  if (!BACKEND.isDemo || !DEMO_PW_MAIN) return null;
 
   return (
     <>
