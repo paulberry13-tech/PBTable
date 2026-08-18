@@ -117,6 +117,11 @@ export function DemoPersonSwitcher() {
                       key={p.email}
                       disabled={!!busy || isMe}
                       onPress={() => void become(p)}
+                      // Without these the rows render as plain divs: not focusable,
+                      // invisible to a screen reader, and unreachable by keyboard.
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: !!busy || isMe, selected: isMe }}
+                      accessibilityLabel={isMe ? `${p.display_name} (currently signed in)` : `Become ${p.display_name}`}
                       style={({ pressed }) => [
                         styles.row,
                         isMe && styles.rowActive,
