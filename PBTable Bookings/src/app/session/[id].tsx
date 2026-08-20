@@ -65,6 +65,13 @@ export default function SessionDetailScreen() {
   // member rate and then charged them the higher one at the tap.
   const cost = session.yourPricePence ?? session.pricePence;
   const taster = !!session.tasterApplies;
+  // Members-first window: a non-member sees WHEN, not just a refusal.
+  const waitUntil = session.youCanBookAt ? new Date(session.youCanBookAt) : null;
+  const mustWait = !!waitUntil && waitUntil.getTime() > Date.now();
+  const waitLabel = waitUntil
+    ? waitUntil.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : '';
+  const needsGuardian = !!session.guardianRequired;
   const canAfford = balancePence >= cost;
 
   const completeBooking = async () => {
@@ -232,6 +239,22 @@ export default function SessionDetailScreen() {
         ) : (
           <>
             {/* The money, laid out BEFORE the button — no surprises at the tap. */}
+            {mustWait && (
+              <Card style={{ paddingVertical: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.amber }}>
+                <Text style={type.bodyBold}>Members book first</Text>
+                <Text style={[type.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                  You can book this session from {waitLabel}.
+                </Text>
+              </Card>
+            )}
+            {needsGuardian && (
+              <Card style={{ paddingVertical: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.amber }}>
+                <Text style={type.bodyBold}>A parent or guardian must come with you</Text>
+                <Text style={[type.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                  Junior members can play as long as a parent or guardian is present for the whole session.
+                </Text>
+              </Card>
+            )}
             {!full && taster ? (
               <Card style={{ paddingVertical: spacing.md }}>
                 <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
@@ -263,7 +286,9 @@ export default function SessionDetailScreen() {
             ) : null}
             <Button
               title={
-                full
+                mustWait
+                  ? `Opens for you ${waitLabel}`
+                    : full
                   ? 'Join waitlist'
                   : cost === 0
                     ? 'Book — free'
@@ -273,7 +298,10 @@ export default function SessionDetailScreen() {
               }
               onPress={onBookPress}
               loading={booking}
-              variant={full ? 'secondary' : 'primary'}
+              // Disabled, not hidden: the member sees the session and when it becomes
+                // theirs to book. book_spot refuses it server-side as well.
+                disabled={mustWait}
+              variant={full || mustWait ? 'secondary' : 'primary'}
             />
             {full ? (
               <Text style={[type.caption, { textAlign: 'center' }]}>

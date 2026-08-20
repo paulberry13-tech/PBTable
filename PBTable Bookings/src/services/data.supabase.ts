@@ -116,6 +116,8 @@ function mapSession(r: SessionRow, kind: SessionKind, spots: Spots, mine: Bookin
     yourPricePence: spots.yourPricePence,
     tasterApplies: spots.tasterApplies,
     youAreMember: spots.youAreMember,
+    youCanBookAt: spots.youCanBookAt,
+    guardianRequired: spots.guardianRequired,
     isRecurring: false,
     bookings,
     waitlist,
@@ -169,7 +171,8 @@ async function myBookingsForSessions(ids: string[]): Promise<Map<string, Booking
  *  non-member shown that figure is quoted one price and charged another, and
  *  someone holding a free taster is quoted a fee they will not be charged.
  *  session_spots resolves both against auth.uid(), so it is always the caller's own. */
-type Spots = { booked: number; yourPricePence: number; tasterApplies: boolean; youAreMember: boolean | null };
+type Spots = { booked: number; yourPricePence: number; tasterApplies: boolean; youAreMember: boolean | null;
+  youCanBookAt: string | null; guardianRequired: boolean };
 
 async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Promise<Map<string, Spots>> {
   const counts = new Map<string, Spots>();
@@ -179,12 +182,16 @@ async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Prom
       const d = (data ?? {}) as {
         booked?: number; your_price_pennies?: number; price_pennies?: number;
         taster_applies?: boolean; you_are_member?: boolean | null;
+        you_can_book_at?: string | null; guardian_required?: boolean;
       };
       counts.set(id, {
         booked: d.booked ?? 0,
         yourPricePence: d.your_price_pennies ?? d.price_pennies ?? 0,
         tasterApplies: !!d.taster_applies,
         youAreMember: d.you_are_member ?? null,
+        // Non-null while a non-member is still inside the members-first window.
+        youCanBookAt: d.you_can_book_at ?? null,
+        guardianRequired: !!d.guardian_required,
       });
     })
   );
@@ -279,7 +286,7 @@ export async function getSessions(): Promise<Session[]> {
     myBookingsForSessions(rows.map(([r]) => r.id)),
   ]);
   return rows
-    .map(([r, kind]) => mapSession(r, kind, counts.get(r.id) ?? { booked: 0, yourPricePence: r.price_pennies ?? 0, tasterApplies: false, youAreMember: null }, mine.get(r.id) ?? []))
+    .map(([r, kind]) => mapSession(r, kind, counts.get(r.id) ?? { booked: 0, yourPricePence: r.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(r.id) ?? []))
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
 }
 
@@ -311,7 +318,7 @@ export async function getSession(id: string): Promise<Session> {
     myBookingsForSessions([id]),
     fetchAttendees(kind, id),
   ]);
-  return { ...mapSession(row, kind, counts.get(id) ?? { booked: 0, yourPricePence: row.price_pennies ?? 0, tasterApplies: false, youAreMember: null }, mine.get(id) ?? []), attendees };
+  return { ...mapSession(row, kind, counts.get(id) ?? { booked: 0, yourPricePence: row.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(id) ?? []), attendees };
 }
 
 export async function createSession(input: CreateSessionInput): Promise<Session> {

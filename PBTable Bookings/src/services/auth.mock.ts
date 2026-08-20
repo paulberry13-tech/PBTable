@@ -29,12 +29,15 @@ export async function setRole(role: Role): Promise<Role> {
 export async function hasSession(): Promise<boolean> {
   return true;
 }
-export async function signIn(_email: string, _password: string): Promise<void> {
+export async function sendOtp(_email: string): Promise<void> {
   /* no-op */
 }
-export async function signUp(_name: string, _email: string, _password: string): Promise<void> {
+export async function verifyOtp(_email: string, _code: string): Promise<void> {
   /* no-op */
 }
 export async function signOut(): Promise<void> {
   /* no-op */
+}
+export async function demoSignIn(): Promise<void> {
+  /* no-op — the mock is always signed in */
 }

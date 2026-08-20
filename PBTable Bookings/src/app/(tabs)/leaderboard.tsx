@@ -115,8 +115,14 @@ function Movement({ entry, onDark }: { entry: LeaderboardEntry; onDark?: boolean
     );
   }
   const up = entry.movement === 'up';
-  const arrow = up ? colors.up : onDark ? '#FF8A80' : colors.down;
-  const text = onDark ? (up ? '#7BE0A8' : '#FF8A80') : up ? colors.upText : colors.downText;
+  const arrow = up ? colors.up : onDark ? colors.downOnDark : colors.down;
+  const text = onDark
+    ? up
+      ? colors.upOnDark
+      : colors.downOnDark
+    : up
+      ? colors.upText
+      : colors.downText;
   return (
     <Row gap={2}>
       <Ionicons name={up ? 'caret-up' : 'caret-down'} size={12} color={arrow} />

@@ -77,6 +77,10 @@ export interface Session {
   tasterApplies?: boolean;
   /** null when signed out. */
   youAreMember?: boolean | null;
+  /** ISO time a non-member may book, while the members-first window is still running. */
+  youCanBookAt?: string | null;
+  /** This member is a junior — a parent or guardian must be present. */
+  guardianRequired?: boolean;
   isRecurring: boolean;
   bookings: Booking[];
   /** memberIds, in order. */

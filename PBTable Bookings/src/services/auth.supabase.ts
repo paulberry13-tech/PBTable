@@ -1,35 +1,46 @@
-// Supabase auth. Real email/password sign-in; the "current user" is the
-// booking_members row for the signed-in auth user. Session is persisted by the
-// Supabase client (localStorage on web, AsyncStorage on native), so a reload
-// keeps you signed in.
+// Supabase auth. Passwordless email OTP — members receive a 6-digit code, no
+// password to set or remember. The "current user" is the booking_members row
+// for the signed-in auth user. Session is persisted by the Supabase client
+// (localStorage on web, AsyncStorage on native), so a reload keeps you signed in.
 
+import { DEMO_EMAIL, DEMO_PASSWORD } from '@/services/config';
 import { getBalance } from '@/services/data.supabase';
 import { supabase } from '@/services/supabaseClient';
 import { Member, Role } from '@/types';
 
 let cachedMemberId = '';
 
-export async function signIn(email: string, password: string): Promise<void> {
-  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+/** Demo mode: sign in as the fixed demo member with a password (no OTP), so the
+ *  demo booking app opens already signed in. Gated by DEMO_AUTOLOGIN at the call
+ *  site; never wired on a real club build. */
+export async function demoSignIn(): Promise<void> {
+  if (!DEMO_EMAIL || !DEMO_PASSWORD) throw new Error('Demo credentials not configured.');
+  const { error } = await supabase.auth.signInWithPassword({
+    email: DEMO_EMAIL.trim(),
+    password: DEMO_PASSWORD,
+  });
   if (error) throw new Error(error.message);
 }
 
-/** Create a member account (server-side, via the `signup` Edge Function), then
- *  sign in. Links to a matching player record when the name matches. */
-export async function signUp(name: string, email: string, password: string): Promise<void> {
-  const { data, error } = await supabase.functions.invoke('signup', {
-    body: {
-      email: email.trim(),
-      password,
-      display_name: name.trim(),
-      club_slug: process.env.EXPO_PUBLIC_CLUB_SLUG,
-    },
+/** Passwordless step 1: email the member a 6-digit one-time code. Invite-only —
+ *  `shouldCreateUser: false` means only members the club has already added can
+ *  sign in (a stray email is rejected with "Signups not allowed for otp"). */
+export async function sendOtp(email: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim(),
+    options: { shouldCreateUser: false },
   });
   if (error) throw new Error(error.message);
-  if (!(data as { ok?: boolean })?.ok) {
-    throw new Error((data as { error?: string })?.error ?? 'Sign-up failed.');
-  }
-  await signIn(email, password);
+}
+
+/** Passwordless step 2: verify the emailed code and open a session. */
+export async function verifyOtp(email: string, code: string): Promise<void> {
+  const { error } = await supabase.auth.verifyOtp({
+    email: email.trim(),
+    token: code.trim(),
+    type: 'email',
+  });
+  if (error) throw new Error(error.message);
 }
 
 export async function signOut(): Promise<void> {

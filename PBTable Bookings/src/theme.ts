@@ -1,10 +1,14 @@
 /**
  * PBTable brand tokens — the single place to tune the look.
  *
- * Design language: ATHLETIC SCOREBOARD. PBTable's own navy + coral, dark
- * chrome top and bottom, condensed uppercase display type (jersey /
- * broadcast-graphics energy), monospace scoreboard numbers, solid punchy
- * badges. Sporty and sharp — never salon-soft, never corporate.
+ * These MIRROR the dashboard's CSS variables in site/index.html (the
+ * `bold-sporty` :root theme) so /app and the dashboard read as one product.
+ * If a colour changes there, change it here too — the values below are the
+ * hex equivalents of --coral, --navy, --green, --red, --amber, --text, etc.
+ *
+ * Design language: ATHLETIC SCOREBOARD. PBTable's navy + coral, dark chrome
+ * top and bottom, Oswald uppercase display type, Inter for UI text, tabular
+ * figures for ratings and scores. Sporty and sharp — never corporate.
  *
  * Rule of thumb: the vibrant signal colours (coral/up/down/amber) are for
  * FILLS, ICONS and ARROWS; their *Text variants are darkened for WCAG-AA
@@ -13,38 +17,41 @@
 import { Platform, TextStyle } from 'react-native';
 
 export const colors = {
-  // Brand
-  navy: '#0B2545',        // primary — chrome, headings, key numbers
-  navyDeep: '#071A33',    // darker band for the podium / chrome gradients
-  navySoft: '#274B77',
-  coral: '#E8571F',       // accent — CTAs, highlights, live details
-  coralBright: '#FF6B2C', // accent on dark surfaces
-  coralSoft: '#FDE7DD',
-  coralText: '#BC4710',   // coral for small text on light surfaces
-  // Surfaces
-  background: '#F1F4F8',
+  // Brand — dashboard --navy / --coral / --coral-dark / --coral-fill
+  navy: '#1B2B4B',        // primary — chrome, headings, key numbers
+  navyDeep: '#0F1A2E',    // darker band for the podium / chrome gradients
+  navySoft: '#33456B',
+  coral: '#FF6B4A',       // accent — CTAs, highlights, live details
+  coralBright: '#FF7A5C', // accent on dark surfaces
+  coralSoft: '#FFF1EE',
+  coralText: '#C2410C',   // coral for small text on light surfaces
+  // Surfaces — dashboard --surface / --bg / --border / --scroll
+  background: '#F9FAFB',
   card: '#FFFFFF',
-  border: '#E3E9F0',
-  borderStrong: '#C9D4E0',
-  // Signals
-  up: '#2FBF71',
-  upSoft: '#E2F7EC',
-  upText: '#147A46',
-  down: '#E5544B',
-  downSoft: '#FBE7E5',
-  downText: '#C03329',
-  amber: '#E8A13A',
-  amberSoft: '#FBF1DF',
-  amberText: '#96610A',
-  // Text
-  text: '#16293F',
-  textMuted: '#51617A',
+  border: '#E5E7EB',
+  borderStrong: '#CBD5E1',
+  // Signals — dashboard --green / --red / --amber, *Text from --conf-*
+  up: '#10B981',
+  upSoft: '#E7F8F2',
+  upText: '#047857',
+  down: '#EF4444',
+  downSoft: '#FDECEC',
+  downText: '#B91C1C',
+  // Lifted variants for use on the navy chrome (dashboard's midnight --green/--red)
+  upOnDark: '#34D399',
+  downOnDark: '#F87171',
+  amber: '#F59E0B',
+  amberSoft: '#FEF5E7',
+  amberText: '#B45309',
+  // Text — dashboard --text / --text-soft / --text-muted
+  text: '#111827',
+  textMuted: '#374151',
   textFaint: '#64748B',
   textOnDark: '#FFFFFF',
   textOnDarkMuted: 'rgba(255,255,255,0.72)',
   // Misc
-  navyOverlay: 'rgba(7, 26, 51, 0.60)',
-  trackBg: '#E7EDF3',
+  navyOverlay: 'rgba(27, 43, 75, 0.60)',
+  trackBg: '#F1F5F9',
 } as const;
 
 export const spacing = {
@@ -64,21 +71,21 @@ export const radius = {
 } as const;
 
 /**
- * Type families. Barlow Condensed (uppercase) carries screen titles like a
- * broadcast graphic; Manrope carries UI text; JetBrains Mono is reserved
- * for ratings, ranks and scores — the scoreboard numbers that are the
- * product's currency.
+ * Type families — the dashboard's pairing: Oswald (uppercase) carries screen
+ * titles like a broadcast graphic, Inter carries UI text. The `mono` tokens
+ * are Inter too: the dashboard has no monospace face, and `type.mono` already
+ * sets tabular-nums, which is what keeps ratings and ranks column-aligned.
  */
 export const fonts = {
-  display: 'BarlowCondensed_600SemiBold',
-  displayBold: 'BarlowCondensed_700Bold',
-  regular: 'Manrope_400Regular',
-  medium: 'Manrope_500Medium',
-  semibold: 'Manrope_600SemiBold',
-  bold: 'Manrope_700Bold',
-  extrabold: 'Manrope_800ExtraBold',
-  mono: 'JetBrainsMono_500Medium',
-  monoBold: 'JetBrainsMono_700Bold',
+  display: 'Oswald_600SemiBold',
+  displayBold: 'Oswald_700Bold',
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+  extrabold: 'Inter_800ExtraBold',
+  mono: 'Inter_500Medium',
+  monoBold: 'Inter_700Bold',
 } as const;
 
 export const type = {

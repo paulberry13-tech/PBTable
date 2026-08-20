@@ -4,12 +4,9 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { Header } from '@/components/Header';
-import { useApp } from '@/store/AppContext';
 import { colors, fonts } from '@/theme';
 
 export default function TabsLayout() {
-  const { role } = useApp();
-
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header />
@@ -44,8 +41,6 @@ export default function TabsLayout() {
           name="wallet"
           options={{
             title: 'Wallet',
-            // Members manage their wallet; hidden in Admin (5 tabs either way).
-            href: role === 'member' ? '/wallet' : null,
             tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={size} color={color} />,
           }}
         />
@@ -53,23 +48,16 @@ export default function TabsLayout() {
           name="leaderboard"
           options={{
             title: 'Leaderboard',
-            tabBarIcon: ({ color, size }) => <Ionicons name="podium" size={size} color={color} />,
+            // Promoted to the top nav row (Header); keep the route, hide the tab.
+            href: null,
           }}
         />
         <Tabs.Screen
           name="players"
           options={{
             title: 'Players',
-            tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="admin"
-          options={{
-            title: 'Admin',
-            // Hidden entirely unless the role switcher is set to Admin.
-            href: role === 'admin' ? '/admin' : null,
-            tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />,
+            // Promoted to the top nav row (Header); keep the route, hide the tab.
+            href: null,
           }}
         />
       </Tabs>
