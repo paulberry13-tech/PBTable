@@ -256,12 +256,13 @@ async function fetchAttendees(kind: SessionKind, sessionId: string): Promise<Ses
     p_session_id: sessionId,
   });
   if (error || !data) return [];
-  type Row = { member_id: string; name: string; rating: number | null; status: SessionAttendee['status'] };
+  type Row = { member_id: string; name: string; rating: number | null; status: SessionAttendee['status']; waitlist_pos: number | null };
   return (data as Row[]).map((r) => ({
     memberId: r.member_id,
     name: r.name,
     rating: r.rating ?? null,
     status: r.status,
+    waitlistPos: r.waitlist_pos ?? null,
   }));
 }
 

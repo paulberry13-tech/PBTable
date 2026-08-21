@@ -45,12 +45,16 @@ export default function SessionDetailScreen() {
   const kind = session.affectsRating ? 'graded' : 'social';
   const roster = session.bookings.filter((b) => b.status === 'booked' || b.status === 'attended');
   // Prefer the real attendee names (live backend); fall back to the local roster.
-  const playing =
+  const everyone =
     session.attendees ??
     roster.map((b) => {
       const m = membersById.get(b.memberId);
-      return { memberId: b.memberId, name: m?.name ?? '…', rating: m?.rating ?? null, status: b.status };
+      return { memberId: b.memberId, name: m?.name ?? '…', rating: m?.rating ?? null, status: b.status, waitlistPos: null };
     });
+  // session_attendees now carries the queue as well (migration 39) so a newcomer
+  // can see real demand. They are NOT playing, so they get their own section.
+  const playing = everyone.filter((p) => p.status !== 'waitlisted');
+  const waiting = everyone.filter((p) => p.status === 'waitlisted');
   const myBooking = session.bookings.find(
     (b) => b.memberId === currentUser?.id && (b.status === 'booked' || b.status === 'waitlisted')
   );
@@ -202,11 +206,23 @@ export default function SessionDetailScreen() {
             ))}
           </View>
         )}
-        {session.waitlist.length > 0 ? (
-          <Text style={[type.captionBold, { marginTop: spacing.sm, color: colors.amberText }]}>
-            +{session.waitlist.length} on the waitlist
-          </Text>
-        ) : null}
+          {waiting.length > 0 ? (
+            <View style={{ marginTop: spacing.md }}>
+              <Text style={[type.captionBold, { color: colors.amberText }]}>
+                Waiting list · {waiting.length}
+              </Text>
+              {waiting.map((p, i) => (
+                <Row key={`w-${p.memberId}-${i}`} style={styles.playerRow} gap={spacing.md}>
+                  <Text style={[type.captionBold, type.mono, { width: 18, color: colors.textMuted }]}>
+                    {p.waitlistPos ?? i + 1}
+                  </Text>
+                  <Text style={[type.body, { flex: 1, color: colors.textMuted }]} numberOfLines={1}>
+                    {p.name}
+                  </Text>
+                </Row>
+              ))}
+            </View>
+          ) : null}
       </Card>
 
       {outsideBand ? (

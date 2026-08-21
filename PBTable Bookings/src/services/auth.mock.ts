@@ -41,3 +41,10 @@ export async function signOut(): Promise<void> {
 export async function demoSignIn(): Promise<void> {
   /* no-op — the mock is always signed in */
 }
+
+// Mock mode has a fixed user and no club backend — joining is a no-op.
+export async function sendJoinOtp(_email: string): Promise<void> {}
+export async function joinClub(_slug: string, _name: string): Promise<void> {}
+export async function clubSignupInfo(_slug: string): Promise<{
+  club_name: string; self_signup: boolean; free_taster_sessions: number; price_nonmember_pennies: number | null;
+} | null> { return null; }

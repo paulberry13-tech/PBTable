@@ -101,6 +101,8 @@ export interface SessionAttendee {
   name: string;
   rating: number | null;
   status: BookingStatus;
+  /** Queue position when status is 'waitlisted'. */
+  waitlistPos?: number | null;
 }
 
 export type BookingStatus = 'booked' | 'waitlisted' | 'attended' | 'no_show' | 'cancelled';

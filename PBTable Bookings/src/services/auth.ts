@@ -14,3 +14,6 @@ export const sendOtp = impl.sendOtp;
 export const verifyOtp = impl.verifyOtp;
 export const signOut = impl.signOut;
 export const demoSignIn = impl.demoSignIn;
+export const sendJoinOtp = impl.sendJoinOtp;
+export const joinClub = impl.joinClub;
+export const clubSignupInfo = impl.clubSignupInfo;

@@ -91,3 +91,34 @@ export async function getRole(): Promise<Role> {
 export async function setRole(role: Role): Promise<Role> {
   return role;
 }
+
+/** JOIN (self-signup) step 1. Unlike sendOtp, this ALLOWS the account to be
+ *  created — that is the whole difference between "I am a member, let me in" and
+ *  "I am new here". Nothing is written to the club's roster at this point: the
+ *  auth user exists but belongs to no club until join_club() runs, so an
+ *  abandoned signup leaves no junk behind. */
+export async function sendJoinOtp(email: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim(),
+    options: { shouldCreateUser: true },
+  });
+  if (error) throw new Error(error.message);
+}
+
+/** JOIN step 3 (after the code is verified): create the players + booking_members
+ *  rows. Deliberately AFTER verification — see migration 30. */
+export async function joinClub(slug: string, name: string): Promise<void> {
+  const { error } = await supabase.rpc('join_club', { p_club_slug: slug, p_name: name.trim() });
+  if (error) throw new Error(error.message);
+}
+
+/** Whether this club takes sign-ups, and what a newcomer would pay. Readable
+ *  signed-out, so the join screen can say "this club isn't taking sign-ups"
+ *  before anyone types an email. */
+export async function clubSignupInfo(slug: string): Promise<{
+  club_name: string; self_signup: boolean; free_taster_sessions: number; price_nonmember_pennies: number | null;
+} | null> {
+  const { data, error } = await supabase.rpc('club_signup_info', { p_club_slug: slug });
+  if (error) return null;
+  return (data ?? null) as never;
+}
