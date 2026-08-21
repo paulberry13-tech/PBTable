@@ -11,7 +11,7 @@ import {
   Oswald_700Bold,
 } from '@expo-google-fonts/oswald';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
@@ -101,14 +101,22 @@ export default function RootLayout() {
   );
 }
 
-/** On the live backend, overlay a sign-in screen until there's a session.
+/** Browsing the club's sessions, leaderboard and players is PUBLIC — the same
+ *  information the club's own dashboard shows to anyone. The sign-in appears only
+ *  where identity is actually needed: the personal tabs (My Bookings, Wallet) and
+ *  the moment someone taps Book, which calls promptSignIn().
+ *
  *  In mock mode this is always inert (there's a fixed user). */
+const PRIVATE_ROUTES = ['/bookings', '/wallet'];
+
 function AuthGate() {
-  const { authLoading, currentUser } = useApp();
-  if (!USE_SUPABASE || currentUser) return null;
+  const { authLoading, currentUser, signInPrompted, dismissSignIn } = useApp();
+  const pathname = usePathname();
+  const needsIdentity = PRIVATE_ROUTES.some((r) => pathname.startsWith(r)) || signInPrompted;
+  if (!USE_SUPABASE || currentUser || !needsIdentity) return null;
   return (
     <View style={StyleSheet.absoluteFill}>
-      {authLoading ? <View style={{ flex: 1, backgroundColor: colors.navy }} /> : <SignIn />}
+      {authLoading ? <View style={{ flex: 1, backgroundColor: colors.navy }} /> : <SignIn onCancel={signInPrompted ? dismissSignIn : undefined} />}
     </View>
   );
 }

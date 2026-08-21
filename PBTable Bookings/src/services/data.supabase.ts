@@ -213,7 +213,19 @@ async function myClubId(): Promise<string | null> {
   if (_clubId) return _clubId;
   const { data: sess } = await supabase.auth.getSession();
   const uid = sess.session?.user?.id;
-  if (!uid) return null;
+  if (!uid) {
+    // Signed out, browsing publicly: fall back to the club this HOSTNAME serves.
+    // Without this the public session list is empty, because scoping is normally
+    // done by the signed-in member's club. Reads still obey RLS — a visitor sees
+    // exactly what the club's public dashboard already shows.
+    const { data: club } = await supabase
+      .from('clubs')
+      .select('id')
+      .eq('slug', BACKEND.slug)
+      .maybeSingle();
+    _clubId = (club as { id: string } | null)?.id ?? null;
+    return _clubId;
+  }
   const { data } = await supabase
     .from('booking_members')
     .select('club_id')

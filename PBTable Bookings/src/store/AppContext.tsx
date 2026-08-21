@@ -24,6 +24,10 @@ interface AppContextValue {
   currentUser: Member | null;
   /** Re-read the signed-in member — used by the demo person switcher. */
   refreshUser: () => Promise<void>;
+  /** True while a sign-in has been asked for at the point of booking. */
+  signInPrompted: boolean;
+  promptSignIn: () => void;
+  dismissSignIn: () => void;
   /** True until the initial session check completes (avoids a sign-in flash). */
   authLoading: boolean;
   /** Passwordless sign-in: email an 8-digit code, then verify it. */
@@ -50,6 +54,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [dataVersion, setDataVersion] = useState(0);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
+  // Browsing is public; the sign-in appears only when someone tries to BOOK.
+  const [signInPrompted, setSignInPrompted] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -93,6 +99,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const verifyOtp = useCallback(async (email: string, code: string) => {
     await auth.verifyOtp(email, code);
     setCurrentUser(await auth.getCurrentUser());
+    setSignInPrompted(false);
   }, []);
 
   const signOut = useCallback(async () => {
@@ -106,6 +113,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refresh = useCallback(() => setDataVersion((v) => v + 1), []);
+  const promptSignIn = useCallback(() => setSignInPrompted(true), []);
+  const dismissSignIn = useCallback(() => setSignInPrompted(false), []);
 
   // Pull the member record again after an out-of-band sign-in (the demo switcher
   // signs in directly rather than through verifyOtp). Changing currentUser also
@@ -133,6 +142,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     () => ({
       currentUser,
       refreshUser,
+      signInPrompted,
+      promptSignIn,
+      dismissSignIn,
       authLoading,
       sendOtp,
       verifyOtp,
@@ -145,7 +157,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       showBanner,
       dismissBanner,
     }),
-    [currentUser, refreshUser, authLoading, sendOtp, verifyOtp, signOut, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
+    [currentUser, refreshUser, signInPrompted, promptSignIn, dismissSignIn, authLoading, sendOtp, verifyOtp, signOut, sportProfile, setSport, dataVersion, refresh, banners, showBanner, dismissBanner]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

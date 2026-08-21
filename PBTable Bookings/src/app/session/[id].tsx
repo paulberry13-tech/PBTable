@@ -15,7 +15,7 @@ import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { currentUser, sportProfile, refresh, showBanner } = useApp();
+  const { currentUser, sportProfile, refresh, showBanner, promptSignIn } = useApp();
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [shortfallPence, setShortfallPence] = useState(0);
   const [booking, setBooking] = useState(false);
@@ -30,7 +30,8 @@ export default function SessionDetailScreen() {
   const membersById = useMemo(() => new Map((members ?? []).map((m) => [m.id, m])), [members]);
 
   if (error) return <ErrorState message={error} />;
-  if (!session || !currentUser) return <LoadingView />;
+  // Signed-out visitors may READ this screen — only the session itself is required.
+  if (!session) return <LoadingView />;
 
   const left = spotsLeft(session);
   const full = left === 0;
@@ -51,11 +52,11 @@ export default function SessionDetailScreen() {
       return { memberId: b.memberId, name: m?.name ?? '…', rating: m?.rating ?? null, status: b.status };
     });
   const myBooking = session.bookings.find(
-    (b) => b.memberId === currentUser.id && (b.status === 'booked' || b.status === 'waitlisted')
+    (b) => b.memberId === currentUser?.id && (b.status === 'booked' || b.status === 'waitlisted')
   );
   const outsideBand =
     session.skillMin !== undefined &&
-    currentUser.rating !== undefined &&
+    currentUser?.rating !== undefined &&
     (currentUser.rating < (session.skillMin ?? 0) || currentUser.rating > (session.skillMax ?? 99));
 
   const balancePence = balance ?? 0;
@@ -77,6 +78,7 @@ export default function SessionDetailScreen() {
   const completeBooking = async () => {
     setBooking(true);
     try {
+      if (!currentUser) return;   // unreachable: onBookPress prompts sign-in first
       const result = await data.bookSession(session.id, currentUser.id);
       refresh();
       if (result.waitlisted) {
@@ -102,6 +104,8 @@ export default function SessionDetailScreen() {
   };
 
   const onBookPress = () => {
+    // Browsing is public, so this is the first point identity is needed.
+    if (!currentUser) { promptSignIn(); return; }
     if (full || cost === 0 || canAfford) {
       void completeBooking();
     } else {
@@ -111,6 +115,7 @@ export default function SessionDetailScreen() {
   };
 
   const onTopUp = async (amountPence: number) => {
+    if (!currentUser) return;
     await data.topUp(currentUser.id, amountPence);
     refresh();
     setTopUpOpen(false);
@@ -255,7 +260,7 @@ export default function SessionDetailScreen() {
                 </Text>
               </Card>
             )}
-            {!full && taster ? (
+            {!currentUser ? null : !full && taster ? (
               <Card style={{ paddingVertical: spacing.md }}>
                 <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={type.bodyBold}>Free taster</Text>
@@ -286,7 +291,9 @@ export default function SessionDetailScreen() {
             ) : null}
             <Button
               title={
-                mustWait
+                !currentUser
+                  ? 'Sign in to book'
+                : mustWait
                   ? `Opens for you ${waitLabel}`
                     : full
                   ? 'Join waitlist'

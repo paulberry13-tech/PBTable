@@ -17,7 +17,9 @@ import { colors, fonts, radius, spacing, type } from '@/theme';
 /** Passwordless sign-in on the live backend: enter your club email, we email a
  *  6-digit code, you type it in. No password to set or remember. Invite-only —
  *  only members the club has added can sign in. */
-export function SignIn() {
+/** onCancel is supplied only when the sign-in was raised on demand (someone tapped
+ *  Book while signed out). Browsing is public, so they must be able to back out. */
+export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
   const { sendOtp, verifyOtp } = useApp();
   const [stage, setStage] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState(process.env.EXPO_PUBLIC_DEMO_EMAIL ?? '');
@@ -150,6 +152,12 @@ export function SignIn() {
               </View>
             </>
           )}
+            {onCancel && (
+              <Pressable onPress={onCancel} hitSlop={8} style={{ marginTop: spacing.md, alignSelf: 'center' }}
+                accessibilityRole="button" accessibilityLabel="Back to browsing">
+                <Text style={styles.switchLink}>← Keep looking without signing in</Text>
+              </Pressable>
+            )}
         </View>
       </KeyboardAvoidingView>
     </View>
