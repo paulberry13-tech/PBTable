@@ -520,28 +520,51 @@ const LEDGER_LABEL: Record<string, string> = {
   adjustment: 'Adjustment',
 };
 
+type WalletRow = {
+  id: number; created_at: string; reason: string; amount_pennies: number;
+  session_kind: string | null; session_id: string | null;
+  session_name: string | null; session_date: string | null;
+  comp: boolean | null; taster: boolean | null;
+};
+
+// my_wallet_activity resolves which SESSION each entry was for. That cannot be done
+// client-side: bookings is polymorphic (session_kind + session_id, pointing at either
+// social_sessions or session_plans), so PostgREST has no relationship to embed.
+// Without it every row read "Session booking" plus the date the money moved, which
+// told a member nothing and made a balance impossible to reconcile.
 export async function getLedger(memberId: string): Promise<LedgerEntry[]> {
-  const { data, error } = await supabase
-    .from('credits_ledger')
-    .select('id,member_id,amount_pennies,reason,created_at')
-    .eq('member_id', memberId)
-    .order('created_at', { ascending: true });
+  const { data, error } = await supabase.rpc('my_wallet_activity');
   if (error) throw error;
   let running = 0;
-  const rows = (data as { id: number; amount_pennies: number; reason: string; created_at: string }[]).map((r) => {
+  const rows = ((data ?? []) as WalletRow[]).map((r) => {
     running += r.amount_pennies;
+    // A comp or a taster still writes a ledger row; say so rather than calling a
+    // £0 line "Session booking" and leaving the member to wonder what they paid.
+    const label =
+      r.comp ? 'Comped place' : r.taster ? 'Free taster' : LEDGER_LABEL[r.reason] ?? r.reason;
     return {
       id: String(r.id),
       memberId,
       type: LEDGER_KIND[r.reason] ?? 'refund',
       amountPence: r.amount_pennies,
       balanceAfterPence: running,
-      description: LEDGER_LABEL[r.reason] ?? r.reason,
-      sessionId: undefined,
+      description: label,
+      sessionId: r.session_id ?? undefined,
+      sessionLabel: r.session_name
+        ? r.session_date
+          ? `${r.session_name} · ${formatSessionDate(r.session_date)}`
+          : r.session_name
+        : undefined,
       createdAt: r.created_at,
     } as LedgerEntry;
   });
   return rows.reverse();
+}
+
+// Short, unambiguous date for a ledger line: "Wed 26 Aug".
+function formatSessionDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 export async function topUp(memberId: string, amountPence: number): Promise<LedgerEntry> {

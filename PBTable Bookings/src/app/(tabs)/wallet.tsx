@@ -112,17 +112,33 @@ function LedgerRow({ entry, last }: { entry: LedgerEntry; last: boolean }) {
         <Text style={type.bodyBold} numberOfLines={1}>
           {entry.description}
         </Text>
-        <Text style={type.caption}>{formatDate(entry.createdAt.slice(0, 10))}</Text>
+        {/* Which session the money was for. Without this every row read the same:
+            a label and the date the money moved, which is not what anyone is
+            looking for when they open a statement. Top-ups have no session, so
+            they keep the transaction date on its own. */}
+        <Text style={type.caption} numberOfLines={1}>
+          {entry.sessionLabel ?? formatDate(entry.createdAt.slice(0, 10))}
+        </Text>
       </View>
-      <Text style={[styles.amount, { color: credit ? colors.upText : colors.text }]}>
-        {sign}
-        {formatMoney(magnitude)}
-      </Text>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={[styles.amount, { color: credit ? colors.upText : colors.text }]}>
+          {sign}
+          {formatMoney(magnitude)}
+        </Text>
+        {/* Running balance: the reason people open a statement at all. */}
+        <Text style={styles.balanceAfter}>{formatMoney(entry.balanceAfterPence)}</Text>
+      </View>
     </Row>
   );
 }
 
 const styles = StyleSheet.create({
+  balanceAfter: {
+    fontFamily: fonts.medium,
+    fontSize: 11.5,
+    color: colors.textFaint,
+    marginTop: 1,
+  },
   screen: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: 48, maxWidth: 720, width: '100%', alignSelf: 'center' },
   balanceCard: {

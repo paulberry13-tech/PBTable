@@ -43,6 +43,8 @@ export interface LedgerEntry {
   description: string;
   /** Set when the entry relates to a session booking/cancellation. */
   sessionId?: string;
+  /** Which session the money was for — the whole point of the activity list. */
+  sessionLabel?: string;
   createdAt: string;
 }
 
