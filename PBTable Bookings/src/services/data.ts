@@ -44,6 +44,7 @@ export const confirmTopUp = USE_SUPABASE
   ? supa.confirmTopUp
   : async (_sessionId?: string | null) => ({ creditedPence: 0, pending: false, reversed: 0, truncated: false });
 export const clubTakesPayments = impl.clubTakesPayments;
+export const getClubBranding = impl.getClubBranding;
 export const getMembers = impl.getMembers;
 export const getMember = impl.getMember;
 export const getLeaderboard = impl.getLeaderboard;

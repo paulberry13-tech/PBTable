@@ -645,6 +645,10 @@ export async function recalcRatings(): Promise<void> {
 }
 
 /** Mock mode has no club and no Stripe. The demo top-up path covers it. */
+export async function getClubBranding(): Promise<{ name: string | null; logoUrl: string | null } | null> {
+  return null;   // mock mode falls back to the PBTable mark
+}
+
 export async function clubTakesPayments(): Promise<boolean> {
   return false;
 }

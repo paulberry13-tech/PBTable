@@ -620,6 +620,48 @@ async function fnError(error: unknown, fallback: string): Promise<Error> {
 }
 
 let _takesPayments: boolean | null = null;
+export type ClubBranding = {
+  /** The club's display name, or null if it could not be read. */
+  name: string | null;
+  /** settings.logo_url, or null when the club has set none. */
+  logoUrl: string | null;
+};
+
+/** The club's own name and logo, for the header. The app is embedded at /app on the
+ *  club's site, so the CLUB is the brand and PBTable is the plumbing — a member should
+ *  see the same identity here as on every other screen. Until now the header showed
+ *  PBTable's logo and wordmark on every club.
+ *
+ *  Both come from `clubs`: `name` is a column, the logo lives at `settings.logo_url`
+ *  (that is where the dashboard writes it — there is no logo_url column). Both stay
+ *  readable by anon under migration 47's column list.
+ *
+ *  Cached for the session: it cannot change while the page is open, and the header
+ *  renders on every screen. Any failure returns null and the PBTable mark is used,
+ *  so a slow or broken lookup can never leave the header empty. */
+let _branding: ClubBranding | null | undefined;
+export async function getClubBranding(): Promise<ClubBranding | null> {
+  if (_branding !== undefined) return _branding;
+  try {
+    const { data, error } = await supabase
+      .from('clubs')
+      .select('name,settings')
+      .eq('slug', BACKEND.slug)
+      .maybeSingle();
+    // Do NOT cache a failure: one dropped request would pin the header to the
+    // PBTable mark for the rest of the session, on every screen, even after the
+    // connection came back. Only success is remembered.
+    if (error || !data) return null;
+    const row = data as { name?: string | null; settings?: Record<string, unknown> | null };
+    const s = row.settings ?? {};
+    const logo = typeof s.logo_url === 'string' && s.logo_url.trim() ? s.logo_url.trim() : null;
+    _branding = { name: (row.name ?? '').trim() || null, logoUrl: logo };
+  } catch {
+    return null;   // transient — try again on the next mount rather than caching it
+  }
+  return _branding;
+}
+
 export async function clubTakesPayments(): Promise<boolean> {
   if (_takesPayments !== null) return _takesPayments;
   try {

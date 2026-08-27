@@ -3,6 +3,8 @@ import React from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BACKEND } from '@/services/backend';
+import * as data from '@/services/data';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, spacing } from '@/theme';
 
@@ -25,22 +27,48 @@ export function Header() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
+  // The club's own identity. Null until it loads and null if it cannot be read, in
+  // which case the PBTable mark below is what shows — the header is never empty.
+  const [club, setClub] = React.useState<{ name: string | null; logoUrl: string | null } | null>(null);
+  React.useEffect(() => {
+    let alive = true;
+    data.getClubBranding().then((b) => { if (alive) setClub(b); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.row}>
         <Pressable
-          onPress={() => setSport(sportProfile.sport === 'pickleball' ? 'tennis' : 'pickleball')}
-          accessibilityLabel="PBTable"
+          // The sport switch is a demo/prospect toy. It was tolerable on a PBTable
+          // wordmark labelled "PICKLEBALL CLUB" — that line said what the button did
+          // and showed which mode you were in. Now the brand is the CLUB's own name
+          // and that label is gone, so on a real club a tap would silently re-word
+          // the whole app ("Session" -> "Fixture", "RDR" -> "Club rating") with
+          // nothing to explain it and no visible way back. Inert off demo.
+          onPress={BACKEND.isDemo
+            ? () => setSport(sportProfile.sport === 'pickleball' ? 'tennis' : 'pickleball')
+            : undefined}
+          accessibilityLabel={club?.name || 'PBTable'}
           style={({ pressed }) => [styles.brand, pressed && { opacity: 0.85 }]}
         >
-          <Image source={LOGO} style={styles.logoImg} resizeMode="contain" />
-          <View>
-            <Text style={styles.logo}>
-              <Text style={styles.logoLight}>PB</Text>
-              <Text style={styles.logoBold}>Table</Text>
-            </Text>
-            <Text style={styles.sport}>{sportProfile.sport.toUpperCase()} CLUB</Text>
+          <Image
+            source={club?.logoUrl ? { uri: club.logoUrl } : LOGO}
+            style={styles.logoImg}
+            resizeMode="contain"
+          />
+          <View style={styles.brandText}>
+            {club?.name ? (
+              <Text style={styles.clubName} numberOfLines={2}>{club.name}</Text>
+            ) : (
+              <>
+                <Text style={styles.logo}>
+                  <Text style={styles.logoLight}>PB</Text>
+                  <Text style={styles.logoBold}>Table</Text>
+                </Text>
+                <Text style={styles.sport}>{sportProfile.sport.toUpperCase()} CLUB</Text>
+              </>
+            )}
           </View>
         </Pressable>
 
@@ -114,6 +142,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    flexShrink: 1,
+  },
+  // A club name is longer than a wordmark and must not shove the Admin link off
+  // the row, so the text block shrinks and a long name wraps to two lines.
+  brandText: { flexShrink: 1 },
+  clubName: {
+    color: colors.textOnDark,
+    fontSize: 17,
+    fontFamily: fonts.extrabold,
+    lineHeight: 20,
   },
   logoImg: {
     width: 38,
