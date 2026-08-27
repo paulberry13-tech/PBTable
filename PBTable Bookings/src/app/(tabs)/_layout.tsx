@@ -44,22 +44,6 @@ export default function TabsLayout() {
             tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={size} color={color} />,
           }}
         />
-        <Tabs.Screen
-          name="leaderboard"
-          options={{
-            title: 'Leaderboard',
-            // Promoted to the top nav row (Header); keep the route, hide the tab.
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="players"
-          options={{
-            title: 'Players',
-            // Promoted to the top nav row (Header); keep the route, hide the tab.
-            href: null,
-          }}
-        />
       </Tabs>
     </View>
   );

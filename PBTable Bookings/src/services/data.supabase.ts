@@ -780,34 +780,28 @@ export async function confirmTopUp(sessionId?: string | null): Promise<TopUpReco
 
 type StandingRow = { pos: number; name: string; rating: number; games: number };
 
-async function standings(): Promise<StandingRow[]> {
-  const { data, error } = await supabase.rpc('rdr_leaderboard', { club_slug: CLUB_SLUG });
-  if (error) throw error;
-  return data as StandingRow[];
-}
-
 export async function getMembers(): Promise<Member[]> {
   const club = await myClubId();
   if (!club) return [];
-  const [{ data: players, error }, ranks] = await Promise.all([
-    supabase.from('players').select('id,name,guest').eq('club_id', club).order('name', { ascending: true }),
-    standings(),
-  ]);
+  // NAMES ONLY. This used to merge private.rdr_standings -- a cached SECOND
+  // implementation of the rating engine, which on Swindon disagreed with the public
+  // leaderboard by up to 0.015 for eight of ninety-eight players. The browser's
+  // replayAllSessions is the one true calculation and is what the club site shows;
+  // nothing here may put a different number in front of a member.
+  // (Paul, 2026-08-27: "All they need to see is who is playing.")
+  const { data: players, error } = await supabase
+    .from('players').select('id,name,guest').eq('club_id', club).order('name', { ascending: true });
   if (error) throw error;
-  const byName = new Map(ranks.map((r) => [r.name, r]));
-  return (players as { id: string; name: string; guest: boolean }[]).map((p) => {
-    const rank = byName.get(p.name);
-    return {
-      id: p.id,
-      name: p.name,
-      email: '',
-      memberType: p.guest ? 'guest' : 'member',
-      ratingState: rank && rank.games > 0 ? 'rated' : 'unrated',
-      rating: rank?.rating !== undefined ? Math.round(rank.rating * 100) / 100 : undefined,
-      gradedGames: rank?.games ?? 0,
-      balancePence: 0,
-    };
-  });
+  return (players as { id: string; name: string; guest: boolean }[]).map((p) => ({
+    id: p.id,
+    name: p.name,
+    email: '',
+    memberType: p.guest ? 'guest' : 'member',
+    ratingState: 'unrated' as const,
+    rating: undefined,
+    gradedGames: 0,
+    balancePence: 0,
+  }));
 }
 
 export async function getMember(id: string): Promise<Member> {
@@ -816,32 +810,6 @@ export async function getMember(id: string): Promise<Member> {
   return m;
 }
 
-export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
-  const club = await myClubId();
-  const [ranks, { data: players }] = await Promise.all([
-    standings(),
-    club ? supabase.from('players').select('id,name').eq('club_id', club) : Promise.resolve({ data: [] }),
-  ]);
-  const idByName = new Map((players as { id: string; name: string }[]).map((p) => [p.name, p.id]));
-  return ranks
-    .filter((r) => r.games > 0)
-    .map((r) => ({
-      rank: r.pos,
-      member: {
-        id: idByName.get(r.name) ?? r.name,
-        name: r.name,
-        email: '',
-        memberType: 'member' as const,
-        ratingState: 'rated' as const,
-        rating: Math.round(r.rating * 100) / 100,
-        gradedGames: r.games,
-        balancePence: 0,
-      },
-      movement: 'flat' as const, // rdr_leaderboard has no movement column yet
-      movementDelta: 0,
-      hot: false,
-    }));
-}
 
 export async function getMemberMatches(): Promise<{ match: unknown; session: Session }[]> {
   return notBuiltYet('Player match history');

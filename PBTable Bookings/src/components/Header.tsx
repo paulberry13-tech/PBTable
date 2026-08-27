@@ -10,11 +10,6 @@ import { colors, fonts, spacing } from '@/theme';
 
 const LOGO = require('../../assets/images/pbtable-logo.png');
 
-/** Browse views promoted out of the bottom tab bar to the top of every screen. */
-const NAV = [
-  { label: 'Leaderboard', path: '/leaderboard' as const },
-  { label: 'Players', path: '/players' as const },
-];
 
 /**
  * Brand header: the PBTable logo + wordmark, a web-only "Admin" link out to the club-site
@@ -22,6 +17,13 @@ const NAV = [
  * for the Leaderboard and Players views (the core booking actions — Sessions, My Bookings,
  * Wallet — stay in the bottom tab bar).
  */
+/** Browse views promoted out of the bottom tab bar to the top of every screen.
+ *  Empty since the Leaderboard and Players tabs were removed. Kept as an empty
+ *  list WITH its map intact: deleting the map outright changed the rendered tree
+ *  relative to the static pre-render and introduced a hydration mismatch
+ *  (React #418) on every screen. */
+const NAV: { label: string; path: '/bookings' | '/wallet' }[] = [];
+
 export function Header() {
   const { sportProfile, setSport } = useApp();
   const insets = useSafeAreaInsets();
@@ -112,11 +114,7 @@ export function Header() {
               onPress={() => router.push(item.path)}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
-              style={({ pressed }) => [
-                styles.navBtn,
-                active && styles.navBtnActive,
-                pressed && { opacity: 0.8 },
-              ]}
+              style={({ pressed }) => [styles.navBtn, active && styles.navBtnActive, pressed && { opacity: 0.8 }]}
             >
               <Text style={[styles.navText, active && styles.navTextActive]}>{item.label}</Text>
             </Pressable>

@@ -49,7 +49,7 @@ export default function SessionDetailScreen() {
     session.attendees ??
     roster.map((b) => {
       const m = membersById.get(b.memberId);
-      return { memberId: b.memberId, name: m?.name ?? '…', rating: m?.rating ?? null, status: b.status, waitlistPos: null };
+      return { memberId: b.memberId, name: m?.name ?? '…', status: b.status, waitlistPos: null };
     });
   // session_attendees now carries the queue as well (migration 39) so a newcomer
   // can see real demand. They are NOT playing, so they get their own section.
@@ -199,9 +199,6 @@ export default function SessionDetailScreen() {
                 <Text style={[type.body, { flex: 1 }]} numberOfLines={1}>
                   {p.name}
                 </Text>
-                {session.affectsRating && p.rating != null ? (
-                  <Text style={[type.captionBold, type.mono]}>{p.rating.toFixed(2)}</Text>
-                ) : null}
               </Row>
             ))}
           </View>

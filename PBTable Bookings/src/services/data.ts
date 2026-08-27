@@ -47,7 +47,6 @@ export const clubTakesPayments = impl.clubTakesPayments;
 export const getClubBranding = impl.getClubBranding;
 export const getMembers = impl.getMembers;
 export const getMember = impl.getMember;
-export const getLeaderboard = impl.getLeaderboard;
 export const getMemberMatches = impl.getMemberMatches;
 export const generateCourtSlips = impl.generateCourtSlips;
 export const getCourtSlips = impl.getCourtSlips;

@@ -104,10 +104,6 @@ export default function RootLayout() {
           name="session/[id]"
           options={{ title: 'SESSION', headerBackVisible: false, headerLeft: () => <HeaderBack /> }}
         />
-        <Stack.Screen
-          name="player/[id]"
-          options={{ title: 'PLAYER', headerBackVisible: false, headerLeft: () => <HeaderBack /> }}
-        />
       </Stack>
       </ErrorBoundary>
       <AuthGate />
@@ -117,7 +113,7 @@ export default function RootLayout() {
   );
 }
 
-/** Browsing the club's sessions, leaderboard and players is PUBLIC — the same
+/** Browsing the club's sessions is PUBLIC — the same
  *  information the club's own dashboard shows to anyone. The sign-in appears only
  *  where identity is actually needed: the personal tabs (My Bookings, Wallet) and
  *  the moment someone taps Book, which calls promptSignIn().
