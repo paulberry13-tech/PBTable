@@ -57,8 +57,28 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
     setError(null);
     try {
       await verifyOtp(email, code);
+      // The code can be perfectly valid and still leave us with nobody: the address
+      // has a login, but no member record at THIS club. AppContext's refreshUser
+      // swallows that and sets currentUser to null, so the gate simply re-rendered
+      // the sign-in form -- indistinguishable from the code being rejected, and a
+      // dead end with nothing to click. Say what actually happened instead.
+      if ((await auth.hasMemberRecord()) === false) {
+        await auth.signOut();
+        setError(
+          `That email has a login, but isn't a member of this club yet. ` +
+            `If you're new, use "Join the club" below — otherwise ask the club to add you.`,
+        );
+        return;
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That code was not accepted.');
+      // Supabase throws PostgrestError, which is NOT an Error instance -- an
+      // `instanceof` check alone silently turned real causes into a generic
+      // "not accepted" and cost an afternoon of chasing the wrong bug.
+      const msg =
+        e instanceof Error ? e.message
+        : (e && typeof e === 'object' && 'message' in e) ? String((e as { message: unknown }).message)
+        : 'That code was not accepted.';
+      setError(msg);
     } finally {
       setBusy(false);
     }
@@ -98,7 +118,14 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
       await auth.verifyOtp(email, code);
       setStage('joinName');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'That code was not accepted.');
+      // Supabase throws PostgrestError, which is NOT an Error instance -- an
+      // `instanceof` check alone silently turned real causes into a generic
+      // "not accepted" and cost an afternoon of chasing the wrong bug.
+      const msg =
+        e instanceof Error ? e.message
+        : (e && typeof e === 'object' && 'message' in e) ? String((e as { message: unknown }).message)
+        : 'That code was not accepted.';
+      setError(msg);
     } finally { setBusy(false); }
   };
 

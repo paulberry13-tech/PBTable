@@ -20,6 +20,21 @@ export const CLUB_SLUG = BACKEND.slug;
 // Lift the isDemo gate in the same change that puts live keys on production.
 export const STRIPE_TOPUP = process.env.EXPO_PUBLIC_STRIPE_TOPUP === 'true' && BACKEND.isDemo;
 
+/** Is the fake card form allowed at all?
+ *
+ *  There is a second top-up path that presents a card form, says "Demo payment —
+ *  no card is charged" in small type, and calls a function that mints wallet credit
+ *  with no payment behind it. It exists so the demo can be shown end to end.
+ *
+ *  It was reachable on CLUB sites, because it is simply the `else` of STRIPE_TOPUP
+ *  and STRIPE_TOPUP is hard-wired to demo. So a Gloucester member opening their
+ *  wallet was shown a realistic card form that did nothing — an invitation to type
+ *  a real card number into a dead end. The function it calls is not deployed to
+ *  production, which is the only reason it was merely useless rather than harmful.
+ *
+ *  Never on a real club, whatever the build was configured with. */
+export const DEMO_TOPUP = !STRIPE_TOPUP && BACKEND.isDemo;
+
 // Demo mode: the fixed demo member's credentials. When DEMO_AUTOLOGIN is on the
 // app auto-signs-in as this member on load, so the demo /app/ opens with no
 // sign-in screen at all. The isDemo gate is the hard guarantee that a club site

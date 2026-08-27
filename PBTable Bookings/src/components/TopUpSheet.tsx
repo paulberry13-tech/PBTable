@@ -4,7 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 
 import { Button, Row } from '@/components/ui';
 import { formatMoney, TOPUP_AMOUNTS } from '@/lib/money';
-import { STRIPE_TOPUP } from '@/services/config';
+import { DEMO_TOPUP, STRIPE_TOPUP } from '@/services/config';
 import { charge } from '@/services/payments';
 import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
@@ -19,6 +19,7 @@ export function TopUpSheet({
   reason,
   onConfirm,
   onClose,
+  canPay,
 }: {
   visible: boolean;
   /** Preselect the smallest preset that covers this (e.g. a booking shortfall). */
@@ -27,6 +28,9 @@ export function TopUpSheet({
   reason?: string;
   onConfirm: (amountPence: number) => Promise<void> | void;
   onClose: () => void;
+  /** Whether THIS club can take a card payment, asked of the database. Undefined
+   *  in mock mode, where the demo path applies instead. */
+  canPay?: boolean | null;
 }) {
   const defaultAmount = useMemo(
     () => TOPUP_AMOUNTS.find((a) => a >= minPence) ?? TOPUP_AMOUNTS[TOPUP_AMOUNTS.length - 1],
@@ -43,6 +47,17 @@ export function TopUpSheet({
   const [expiry, setExpiry] = useState('12/28');
   const [cvc, setCvc] = useState('123');
   const [paying, setPaying] = useState(false);
+  // Shown in the sheet rather than behind it. pay() had a try/finally and no catch,
+  // so every failure -- a declined demo card, an undeployed function, a club not set
+  // up for payments -- ended as an unhandled rejection: the spinner stopped and
+  // nothing else happened.
+  const [payError, setPayError] = useState<string | null>(null);
+
+  // A Stripe-hosted payment is right whenever THIS club can take one, or when the
+  // demo build is pointed at the platform test account. The old code asked only
+  // the second question, which is exactly why a club site fell through to the
+  // fake card form.
+  const stripePath = canPay === true || STRIPE_TOPUP;
 
   // Re-sync the default when the sheet is reopened for a different shortfall.
   const [lastMin, setLastMin] = useState(minPence);
@@ -54,12 +69,15 @@ export function TopUpSheet({
   const pay = async () => {
     if (!amountValid) return;
     setPaying(true);
+    setPayError(null);
     try {
-      if (!STRIPE_TOPUP) {
+      if (!stripePath) {
         await charge({ amountPence: effectiveAmount, description: `Wallet top-up`, cardNumber, expiry, cvc });
       }
       // In Stripe mode onConfirm → topUp redirects to Stripe Checkout.
       await onConfirm(effectiveAmount);
+    } catch (e) {
+      setPayError((e as Error)?.message ?? 'That did not go through. Please try again.');
     } finally {
       setPaying(false);
     }
@@ -77,7 +95,7 @@ export function TopUpSheet({
           </Row>
           <Text style={[type.caption, { marginTop: 4 }]}>
             {reason ??
-              (STRIPE_TOPUP
+              (stripePath
                 ? 'Add money to your balance — you’ll pay securely with Stripe.'
                 : 'Add money to your balance to book sessions.')}
           </Text>
@@ -134,7 +152,7 @@ export function TopUpSheet({
             </>
           ) : null}
 
-          {!STRIPE_TOPUP ? (
+          {DEMO_TOPUP ? (
             <>
               <View style={styles.demoNote}>
                 <Ionicons name="flask-outline" size={14} color={colors.amberText} />
@@ -176,22 +194,37 @@ export function TopUpSheet({
             </>
           ) : null}
 
-          <Button
-            title={
-              paying
-                ? STRIPE_TOPUP
-                  ? 'Opening Stripe…'
-                  : 'Adding money…'
-                : STRIPE_TOPUP
-                  ? `Continue to payment · ${formatMoney(effectiveAmount)}`
-                  : `Pay ${formatMoney(effectiveAmount)}`
-            }
-            onPress={pay}
-            loading={paying}
-            disabled={!amountValid}
-            style={{ marginTop: spacing.lg }}
-          />
-          {STRIPE_TOPUP ? (
+              {/* Neither path available: this club has no way to take a payment yet.
+                  Say so plainly rather than offering a button that cannot work — that
+                  is exactly how a member ends up typing a card number into nothing. */}
+              {!stripePath && !DEMO_TOPUP ? (
+                <Text style={[type.caption, { marginTop: spacing.lg }]}>
+                  This club isn&rsquo;t taking card payments yet. Speak to the club about paying for
+                  sessions — booking still works in the meantime.
+                </Text>
+              ) : (
+            <>
+              {payError ? (
+                <Text style={[type.caption, { color: colors.downText, marginTop: spacing.lg }]}>{payError}</Text>
+              ) : null}
+              <Button
+              title={
+                paying
+                  ? stripePath
+                    ? 'Opening Stripe…'
+                    : 'Adding money…'
+                  : stripePath
+                    ? `Continue to payment · ${formatMoney(effectiveAmount)}`
+                    : `Pay ${formatMoney(effectiveAmount)}`
+              }
+                onPress={pay}
+                loading={paying}
+                disabled={!amountValid}
+                style={{ marginTop: spacing.lg }}
+              />
+            </>
+              )}
+          {stripePath ? (
             <Row style={{ marginTop: spacing.md, justifyContent: 'center' }} gap={6}>
               <Ionicons name="lock-closed" size={12} color={colors.textFaint} />
               <Text style={[type.caption, { color: colors.textFaint }]}>

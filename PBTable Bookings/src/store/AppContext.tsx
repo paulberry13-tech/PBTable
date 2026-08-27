@@ -97,8 +97,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const verifyOtp = useCallback(async (email: string, code: string) => {
+    // Only a genuinely bad code should throw out of here. getCurrentUser fails for
+    // an address that has a login but no member record at this club -- and it fails
+    // with a PostgrestError, not an Error, so SignIn's `e instanceof Error` missed
+    // it and reported the accepted code as "not accepted". The code was fine; the
+    // person simply was not a member. SignIn checks for exactly that after this
+    // resolves, and can only do so if we let it resolve.
     await auth.verifyOtp(email, code);
-    setCurrentUser(await auth.getCurrentUser());
+    try {
+      setCurrentUser(await auth.getCurrentUser());
+    } catch {
+      setCurrentUser(null);
+    }
     setSignInPrompted(false);
   }, []);
 

@@ -643,3 +643,8 @@ export async function recalcRatings(): Promise<void> {
   });
   replayAllMatches(store);
 }
+
+/** Mock mode has no club and no Stripe. The demo top-up path covers it. */
+export async function clubTakesPayments(): Promise<boolean> {
+  return false;
+}

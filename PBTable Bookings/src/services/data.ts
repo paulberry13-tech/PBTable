@@ -38,6 +38,12 @@ export const getMyBookings = impl.getMyBookings;
 export const getBalance = impl.getBalance;
 export const getLedger = impl.getLedger;
 export const topUp = impl.topUp;
+// Not on the mock seam: confirming a Stripe payment has no meaning without a real
+// Stripe. In mock mode the wallet page simply never has a session id to confirm.
+export const confirmTopUp = USE_SUPABASE
+  ? supa.confirmTopUp
+  : async (_sessionId?: string | null) => ({ creditedPence: 0, pending: false, reversed: 0, truncated: false });
+export const clubTakesPayments = impl.clubTakesPayments;
 export const getMembers = impl.getMembers;
 export const getMember = impl.getMember;
 export const getLeaderboard = impl.getLeaderboard;

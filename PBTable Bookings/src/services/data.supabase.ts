@@ -533,6 +533,10 @@ type WalletRow = {
 // Without it every row read "Session booking" plus the date the money moved, which
 // told a member nothing and made a balance impossible to reconcile.
 export async function getLedger(memberId: string): Promise<LedgerEntry[]> {
+  // NOTE: my_wallet_activity takes no argument — it is scoped server-side to
+  // auth.uid(). `memberId` is only stamped onto the returned rows, so calling this
+  // with anyone other than the signed-in member would label THEIR rows with
+  // SOMEONE ELSE'S id. The only caller passes currentUser.id; keep it that way.
   const { data, error } = await supabase.rpc('my_wallet_activity');
   if (error) throw error;
   let running = 0;
@@ -567,6 +571,68 @@ function formatSessionDate(iso: string): string {
   return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
+/** Can the club this hostname serves take card payments right now?
+ *
+ *  Three things have to be true and only the database knows all three: a Stripe
+ *  account is connected, Stripe has enabled charges on it, and the club is in paid
+ *  mode. The app cannot read any of them directly -- migration 47 keeps the Stripe
+ *  columns private -- so it asks one purpose-built question instead.
+ *
+ *  This replaces guessing from the build. STRIPE_TOPUP was fixed at compile time
+ *  and hard-wired to the demo, which is how a club site ended up showing a demo
+ *  card form: the app was reasoning about which bundle it was, not about the club
+ *  in front of it.
+ *
+ *  Cached for the session. It changes when an admin connects Stripe or switches
+ *  mode, neither of which happens while a member is mid-top-up.
+ */
+/**
+ * Recover the message an Edge Function actually sent.
+ *
+ * supabase-js turns any non-2xx into a FunctionsHttpError whose message is the
+ * useless string "Edge Function returned a non-2xx status code", and hides the real
+ * body on `error.context` -- an unread Response. Every carefully written error in
+ * connect-topup and connect-topup-confirm was being thrown away, so a member who
+ * needed to be told "this club is not set up to take card payments" got a stack
+ * trace's worth of nothing instead.
+ *
+ * Also marks whether the failure is worth retrying. A 4xx other than 401 means the
+ * request itself is wrong and will never succeed; 401 is usually a token mid-refresh
+ * and 5xx is usually transient, so both are left retryable.
+ */
+async function fnError(error: unknown, fallback: string): Promise<Error> {
+  const ctx = (error as { context?: Response } | null)?.context;
+  let message: string | null = null;
+  let status = 0;
+  if (ctx && typeof ctx === 'object') {
+    status = Number((ctx as Response).status) || 0;
+    try {
+      const body = await (ctx as Response).json();
+      if (body && typeof body.error === 'string') message = body.error;
+    } catch {
+      /* not JSON, or already consumed -- fall through to the fallback */
+    }
+  }
+  const raw = (error as { message?: string } | null)?.message;
+  const out = new Error(message ?? (raw && !/non-2xx/i.test(raw) ? raw : fallback));
+  (out as Error & { terminal?: boolean }).terminal = status >= 400 && status < 500 && status !== 401;
+  return out;
+}
+
+let _takesPayments: boolean | null = null;
+export async function clubTakesPayments(): Promise<boolean> {
+  if (_takesPayments !== null) return _takesPayments;
+  try {
+    const { data, error } = await supabase.rpc('club_payments_enabled', { p_slug: BACKEND.slug });
+    // Fails CLOSED. Not knowing must never open a payment path -- the alternative
+    // is charging a member on a club that cannot receive it.
+    _takesPayments = error ? false : !!data;
+  } catch {
+    _takesPayments = false;
+  }
+  return _takesPayments;
+}
+
 export async function topUp(memberId: string, amountPence: number): Promise<LedgerEntry> {
   const synthetic: LedgerEntry = {
     id: `topup-${Date.now()}`,
@@ -578,12 +644,27 @@ export async function topUp(memberId: string, amountPence: number): Promise<Ledg
     createdAt: new Date().toISOString(),
   };
 
+  // A CLUB payment: Stripe Checkout created on the club’s own connected account,
+  // so the money lands with them and PBTable never holds it. Tried first, because
+  // it is the only path that exists on a real club.
+  if (await clubTakesPayments()) {
+    const origin = Platform.OS === 'web' ? window.location.origin : '';
+    const { data, error } = await supabase.functions.invoke('connect-topup', {
+      // The slug says WHICH club this top-up is for. Without it the server has to
+      // guess from the sign-in alone, which errors outright for anyone who belongs
+      // to two clubs.
+      body: { amount_pennies: amountPence, origin, slug: BACKEND.slug },
+    });
+    if (error) throw await fnError(error, 'Could not start the payment.');
+    const url = (data as { url?: string })?.url;
+    if (!url) throw new Error((data as { error?: string })?.error ?? 'Could not start the payment.');
+    await Linking.openURL(url);
+    return synthetic;
+  }
+
   if (STRIPE_TOPUP) {
-    // Real Stripe Checkout (test mode). Redirect to Stripe; the webhook credits
-    // the wallet on completion and the app reloads to the success_url.
-    // Return the member to the exact app page they launched top-up from, so the
-    // whole round-trip stays inside the app — works whether it's hosted at the
-    // domain root or mounted under /app on the club site.
+    // DEMO Stripe: the platform’s own test account, not Connect. Kept so the demo
+    // site can still show the member payment journey end to end.
     const returnUrl =
       Platform.OS === 'web'
         ? `${window.location.origin}${window.location.pathname}`
@@ -595,7 +676,7 @@ export async function topUp(memberId: string, amountPence: number): Promise<Ledg
         cancel_url: `${returnUrl}?topup=cancelled`,
       },
     });
-    if (error) throw new Error(error.message);
+    if (error) throw await fnError(error, 'Could not start checkout.');
     const url = (data as { url?: string })?.url;
     if (!url) throw new Error((data as { error?: string })?.error ?? 'Could not start checkout.');
     await Linking.openURL(url);
@@ -606,8 +687,51 @@ export async function topUp(memberId: string, amountPence: number): Promise<Ledg
   const { data, error } = await supabase.functions.invoke('wallet-topup', {
     body: { amount_pennies: amountPence },
   });
-  if (error) throw new Error(error.message);
+  if (error) throw await fnError(error, 'Could not add credit.');
   return { ...synthetic, balanceAfterPence: (data as { balance_pence?: number })?.balance_pence ?? 0 };
+}
+
+/**
+ * Confirm a card top-up when the member lands back from Stripe.
+ *
+ * The webhook is meant to do this, and it still runs. But a webhook only credits
+ * if Stripe delivers it, and on 25 Aug 2026 a real payment on a real connected
+ * account produced no delivery to any destination we could configure. Waiting to
+ * be told left the member staring at a zero balance after paying.
+ *
+ * So the wallet page asks instead, using the checkout session id Stripe puts in
+ * the return URL. Same ledger row, same idempotency key as the webhook, so the
+ * two can both fire and only one credit lands.
+ */
+export type TopUpReconciliation = {
+  /** Pennies actually added to the balance by this call — named session plus sweep. */
+  creditedPence: number;
+  /** The named payment exists but Stripe has not settled it yet. Keep the claim. */
+  pending: boolean;
+  /** Paid sessions declined because the money had been refunded or charged back. */
+  reversed: number;
+  /** The sweep hit its page cap, so older payments were NOT examined. */
+  truncated: boolean;
+};
+
+export async function confirmTopUp(sessionId?: string | null): Promise<TopUpReconciliation> {
+  const { data, error } = await supabase.functions.invoke('connect-topup-confirm', {
+    // session_id omitted entirely when there is no reference: the function then
+    // sweeps, which is the whole point of calling it on an ordinary wallet visit.
+    body: { slug: BACKEND.slug, ...(sessionId ? { session_id: sessionId } : {}) },
+  });
+  if (error) throw await fnError(error, 'Could not confirm your payment.');
+  const r = data as {
+    ok?: boolean; error?: string; credited?: boolean; pending?: boolean;
+    amount_pennies?: number; swept_pennies?: number; reversed?: number; truncated?: boolean;
+  };
+  if (!r?.ok) throw new Error(r?.error ?? 'Could not confirm your payment.');
+  return {
+    creditedPence: (r.credited ? r.amount_pennies ?? 0 : 0) + (r.swept_pennies ?? 0),
+    pending: !!r.pending,
+    reversed: r.reversed ?? 0,
+    truncated: !!r.truncated,
+  };
 }
 
 // --- members & leaderboard ---------------------------------------------------

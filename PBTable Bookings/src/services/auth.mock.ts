@@ -48,3 +48,8 @@ export async function joinClub(_slug: string, _name: string): Promise<void> {}
 export async function clubSignupInfo(_slug: string): Promise<{
   club_name: string; self_signup: boolean; free_taster_sessions: number; price_nonmember_pennies: number | null;
 } | null> { return null; }
+
+/** Mock mode has a fixed signed-in member, so there is always a record. */
+export async function hasMemberRecord(): Promise<boolean | null> {
+  return true;
+}

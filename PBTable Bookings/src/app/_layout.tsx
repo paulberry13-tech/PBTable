@@ -18,9 +18,11 @@ import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BannerHost } from '@/components/BannerHost';
+import { BookingNotOpen } from '@/components/BookingNotOpen';
 import { DemoPersonSwitcher } from '@/components/DemoPersonSwitcher';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SignIn } from '@/components/SignIn';
+import { bookingEnabledForThisHost } from '@/services/clubGate';
 import { USE_SUPABASE } from '@/services/config';
 import { AppProvider, useApp } from '@/store/AppContext';
 import { colors, fonts } from '@/theme';
@@ -65,7 +67,21 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  // Booking is switched on per club by the operator. The bundle is committed to
+  // every club site, so this is what stops a club that has not launched booking
+  // from serving it to anyone who types /app. null = still asking.
+  const [booking, setBooking] = React.useState<{ on: boolean; clubName?: string } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    bookingEnabledForThisHost().then((r) => alive && setBooking(r));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   if (!fontsLoaded && !fontError) return null;
+  if (booking === null) return <View style={{ flex: 1, backgroundColor: colors.navy }} />;
+  if (!booking.on) return <BookingNotOpen clubName={booking.clubName} />;
 
   return (
     <AppProvider>
