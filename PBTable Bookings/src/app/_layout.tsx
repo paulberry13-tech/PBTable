@@ -124,11 +124,25 @@ const PRIVATE_ROUTES = ['/bookings', '/wallet'];
 function AuthGate() {
   const { authLoading, currentUser, signInPrompted, dismissSignIn } = useApp();
   const pathname = usePathname();
+  const gateRouter = useRouter();
   const needsIdentity = PRIVATE_ROUTES.some((r) => pathname.startsWith(r)) || signInPrompted;
   if (!USE_SUPABASE || currentUser || !needsIdentity) return null;
+
+  // There must ALWAYS be a way out of this screen.
+  //
+  // It renders as a full-screen overlay covering the tab bar, so when it is raised by
+  // NAVIGATING to My Bookings or Wallet — rather than by tapping Book — passing
+  // `undefined` left the member with no cancel control AND no tabs: a dead end with
+  // nothing to press. Survivable on the web, which has a back button and a URL bar.
+  // A phone has neither. Reported on Gloucester, 2026-09-02.
+  //
+  // Raised on demand -> dismiss and stay put. Raised by the route -> back to the tab
+  // that is public.
+  const cancel = signInPrompted ? dismissSignIn : () => gateRouter.replace('/');
+
   return (
     <View style={StyleSheet.absoluteFill}>
-      {authLoading ? <View style={{ flex: 1, backgroundColor: colors.navy }} /> : <SignIn onCancel={signInPrompted ? dismissSignIn : undefined} />}
+      {authLoading ? <View style={{ flex: 1, backgroundColor: colors.navy }} /> : <SignIn onCancel={cancel} />}
     </View>
   );
 }
