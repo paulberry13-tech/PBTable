@@ -59,6 +59,15 @@ export function TopUpSheet({
   // fake card form.
   const stripePath = canPay === true || STRIPE_TOPUP;
 
+  // "Not yet answered" is not the same as "no". canPay is null while the question is
+  // in flight, and treating that as a refusal put "this club isn't taking card
+  // payments" in front of a member whose club plainly does -- the worst possible
+  // moment to be wrong, and it would have flickered away a beat later. The Wallet
+  // never showed it because it only opens this sheet once the answer is in; the
+  // session screen can open it sooner.
+  const answered = canPay === true || canPay === false;
+  const asking = !answered && !STRIPE_TOPUP && !DEMO_TOPUP;
+
   // Re-sync the default when the sheet is reopened for a different shortfall.
   const [lastMin, setLastMin] = useState(minPence);
   if (minPence !== lastMin) {
@@ -197,7 +206,11 @@ export function TopUpSheet({
               {/* Neither path available: this club has no way to take a payment yet.
                   Say so plainly rather than offering a button that cannot work — that
                   is exactly how a member ends up typing a card number into nothing. */}
-              {!stripePath && !DEMO_TOPUP ? (
+              {asking ? (
+                <Text style={[type.caption, { marginTop: spacing.lg }]}>
+                  Checking how this club takes payment…
+                </Text>
+              ) : !stripePath && !DEMO_TOPUP ? (
                 <Text style={[type.caption, { marginTop: spacing.lg }]}>
                   This club isn&rsquo;t taking card payments yet. Speak to the club about paying for
                   sessions — booking still works in the meantime.

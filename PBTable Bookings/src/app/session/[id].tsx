@@ -8,6 +8,7 @@ import { Avatar, Badge, Button, Card, CapacityBar, DateBlock, ErrorState, Loadin
 import { FORMAT_LABELS } from '@/domain/sportProfile';
 import { formatMoney, formatMoneyShort } from '@/lib/money';
 import { dateBlockParts, formatTimeRange, initialsOf, skillBandLabel, spotsLeft } from '@/lib/format';
+import { STRIPE_TOPUP } from '@/services/config';
 import * as data from '@/services/data';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
@@ -26,6 +27,17 @@ export default function SessionDetailScreen() {
     () => (currentUser ? data.getBalance(currentUser.id) : Promise.resolve(0)),
     [currentUser?.id]
   );
+  // Can THIS club take a card payment? The top-up sheet cannot work it out for
+  // itself, and without an answer it assumed no: a Gloucester member who tapped
+  // Book, was short, and reached the top-up sheet was told "this club isn't taking
+  // card payments yet" -- while the very same sheet, opened from the Wallet tab,
+  // offered Stripe and worked. The Wallet passed this prop and this screen did not.
+  // (Reported by Gloucester, 2026-09-02.)
+  //
+  // Asked on mount rather than when the sheet opens, so the answer is already in
+  // hand by the time anyone taps Book. clubTakesPayments caches per session and
+  // fails closed, so a blip cannot invent a payment path that is not there.
+  const { data: canPay } = useAsyncData(() => data.clubTakesPayments(), []);
 
   const membersById = useMemo(() => new Map((members ?? []).map((m) => [m.id, m])), [members]);
 
@@ -120,7 +132,20 @@ export default function SessionDetailScreen() {
 
   const onTopUp = async (amountPence: number) => {
     if (!currentUser) return;
+    // Both Stripe paths hand off to a hosted payment page, so topUp() returns with
+    // the browser already on its way out and the balance untouched. Completing the
+    // booking here would spend money that has not arrived -- book_spot would refuse
+    // it, and the member would watch an error flash by as the page left. The member
+    // returns to the Wallet with the credit applied and books from there.
+    //
+    // This mattered the moment canPay started being passed above: until then the
+    // club path was unreachable from this screen, so the line below was only ever
+    // hit after a demo top-up that credits instantly.
+    const leavingForStripe = canPay === true || STRIPE_TOPUP;
+    // Deliberately unguarded: TopUpSheet catches, keeps itself open and shows the
+    // reason in place. Catching here as well would hide it behind a closing sheet.
     await data.topUp(currentUser.id, amountPence);
+    if (leavingForStripe) return;
     refresh();
     setTopUpOpen(false);
     await completeBooking();
@@ -333,6 +358,7 @@ export default function SessionDetailScreen() {
       </View>
 
       <TopUpSheet
+        canPay={canPay}
         visible={topUpOpen}
         minPence={shortfallPence}
         reason={`This session costs ${formatMoneyShort(cost)}. Top up to book ${session.title}.`}
