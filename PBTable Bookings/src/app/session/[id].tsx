@@ -266,17 +266,27 @@ export default function SessionDetailScreen() {
           </Card>
         ) : closed ? (
           <Card>
+            {/* "Hasn't opened yet" and "was open, now closed" are different answers to a
+                member deciding whether to check back, and booking_opened_at (stamped on
+                the first open, migration 37) is what tells them apart. Preview clubs
+                (migration 62) surface exactly the first kind. */}
             <Text style={type.h2}>
               {session.status === 'completed'
                 ? 'This session has finished'
                 : session.status === 'in_progress'
                   ? 'This session is under way'
-                  : 'Booking is closed'}
+                  : !session.bookingOpenedAt
+                    ? 'Booking hasn’t opened yet'
+                    : 'Booking is closed'}
             </Text>
             <Text style={[type.caption, { marginTop: 4 }]}>
-              {session.status === 'upcoming'
-                ? 'The club isn’t taking bookings for this one. Check with them if you think that’s wrong.'
-                : 'You can’t book a spot any more.'}
+              {session.status !== 'upcoming'
+                ? 'You can’t book a spot any more.'
+                : !session.bookingOpenedAt
+                  ? session.bookingOpensAt
+                    ? `Booking opens ${new Date(session.bookingOpensAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Check back then.`
+                    : 'The club hasn’t opened booking for this session yet. Check back soon.'
+                  : 'The club isn’t taking bookings for this one. Check with them if you think that’s wrong.'}
             </Text>
           </Card>
         ) : (

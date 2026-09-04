@@ -91,6 +91,13 @@ export interface Session {
   /** Whether the club is currently accepting bookings for this session. Separate from
    *  `status`: a future session can have booking closed (full, or the line-up is built). */
   bookingOpen?: boolean;
+  /** When booking is SCHEDULED to open (ISO). Shown on view-only sessions at
+   *  clubs running preview mode; absent means no go-live is set. */
+  bookingOpensAt?: string | null;
+  /** Stamped the first time booking opened (migration 37). Its absence is how the
+   *  app tells "hasn't opened yet" from "was open, now closed" — different
+   *  messages to a member deciding whether to check back. */
+  bookingOpenedAt?: string | null;
   /** Who's playing, with real names — populated on the live backend via the
    *  session_attendees function (players can't read the bookings table directly). */
   attendees?: SessionAttendee[];

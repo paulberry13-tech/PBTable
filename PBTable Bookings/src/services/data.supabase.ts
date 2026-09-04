@@ -58,6 +58,8 @@ type SessionRow = {
   capacity: number | null;
   price_pennies: number | null;
   booking_open: boolean;
+  booking_opens_at?: string | null;
+  booking_opened_at?: string | null;
   name?: string | null;
   format?: string | null;
   courts?: number | null;
@@ -123,6 +125,8 @@ function mapSession(r: SessionRow, kind: SessionKind, spots: Spots, mine: Bookin
     waitlist,
     status: sessionStatus(r),
     bookingOpen: !!r.booking_open,
+    bookingOpensAt: r.booking_opens_at ?? null,
+    bookingOpenedAt: r.booking_opened_at ?? null,
     location: r.location ?? undefined,
   };
 }
@@ -268,31 +272,46 @@ async function fetchAttendees(kind: SessionKind, sessionId: string): Promise<Ses
 
 // --- sessions ----------------------------------------------------------------
 
+/** Does this club show future sessions before booking opens? (migration 62's
+ *  preview_upcoming). Cached per session like the branding read; fails CLOSED to
+ *  today's behaviour, because a blip must not decide a club has opted in. */
+let _preview: boolean | null = null;
+async function clubPreviewUpcoming(): Promise<boolean> {
+  if (_preview !== null) return _preview;
+  const club = await myClubId();
+  if (!club) return false;
+  try {
+    const { data, error } = await supabase.from('clubs').select('settings').eq('id', club).maybeSingle();
+    _preview = !error && !!(data?.settings as { preview_upcoming?: boolean } | null)?.preview_upcoming;
+  } catch {
+    return false;
+  }
+  return _preview;
+}
+
 export async function getSessions(): Promise<Session[]> {
   // "Upcoming" means upcoming: only sessions from today onward. Past sessions that were
   // left booking_open shouldn't clutter the list.
   const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const club = await myClubId();
   if (!club) return [];
-  const [social, graded] = await Promise.all([
-    supabase
-      .from('social_sessions')
-      .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,location')
-      .eq('club_id', club)
-      .eq('booking_open', true)
-      .gte('played_on', today),
-    supabase
-      .from('session_plans')
-      .select('id,name,played_on,start_time,end_time,capacity,courts,format,price_pennies,booking_open,location')
-      .eq('club_id', club)
-      .eq('booking_open', true)
-      .gte('played_on', today),
-  ]);
+  // Preview clubs list future sessions before booking opens (view-only); RLS decides
+  // what is actually visible either way, so the filter here is belt-and-braces for
+  // clubs that have NOT opted in -- their behaviour stays byte-identical.
+  const preview = await clubPreviewUpcoming();
+  const cols = 'id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,booking_opens_at,booking_opened_at,location';
+  let socialQ = supabase.from('social_sessions').select(cols).eq('club_id', club).gte('played_on', today);
+  let gradedQ = supabase.from('session_plans').select(cols + ',courts').eq('club_id', club).gte('played_on', today);
+  if (!preview) {
+    socialQ = socialQ.eq('booking_open', true);
+    gradedQ = gradedQ.eq('booking_open', true);
+  }
+  const [social, graded] = await Promise.all([socialQ, gradedQ]);
   if (social.error) throw social.error;
   if (graded.error) throw graded.error;
   const rows: [SessionRow, SessionKind][] = [
-    ...(social.data as SessionRow[]).map((r) => [r, 'social'] as [SessionRow, SessionKind]),
-    ...(graded.data as SessionRow[]).map((r) => [r, 'graded'] as [SessionRow, SessionKind]),
+    ...(social.data as unknown as SessionRow[]).map((r) => [r, 'social'] as [SessionRow, SessionKind]),
+    ...(graded.data as unknown as SessionRow[]).map((r) => [r, 'graded'] as [SessionRow, SessionKind]),
   ];
   const [counts, mine] = await Promise.all([
     bookedCounts(rows.map(([r, kind]) => ({ id: r.id, kind }))),
@@ -310,7 +329,7 @@ export async function getSession(id: string): Promise<Session> {
   if (!club) throw new Error('Not signed in.');
   const social = await supabase
     .from('social_sessions')
-    .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,location')
+    .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,booking_opens_at,booking_opened_at,location')
     .eq('id', id)
     .eq('club_id', club)
     .maybeSingle();
@@ -319,7 +338,7 @@ export async function getSession(id: string): Promise<Session> {
   if (!row) {
     const graded = await supabase
       .from('session_plans')
-      .select('id,name,played_on,start_time,end_time,capacity,courts,format,price_pennies,booking_open,location')
+      .select('id,name,played_on,start_time,end_time,capacity,courts,format,price_pennies,booking_open,booking_opens_at,booking_opened_at,location')
       .eq('id', id)
       .eq('club_id', club)
       .single();

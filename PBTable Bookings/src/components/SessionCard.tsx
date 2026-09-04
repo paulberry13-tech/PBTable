@@ -65,6 +65,11 @@ export function SessionCard({ session, profile }: { session: Session; profile: S
           </Row>
           <Row style={{ marginTop: 7, flexWrap: 'wrap' }} gap={5}>
             {session.affectsRating ? <Badge label="Graded" tone="coral" /> : <Badge label="Social" tone="green" />}
+            {/* Preview clubs list sessions before booking opens; say so on the card
+                rather than letting the tap be the discovery. */}
+            {session.bookingOpen === false && session.status === 'upcoming' ? (
+              <Badge label={session.bookingOpenedAt ? 'Booking closed' : 'Not open yet'} tone="grey" />
+            ) : null}
             {session.format !== 'social' && FORMAT_LABELS[session.format] ? (
               <Badge label={FORMAT_LABELS[session.format]} tone="grey" />
             ) : null}
