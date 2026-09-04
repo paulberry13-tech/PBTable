@@ -98,7 +98,7 @@ export function DemoPersonSwitcher() {
           <Text style={styles.fabDotText}>{initialsOf(currentUser?.name ?? '?')}</Text>
         </View>
         <View>
-          <Text style={styles.fabEyebrow}>DEMO — PLAYING AS</Text>
+          <Text style={styles.fabEyebrow}>DEMO · PLAYING AS</Text>
           <Text style={styles.fabName}>{label}</Text>
         </View>
       </Pressable>

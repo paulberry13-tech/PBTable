@@ -381,7 +381,7 @@ export function buildSeed(): SeedData {
   // 7. Advanced Ladder — graded, skill-banded 3.8–5.0.
   upcoming.push({
     id: 's-up-7',
-    title: 'Advanced Ladder — Top Boards',
+    title: 'Advanced Ladder: Top Boards',
     date: isoDate(6),
     startTime: '20:00',
     endTime: '22:00',

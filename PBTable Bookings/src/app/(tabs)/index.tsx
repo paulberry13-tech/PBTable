@@ -42,7 +42,7 @@ export default function SessionsScreen() {
           <View>
             <Text style={[type.display, { marginBottom: 2 }]}>Upcoming {sportProfile.terms.session.toLowerCase()}s</Text>
             <Text style={[type.caption, { marginBottom: spacing.md }]}>
-              Book your spot — graded {sportProfile.terms.session.toLowerCase()}s move your {sportProfile.terms.rating}.
+              Book your spot. Graded {sportProfile.terms.session.toLowerCase()}s move your {sportProfile.terms.rating}.
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
               <View style={{ flexDirection: 'row', gap: 6 }}>

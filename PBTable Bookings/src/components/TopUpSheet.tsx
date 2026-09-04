@@ -105,7 +105,7 @@ export function TopUpSheet({
           <Text style={[type.caption, { marginTop: 4 }]}>
             {reason ??
               (stripePath
-                ? 'Add money to your balance — you’ll pay securely with Stripe.'
+                ? 'Add money to your balance. You’ll pay securely with Stripe.'
                 : 'Add money to your balance to book sessions.')}
           </Text>
 
@@ -165,7 +165,7 @@ export function TopUpSheet({
             <>
               <View style={styles.demoNote}>
                 <Ionicons name="flask-outline" size={14} color={colors.amberText} />
-                <Text style={styles.demoNoteText}>Demo payment — no card is charged</Text>
+                <Text style={styles.demoNoteText}>Demo payment. No card is charged</Text>
               </View>
 
               <Text style={styles.label}>Card number</Text>
@@ -213,7 +213,7 @@ export function TopUpSheet({
               ) : !stripePath && !DEMO_TOPUP ? (
                 <Text style={[type.caption, { marginTop: spacing.lg }]}>
                   This club isn&rsquo;t taking card payments yet. Speak to the club about paying for
-                  sessions — booking still works in the meantime.
+                  sessions. Booking still works in the meantime.
                 </Text>
               ) : (
             <>

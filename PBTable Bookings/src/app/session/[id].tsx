@@ -157,7 +157,7 @@ export default function SessionDetailScreen() {
       <View style={styles.hero}>
         <View style={[styles.heroRule, { backgroundColor: kind === 'graded' ? colors.coral : colors.up }]} />
         <Row gap={spacing.lg} style={{ alignItems: 'flex-start' }}>
-          <DateBlock {...parts} kind={kind} size="lg" />
+          <DateBlock {...parts} kind={kind} size="lg" tone="onDark" />
           <View style={{ flex: 1 }}>
             <Text style={styles.heroTitle}>{session.title}</Text>
             <Row style={{ marginTop: 6, flexWrap: 'wrap' }} gap={spacing.md}>
@@ -201,7 +201,7 @@ export default function SessionDetailScreen() {
         <Text style={[styles.heroMeta, { marginTop: 6 }]}>
           {session.affectsRating
             ? `Counts towards your ${sportProfile.terms.rating}`
-            : `Just for fun — no ${sportProfile.terms.rating} impact`}
+            : `Just for fun. No ${sportProfile.terms.rating} impact`}
         </Text>
       </View>
 
@@ -215,7 +215,7 @@ export default function SessionDetailScreen() {
           </Text>
         </Row>
         {playing.length === 0 ? (
-          <Text style={[type.caption, { marginTop: spacing.sm }]}>No one's booked in yet — be the first.</Text>
+          <Text style={[type.caption, { marginTop: spacing.sm }]}>No one's booked in yet. Be the first.</Text>
         ) : (
           <View style={{ marginTop: spacing.sm }}>
             {playing.map((p, i) => (
@@ -250,7 +250,7 @@ export default function SessionDetailScreen() {
       {outsideBand ? (
         <Text style={[type.caption, { marginTop: spacing.md, color: colors.amberText }]}>
           Heads-up: your {sportProfile.terms.rating} ({currentUser.rating?.toFixed(2)}) is outside this
-          session's band — you can still book for the demo.
+          session's band, but you can still book for the demo.
         </Text>
       ) : null}
 
@@ -307,7 +307,7 @@ export default function SessionDetailScreen() {
                   </Text>
                 </Row>
                 <Text style={[type.caption, { color: colors.textMuted, marginTop: 2 }]}>
-                  Your first session is on the club — nothing comes off your balance.
+                  Your first session is on the club. Nothing comes off your balance.
                 </Text>
               </Card>
             ) : !full && cost > 0 ? (
@@ -336,7 +336,7 @@ export default function SessionDetailScreen() {
                     : full
                   ? 'Join waitlist'
                   : cost === 0
-                    ? 'Book — free'
+                    ? 'Book for free'
                     : canAfford
                       ? `Book · ${formatMoneyShort(cost)}`
                       : `Top up & book · ${formatMoneyShort(cost)}`
@@ -350,7 +350,7 @@ export default function SessionDetailScreen() {
             />
             {full ? (
               <Text style={[type.caption, { textAlign: 'center' }]}>
-                Nothing is charged while you wait — you only pay if a spot frees up.
+                Nothing is charged while you wait. You only pay if a spot frees up.
               </Text>
             ) : null}
           </>

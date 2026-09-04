@@ -468,13 +468,13 @@ export async function cancelBooking(sessionId: string, memberId: string): Promis
 
   let policyNote: string;
   if (bk.paidPence === 0) {
-    policyNote = 'Free booking cancelled — spot released.';
+    policyNote = 'Free booking cancelled. Spot released.';
   } else if (decision.refundNow) {
-    policyNote = `Cancelled more than 24 hours before start — ${formatMoneyShort(refundPence)} returned to your balance.`;
+    policyNote = `Cancelled more than 24 hours before start, so ${formatMoneyShort(refundPence)} is back in your balance.`;
   } else if (refundDue) {
-    policyNote = `Within 24 hours, but your spot was re-sold to the waitlist — ${formatMoneyShort(refundPence)} returned to your balance.`;
+    policyNote = `Within 24 hours, but your spot was re-sold to the waitlist, so ${formatMoneyShort(refundPence)} is back in your balance.`;
   } else {
-    policyNote = 'Cancelled within 24 hours of start — no refund (no waitlister took the spot).';
+    policyNote = 'Cancelled within 24 hours of start, so no refund (nobody took the spot).';
   }
 
   return {
@@ -603,7 +603,7 @@ export interface ScoreEntry {
 export async function enterScores(sessionId: string, entries: ScoreEntry[]): Promise<RatingChange[]> {
   await delay(400);
   const session = findSession(sessionId);
-  if (!session.affectsRating) throw new Error('This session is not graded — scores do not affect ratings.');
+  if (!session.affectsRating) throw new Error('This session is not graded, so scores do not affect ratings.');
   const valid = entries.filter((e) => e.score1 + e.score2 > 0);
   if (valid.length === 0) throw new Error('Enter at least one score.');
 

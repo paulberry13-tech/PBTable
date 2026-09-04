@@ -102,7 +102,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
         await auth.signOut();
         setError(
           `That email has a login, but isn't a member of this club yet. ` +
-            `If you're new, use "Join the club" below — otherwise ask the club to add you.`,
+            `If you're new, use "Join the club" below. Otherwise ask the club to add you.`,
         );
         return;
       }
@@ -217,7 +217,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
                 <>
                   <Text style={[type.caption, { marginTop: 2, marginBottom: spacing.md }]}>
                     This club isn't taking online sign-ups at the moment. Have a word with the club
-                    and they'll add you — then you can sign in with your email.
+                    and they'll add you. Then you can sign in with your email.
                   </Text>
                   <Pressable onPress={() => setStage('email')} hitSlop={8} style={{ alignSelf: 'center' }}>
                     <Text style={styles.switchLink}>Back to sign in</Text>
@@ -276,7 +276,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
             <>
               <Text style={type.h1}>Sign in</Text>
               <Text style={[type.caption, { marginTop: 2, marginBottom: spacing.md }]}>
-                Enter your club email and we'll send you a one-time code — no password needed.
+                Enter your club email and we'll send you a one-time code. No password needed.
               </Text>
 
               <Text style={styles.label}>Email</Text>
@@ -324,7 +324,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
                   </Pressable>
                 ) : signupOpen === false ? (
                   <Text style={[type.caption, { marginTop: spacing.md, textAlign: 'center' }]}>
-                    New here? Have a word with the club and they'll add you — then you can
+                    New here? Have a word with the club and they'll add you, then
                     sign in with your email.
                   </Text>
                 ) : null}

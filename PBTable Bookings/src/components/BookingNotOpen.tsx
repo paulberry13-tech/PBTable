@@ -17,7 +17,7 @@ export function BookingNotOpen({ clubName }: { clubName?: string }) {
         <Text style={styles.title}>BOOKING ISN&rsquo;T OPEN YET</Text>
         <Text style={styles.body}>
           {clubName ? `${clubName} hasn't` : "This club hasn't"} switched on online session
-          booking. Keep an eye out — your club will let you know when it goes live.
+          booking. Your club will let you know when it goes live.
         </Text>
         <Text style={styles.foot}>
           In the meantime, session line-ups and the leaderboard are on the club&rsquo;s

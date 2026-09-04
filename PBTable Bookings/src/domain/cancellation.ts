@@ -42,9 +42,9 @@ export function decideCancellation(session: Session, now: Date = new Date()): Ca
 /** UI copy explaining what cancelling now would mean, before the user confirms. */
 export function cancellationWarning(session: Session, pricePaidPence: number): string {
   const d = decideCancellation(session);
-  if (pricePaidPence === 0) return 'This was a free booking — your spot will be released.';
+  if (pricePaidPence === 0) return 'This was a free booking. Your spot will be released.';
   if (!d.withinCutoff) {
-    return 'More than 24 hours before start — the money goes straight back to your balance.';
+    return 'More than 24 hours before start, so the money goes straight back to your balance.';
   }
   return (
     'This session starts in under 24 hours, so no automatic refund applies. ' +

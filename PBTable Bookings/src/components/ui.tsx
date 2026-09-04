@@ -164,13 +164,22 @@ export function CapacityBar({ booked, capacity, height = 6 }: { booked: number; 
 /** Sports-listing date tile: coral day, big date, month — the visual anchor of a
  *  session card. `kind` colours the top rule: coral = graded, green = social. */
 export function DateBlock({
-  day, num, mon, kind = 'graded', size = 'md',
+  day, num, mon, kind = 'graded', size = 'md', tone = 'onLight',
 }: {
   day: string; num: string; mon: string; kind?: 'graded' | 'social'; size?: 'md' | 'lg';
+  /** Where the tile sits. 'onDark' lifts it off navy chrome; on a white card the
+   *  default navy is what gives it its weight. */
+  tone?: 'onLight' | 'onDark';
 }) {
   const lg = size === 'lg';
   return (
-    <View style={[styles.dateBlock, lg && { width: 68, paddingVertical: 10 }]}>
+    <View style={[
+      styles.dateBlock,
+      lg && { width: 68, paddingVertical: 10 },
+      // Same fill as the avatars on the session hero, which read clearly there.
+      // Without this the tile is colors.navy on a colors.navy hero: invisible.
+      tone === 'onDark' && { backgroundColor: colors.navySoft },
+    ]}>
       <View style={[styles.dateBlockRule, { backgroundColor: kind === 'graded' ? colors.coral : colors.up }]} />
       <Text style={styles.dateBlockDay}>{day}</Text>
       <Text style={[styles.dateBlockNum, lg && { fontSize: 30 }]}>{num}</Text>
