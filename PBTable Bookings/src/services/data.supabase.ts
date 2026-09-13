@@ -32,6 +32,7 @@ import type {
   RosterEntry,
 } from '@/services/data.mock';
 import type { RatingChange } from '@/domain/ratings';
+import { cancelNotice, hoursUntilLondonStart } from '@/domain/cancelNotice';
 
 export { InsufficientBalanceError };
 
@@ -484,20 +485,60 @@ export async function cancelBooking(sessionId: string, _memberId: string): Promi
     p_member_id: _memberId,
   });
   if (error) throw new Error(error.message);
-  const r = data as { refunded: boolean; refund_pence: number; promoted_name?: string; note: string };
+  const r = data as { refunded: boolean; refund_pence: number; promoted_name?: string; promotion_held?: boolean; note: string };
+  // Inside the session lock the server's note still reads "no refund (no waitlister took the spot)",
+  // as if one could have. promotion_held says the lock was in force, so say that instead.
+  const lockedNote =
+    !r.refunded && r.promotion_held === true && /^Cancelled within the cancellation cutoff/.test(r.note ?? '')
+      ? "Cancelled. The session was locked, so nobody could take your place and there's no refund."
+      : null;
   return {
     refunded: r.refunded,
     refundPence: r.refund_pence,
     promotedMemberName: r.promoted_name ?? undefined,
-    policyNote: r.note,
+    policyNote: lockedNote ?? r.note,
   };
 }
 
-export async function getCancellationWarning(): Promise<string> {
-  return (
-    'Cancelling follows your club’s cancellation policy. If you’re outside the cutoff (or a ' +
-    'waitlister takes your spot), the money goes back to your balance.'
-  );
+/** What cancelling THIS booking right now will mean, worked out from the club's own cut-off and lock
+ *  hours the same way cancel_booking does (see domain/cancelNotice.ts). The old fixed sentence
+ *  promised a refund "if a waitlister takes your spot", which a locked session makes impossible. */
+export async function getCancellationWarning(sessionId: string, memberId: string): Promise<string> {
+  const general =
+    'Cancelling follows your club’s cancellation rules. Close to the start of a session you may not get your money back.';
+  try {
+    const club = await myClubId();
+    if (!club) return general;
+    const [session, clubRes, bookingRes] = await Promise.all([
+      getSession(sessionId),
+      supabase.from('clubs').select('settings').eq('id', club).maybeSingle(),
+      supabase
+        .from('bookings')
+        .select('status,price_charged_pennies')
+        .eq('session_id', sessionId)
+        .eq('member_id', memberId)
+        .in('status', ['booked', 'waitlisted'])
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (clubRes.error || bookingRes.error || !bookingRes.data) return general;
+    const settings = (clubRes.data?.settings ?? {}) as {
+      cancel_cutoff_hours?: number | string | null;
+      promote_cutoff_hours?: number | string | null;
+      booking_mode?: string | null;
+    };
+    const bk = bookingRes.data as { status: string; price_charged_pennies: number | null };
+    return cancelNotice({
+      hoursUntilStart: hoursUntilLondonStart(session.date, session.startTime),
+      cancelCutoffHours: settings.cancel_cutoff_hours as number | null | undefined,
+      promoteCutoffHours: settings.promote_cutoff_hours as number | null | undefined,
+      bookingMode: settings.booking_mode ?? 'paid',
+      pricePence: bk.price_charged_pennies ?? 0,
+      waitlisted: bk.status === 'waitlisted',
+    }).text;
+  } catch {
+    return general;
+  }
 }
 
 export async function getMyBookings(memberId: string): Promise<MyBooking[]> {
