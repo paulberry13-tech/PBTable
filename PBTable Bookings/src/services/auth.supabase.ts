@@ -5,6 +5,7 @@
 
 import { DEMO_EMAIL, DEMO_PASSWORD } from '@/services/config';
 import { getBalance } from '@/services/data.supabase';
+import { hostClubId } from '@/services/hostClub';
 import { supabase } from '@/services/supabaseClient';
 import { Member, Role } from '@/types';
 
@@ -75,12 +76,11 @@ export async function hasMemberRecord(): Promise<boolean | null> {
   const { data: sessionRes } = await supabase.auth.getSession();
   const uid = sessionRes.session?.user?.id;
   if (!uid) return null;
-  const { data, error } = await supabase
-    .from('booking_members')
-    .select('id')
-    .eq('auth_user_id', uid)
-    .is('revoked_at', null)
-    .maybeSingle();
+  // At THIS site's club only: a member of another club is not a member here (see hostClub.ts).
+  const host = await hostClubId();
+  let q = supabase.from('booking_members').select('id').eq('auth_user_id', uid).is('revoked_at', null);
+  if (host) q = q.eq('club_id', host);
+  const { data, error } = await q.limit(1).maybeSingle();
   // null = could not tell. Fails OPEN: the caller signs the person out on this
   // answer, so a network blip must never be allowed to read as "not a member" and
   // eject someone who is one. Only a clean query returning no row is definitive.
@@ -107,12 +107,10 @@ export async function getCurrentUser(): Promise<Member> {
 
   // revoked_at set means an admin has taken this person's access away (migration
   // 49). The row survives so their history does, but it must not sign anyone in.
-  const { data: bm, error } = await supabase
-    .from('booking_members')
-    .select('id,display_name,email')
-    .eq('auth_user_id', uid)
-    .is('revoked_at', null)
-    .single();
+  const host = await hostClubId();
+  let q = supabase.from('booking_members').select('id,display_name,email').eq('auth_user_id', uid).is('revoked_at', null);
+  if (host) q = q.eq('club_id', host);
+  const { data: bm, error } = await q.limit(1).single();
   if (error) throw error;
 
   cachedMemberId = bm.id;

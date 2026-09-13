@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { TopUpSheet } from '@/components/TopUpSheet';
 import { Avatar, Badge, Button, Card, CapacityBar, DateBlock, ErrorState, LoadingView, Row } from '@/components/ui';
+import { hoursUntilLondonStart } from '@/domain/cancelNotice';
 import { FORMAT_LABELS } from '@/domain/sportProfile';
 import { formatMoney, formatMoneyShort } from '@/lib/money';
 import { dateBlockParts, formatTimeRange, initialsOf, skillBandLabel, spotsLeft } from '@/lib/format';
@@ -23,7 +24,7 @@ export default function SessionDetailScreen() {
 
   const { data: session, error } = useAsyncData(() => data.getSession(id), [id]);
   const { data: members } = useAsyncData(() => data.getMembers());
-  const { data: balance } = useAsyncData(
+  const { data: balance, error: balanceError } = useAsyncData(
     () => (currentUser ? data.getBalance(currentUser.id) : Promise.resolve(0)),
     [currentUser?.id]
   );
@@ -51,7 +52,13 @@ export default function SessionDetailScreen() {
   // club hasn't opened it). The list only shows open ones, but you can still reach this
   // screen from My Bookings or a stale link — without this the Book button would look
   // live and `book_spot` would reject it with a raw error.
-  const closed = session.bookingOpen === false || session.status !== 'upcoming';
+  // The session lock (booking_cutoff_hours): members can't book this close to the start. Shown
+  // here rather than discovered at the tap -- or worse, after paying Stripe for a top-up the
+  // member then couldn't spend. The server enforces it either way.
+  const lockHours = session.bookingCutoffHours ?? 0;
+  const locked = lockHours > 0 && session.status === 'upcoming'
+    && hoursUntilLondonStart(session.date, session.startTime) < lockHours;
+  const closed = session.bookingOpen === false || session.status !== 'upcoming' || locked;
   const band = skillBandLabel(session);
   const parts = dateBlockParts(session.date);
   const kind = session.affectsRating ? 'graded' : 'social';
@@ -90,6 +97,8 @@ export default function SessionDetailScreen() {
     : '';
   const needsGuardian = !!session.guardianRequired;
   const canAfford = balancePence >= cost;
+  // A balance that failed to load is not £0: don't push a top-up on a guess.
+  const balanceUnknown = !!currentUser && !!balanceError && cost > 0;
 
   const completeBooking = async () => {
     setBooking(true);
@@ -122,6 +131,10 @@ export default function SessionDetailScreen() {
   const onBookPress = () => {
     // Browsing is public, so this is the first point identity is needed.
     if (!currentUser) { promptSignIn(); return; }
+    if (balanceUnknown) {
+      showBanner('We couldn’t check your balance just now. Please try again in a moment.', 'warning');
+      return;
+    }
     if (full || cost === 0 || canAfford) {
       void completeBooking();
     } else {
@@ -275,14 +288,18 @@ export default function SessionDetailScreen() {
                 ? 'This session has finished'
                 : session.status === 'in_progress'
                   ? 'This session is under way'
-                  : !session.bookingOpenedAt
+                  : locked
+                    ? 'Booking has closed'
+                    : !session.bookingOpenedAt
                     ? 'Booking hasn’t opened yet'
                     : 'Booking is closed'}
             </Text>
             <Text style={[type.caption, { marginTop: 4 }]}>
               {session.status !== 'upcoming'
                 ? 'You can’t book a spot any more.'
-                : !session.bookingOpenedAt
+                : locked
+                  ? `The club closes booking ${lockHours === 1 ? '1 hour' : `${lockHours} hours`} before the start. If you still want to play, contact the club.`
+                  : !session.bookingOpenedAt
                   ? session.bookingOpensAt
                     ? `Booking opens ${new Date(session.bookingOpensAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Check back then.`
                     : 'The club hasn’t opened booking for this session yet. Check back soon.'

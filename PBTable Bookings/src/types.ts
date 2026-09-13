@@ -98,6 +98,9 @@ export interface Session {
    *  app tells "hasn't opened yet" from "was open, now closed" — different
    *  messages to a member deciding whether to check back. */
   bookingOpenedAt?: string | null;
+  /** clubs.settings.booking_cutoff_hours: members can't book this close to the start (the
+   *  session lock). 0 or absent = no lock. Admins can still book people in. */
+  bookingCutoffHours?: number;
   /** Who's playing, with real names — populated on the live backend via the
    *  session_attendees function (players can't read the bookings table directly). */
   attendees?: SessionAttendee[];

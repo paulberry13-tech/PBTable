@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmSheet } from '@/components/ConfirmSheet';
-import { Badge, Button, DateBlock, EmptyState, LoadingView, Row } from '@/components/ui';
+import { Badge, Button, DateBlock, EmptyState, ErrorState, LoadingView, Row } from '@/components/ui';
 import { sessionStart } from '@/domain/cancellation';
 import { formatMoney, formatMoneyShort } from '@/lib/money';
 import { countdownLabel, dateBlockParts, formatSessionWhen, formatTimeRange } from '@/lib/format';
@@ -15,7 +15,7 @@ import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 export default function MyBookingsScreen() {
   const router = useRouter();
   const { currentUser, refresh, showBanner } = useApp();
-  const { data: bookings, loading } = useAsyncData(
+  const { data: bookings, loading, error } = useAsyncData(
     () => (currentUser ? data.getMyBookings(currentUser.id) : Promise.resolve([])),
     [currentUser?.id]
   );
@@ -28,6 +28,10 @@ export default function MyBookingsScreen() {
   const [cancelBusy, setCancelBusy] = useState(false);
 
   if (loading && !bookings) return <LoadingView label="Loading your bookings…" />;
+  // A failed load is not "Nothing booked yet": say so, instead of an empty list the member
+  // might act on (booking again, or thinking a cancellation went through).
+  if (error && !bookings) return <ErrorState message="We couldn’t load your bookings. Please try again in a moment." />;
+  const unavailable = (bookings as { unavailable?: number } | null)?.unavailable ?? 0;
 
   const now = new Date();
   const upcoming = (bookings ?? []).filter(
@@ -78,6 +82,11 @@ export default function MyBookingsScreen() {
       </Pressable>
 
       <Text style={[type.h1, { marginTop: spacing.lg, marginBottom: spacing.md }]}>Upcoming</Text>
+      {unavailable > 0 ? (
+        <Text style={[type.caption, { color: colors.amberText, marginBottom: spacing.md }]}>
+          {unavailable === 1 ? 'One of your bookings' : `${unavailable} of your bookings`} couldn’t be shown right now. Contact the club if you need to change it.
+        </Text>
+      ) : null}
       {upcoming.length === 0 ? (
         <EmptyState title="Nothing booked yet" hint="Head to Sessions to grab a spot." />
       ) : (

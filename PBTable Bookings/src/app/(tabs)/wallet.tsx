@@ -115,7 +115,7 @@ export default function WalletScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [claim, currentUser, settled]);
 
-  const { data: balance, loading: balLoading } = useAsyncData(
+  const { data: balance, loading: balLoading, error: balanceError } = useAsyncData(
     () => (currentUser ? data.getBalance(currentUser.id) : Promise.resolve(0)),
     [currentUser?.id]
   );
@@ -157,9 +157,11 @@ export default function WalletScreen() {
       <View style={styles.balanceCard}>
         <View style={styles.balanceRule} />
         <Text style={styles.balanceLabel}>BALANCE</Text>
-        <Text style={styles.balanceMoney}>{formatMoney(pence)}</Text>
+        <Text style={styles.balanceMoney}>{balanceError && balance === null ? '£–' : formatMoney(pence)}</Text>
         <Text style={styles.balanceHint}>
-          {confirming
+          {balanceError && balance === null
+            ? 'We couldn’t load your balance just now. Please try again in a moment.'
+            : confirming
             ? 'Confirming your payment…'
             : awaitingStripe
               ? 'Your payment is still being confirmed by Stripe. This can take a few minutes.'

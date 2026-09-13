@@ -33,6 +33,7 @@ import type {
 } from '@/services/data.mock';
 import type { RatingChange } from '@/domain/ratings';
 import { cancelNotice, hoursUntilLondonStart } from '@/domain/cancelNotice';
+import { hostClubId } from '@/services/hostClub';
 
 export { InsufficientBalanceError };
 
@@ -223,19 +224,14 @@ async function myClubId(): Promise<string | null> {
     // Without this the public session list is empty, because scoping is normally
     // done by the signed-in member's club. Reads still obey RLS — a visitor sees
     // exactly what the club's public dashboard already shows.
-    const { data: club } = await supabase
-      .from('clubs')
-      .select('id')
-      .eq('slug', BACKEND.slug)
-      .maybeSingle();
-    _clubId = (club as { id: string } | null)?.id ?? null;
+    _clubId = await hostClubId();
     return _clubId;
   }
-  const { data } = await supabase
-    .from('booking_members')
-    .select('club_id')
-    .eq('auth_user_id', uid)
-    .maybeSingle();
+  // Scoped to THIS site's club: one login can be a member of several clubs (see hostClub.ts).
+  const host = await hostClubId();
+  let q = supabase.from('booking_members').select('club_id').eq('auth_user_id', uid);
+  if (host) q = q.eq('club_id', host);
+  const { data } = await q.limit(1).maybeSingle();
   _clubId = (data as { club_id: string } | null)?.club_id ?? null;
   return _clubId;
 }
@@ -290,6 +286,24 @@ async function clubPreviewUpcoming(): Promise<boolean> {
   return _preview;
 }
 
+/** The club's booking lock, in hours (clubs.settings.booking_cutoff_hours; 0 = none). Cached
+ *  per club for the life of the page. Fails to 0 -- no lock shown -- because the server still
+ *  enforces it: the worst a blip can do is let a member tap Book and be told no. */
+const _cutoffByClub = new Map<string, number>();
+async function clubBookingCutoffHours(club: string): Promise<number> {
+  if (_cutoffByClub.has(club)) return _cutoffByClub.get(club)!;
+  try {
+    const { data, error } = await supabase.from('clubs').select('settings').eq('id', club).maybeSingle();
+    if (error) return 0;
+    const v = Number((data?.settings as { booking_cutoff_hours?: unknown } | null)?.booking_cutoff_hours ?? 0);
+    const hours = Number.isFinite(v) && v > 0 ? v : 0;
+    _cutoffByClub.set(club, hours);
+    return hours;
+  } catch {
+    return 0;
+  }
+}
+
 export async function getSessions(): Promise<Session[]> {
   // "Upcoming" means upcoming: only sessions from today onward. Past sessions that were
   // left booking_open shouldn't clutter the list.
@@ -314,12 +328,13 @@ export async function getSessions(): Promise<Session[]> {
     ...(social.data as unknown as SessionRow[]).map((r) => [r, 'social'] as [SessionRow, SessionKind]),
     ...(graded.data as unknown as SessionRow[]).map((r) => [r, 'graded'] as [SessionRow, SessionKind]),
   ];
-  const [counts, mine] = await Promise.all([
+  const [counts, mine, cutoff] = await Promise.all([
     bookedCounts(rows.map(([r, kind]) => ({ id: r.id, kind }))),
     myBookingsForSessions(rows.map(([r]) => r.id)),
+    clubBookingCutoffHours(club),
   ]);
   return rows
-    .map(([r, kind]) => mapSession(r, kind, counts.get(r.id) ?? { booked: 0, yourPricePence: r.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(r.id) ?? []))
+    .map(([r, kind]) => ({ ...mapSession(r, kind, counts.get(r.id) ?? { booked: 0, yourPricePence: r.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(r.id) ?? []), bookingCutoffHours: cutoff }))
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
 }
 
@@ -346,12 +361,13 @@ export async function getSession(id: string): Promise<Session> {
     if (graded.error) throw graded.error;
     row = graded.data as SessionRow;
   }
-  const [counts, mine, attendees] = await Promise.all([
+  const [counts, mine, attendees, cutoff] = await Promise.all([
     bookedCounts([{ id, kind }]),
     myBookingsForSessions([id]),
     fetchAttendees(kind, id),
+    clubBookingCutoffHours(club),
   ]);
-  return { ...mapSession(row, kind, counts.get(id) ?? { booked: 0, yourPricePence: row.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(id) ?? []), attendees };
+  return { ...mapSession(row, kind, counts.get(id) ?? { booked: 0, yourPricePence: row.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(id) ?? []), attendees, bookingCutoffHours: cutoff };
 }
 
 export async function createSession(input: CreateSessionInput): Promise<Session> {
@@ -549,10 +565,18 @@ export async function getMyBookings(memberId: string): Promise<MyBooking[]> {
     .in('status', ['booked', 'waitlisted', 'attended']);
   if (error) throw error;
   const rows = data as (BookingRow & { session_kind: SessionKind })[];
-  const out: MyBooking[] = [];
-  for (const b of rows) {
-    out.push({ booking: mapBooking(b), session: await getSession(b.session_id) });
-  }
+  // One unreadable session must not blank the whole list. Before, a single session the member
+  // could not read (closed and unpublished, say) threw, and My Bookings showed "Nothing booked
+  // yet" with no way to cancel anything. Now the rest still show, and the screen says how many
+  // could not be. Loaded in parallel rather than one after another.
+  const settled = await Promise.allSettled(rows.map((b) => getSession(b.session_id)));
+  const out: MyBooking[] & { unavailable?: number } = [];
+  let unavailable = 0;
+  settled.forEach((r, i) => {
+    if (r.status === 'fulfilled') out.push({ booking: mapBooking(rows[i]), session: r.value });
+    else unavailable += 1;
+  });
+  if (unavailable) out.unavailable = unavailable;
   return out;
 }
 
