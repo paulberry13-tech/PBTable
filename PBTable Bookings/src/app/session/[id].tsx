@@ -11,10 +11,12 @@ import { formatMoney, formatMoneyShort } from '@/lib/money';
 import { dateBlockParts, formatTimeRange, initialsOf, skillBandLabel, spotsLeft } from '@/lib/format';
 import { STRIPE_TOPUP } from '@/services/config';
 import * as data from '@/services/data';
+import { EMBEDDED_FILL, useEmbedded } from '@/services/embed';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
 export default function SessionDetailScreen() {
+  const embedded = useEmbedded();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { currentUser, sportProfile, refresh, showBanner, promptSignIn } = useApp();
@@ -165,7 +167,7 @@ export default function SessionDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, embedded && EMBEDDED_FILL]}>
       {/* Fixture hero — the match poster. Navy chrome, kind-coloured rule, big Oswald title. */}
       <View style={styles.hero}>
         <View style={[styles.heroRule, { backgroundColor: kind === 'graded' ? colors.coral : colors.up }]} />

@@ -5,6 +5,7 @@ import { SessionCard } from '@/components/SessionCard';
 import { Chip, EmptyState, ErrorState, LoadingView } from '@/components/ui';
 import { FORMAT_LABELS } from '@/domain/sportProfile';
 import * as data from '@/services/data';
+import { EMBEDDED_FILL, useEmbedded } from '@/services/embed';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, spacing, type } from '@/theme';
 import { SessionFormat } from '@/types';
@@ -12,6 +13,7 @@ import { SessionFormat } from '@/types';
 type GradedFilter = 'all' | 'graded' | 'social';
 
 export default function SessionsScreen() {
+  const embedded = useEmbedded();
   const { sportProfile } = useApp();
   const { data: sessions, loading, error } = useAsyncData(() => data.getSessions());
   const [formatFilter, setFormatFilter] = useState<SessionFormat | 'all'>('all');
@@ -37,7 +39,7 @@ export default function SessionsScreen() {
       <FlatList
         data={upcoming}
         keyExtractor={(s) => s.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, embedded && EMBEDDED_FILL]}
         ListHeaderComponent={
           <View>
             <Text style={[type.display, { marginBottom: 2 }]}>Upcoming {sportProfile.terms.session.toLowerCase()}s</Text>

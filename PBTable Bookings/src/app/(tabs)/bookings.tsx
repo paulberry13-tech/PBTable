@@ -9,10 +9,12 @@ import { sessionStart } from '@/domain/cancellation';
 import { formatMoney, formatMoneyShort } from '@/lib/money';
 import { countdownLabel, dateBlockParts, formatSessionWhen, formatTimeRange } from '@/lib/format';
 import * as data from '@/services/data';
+import { EMBEDDED_FILL, useEmbedded } from '@/services/embed';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
 
 export default function MyBookingsScreen() {
+  const embedded = useEmbedded();
   const router = useRouter();
   const { currentUser, refresh, showBanner } = useApp();
   const { data: bookings, loading, error } = useAsyncData(
@@ -64,7 +66,7 @@ export default function MyBookingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, embedded && EMBEDDED_FILL]}>
       <Text style={type.display}>My bookings</Text>
 
       <Pressable

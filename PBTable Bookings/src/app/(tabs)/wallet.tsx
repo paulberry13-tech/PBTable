@@ -9,11 +9,13 @@ import { formatMoney } from '@/lib/money';
 import { DEMO_AUTOLOGIN, DEMO_TOPUP, STRIPE_TOPUP, USE_SUPABASE } from '@/services/config';
 import { clubTakesPayments } from '@/services/data';
 import * as data from '@/services/data';
+import { EMBEDDED_FILL, useEmbedded } from '@/services/embed';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 import { LedgerEntry } from '@/types';
 
 export default function WalletScreen() {
+  const embedded = useEmbedded();
   const { currentUser, refresh, showBanner, signOut } = useApp();
   const [topUpOpen, setTopUpOpen] = useState(false);
   // Whether THIS club can take a payment, asked of the database rather than
@@ -151,7 +153,7 @@ export default function WalletScreen() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, embedded && EMBEDDED_FILL]}>
       <Text style={type.display}>Wallet</Text>
 
       <View style={styles.balanceCard}>

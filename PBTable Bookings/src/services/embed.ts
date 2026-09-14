@@ -31,6 +31,41 @@ export function useEmbedded(): boolean {
 }
 const noSubscribe = () => () => {};
 
+/** Inside the layout a screen uses the club site's column -- 1152px, its max-w-6xl, with the same 16px
+ *  side padding -- instead of its own 720px reading column, which left booking narrower than every
+ *  page around it. Added to a screen's content style only when embedded. */
+export const EMBEDDED_FILL = { maxWidth: 1152 } as const;
+
+/** Keep identical to the club site's page scrollbar (site/index.html, "pb-page-scrollbar"). */
+export const SCROLLBAR_CSS =
+  '::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:transparent}' +
+  '::-webkit-scrollbar-thumb{background:#C9CED8;border-radius:6px;border:3px solid #F9FAFB}' +
+  '::-webkit-scrollbar-thumb:hover{background:#AEB4C0}';
+
+/** Inside the layout the frame runs to the window's right edge, so this app's scroll areas put their
+ *  scrollbar where the club site's own page scrollbar sits. Reserving that space even when a screen is
+ *  too short to scroll keeps the column centred in exactly the same place as on the site's other pages
+ *  (which reserve theirs). Applied to vertical scroll areas only: a horizontal chip row must not gain
+ *  a gap. */
+export function reserveScrollbarSpace(doc: Document): void {
+  const view = doc.defaultView;
+  if (!view) return;
+  // One scrollbar, drawn the same in the club site and here (SCROLLBAR_CSS there too), so the space
+  // both reserve is identical whatever the browser's default width is.
+  if (!doc.getElementById('pb-embed-scrollbar')) {
+    const st = doc.createElement('style');
+    st.id = 'pb-embed-scrollbar';
+    st.textContent = SCROLLBAR_CSS;
+    doc.head.appendChild(st);
+  }
+  doc.querySelectorAll('div').forEach((el) => {
+    const cs = view.getComputedStyle(el);
+    if (/(auto|scroll)/.test(cs.overflowY) && !/(auto|scroll)/.test(cs.overflowX) && el.style.getPropertyValue('scrollbar-gutter') !== 'stable') {
+      el.style.setProperty('scrollbar-gutter', 'stable');
+    }
+  });
+}
+
 /** Set before leaving for Stripe from inside the layout; read when Stripe sends the member back
  *  to /app/wallet in the whole window, so they can be put back inside the layout. Kept in
  *  sessionStorage (this tab only), which a same-origin frame shares with its top window. */
