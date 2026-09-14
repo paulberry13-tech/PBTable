@@ -228,10 +228,11 @@ async function myClubId(): Promise<string | null> {
     return _clubId;
   }
   // Scoped to THIS site's club: one login can be a member of several clubs (see hostClub.ts).
+  // Never unscoped: if this site's club can't be resolved, return null (nothing shown, not cached)
+  // rather than guess from the login, which would pick one of a two-club member's clubs at random.
   const host = await hostClubId();
-  let q = supabase.from('booking_members').select('club_id').eq('auth_user_id', uid);
-  if (host) q = q.eq('club_id', host);
-  const { data } = await q.limit(1).maybeSingle();
+  if (!host) return null;
+  const { data } = await supabase.from('booking_members').select('club_id').eq('auth_user_id', uid).eq('club_id', host).maybeSingle();
   _clubId = (data as { club_id: string } | null)?.club_id ?? null;
   return _clubId;
 }
@@ -617,11 +618,12 @@ type WalletRow = {
 // Without it every row read "Session booking" plus the date the money moved, which
 // told a member nothing and made a balance impossible to reconcile.
 export async function getLedger(memberId: string): Promise<LedgerEntry[]> {
-  // NOTE: my_wallet_activity takes no argument — it is scoped server-side to
-  // auth.uid(). `memberId` is only stamped onto the returned rows, so calling this
+  // NOTE: my_wallet_activity is scoped server-side to auth.uid() AND to this site's club
+  // (migration 83): one login can be a member of two clubs, and each site must show only its
+  // own club's wallet. `memberId` is only stamped onto the returned rows, so calling this
   // with anyone other than the signed-in member would label THEIR rows with
   // SOMEONE ELSE'S id. The only caller passes currentUser.id; keep it that way.
-  const { data, error } = await supabase.rpc('my_wallet_activity');
+  const { data, error } = await supabase.rpc('my_wallet_activity', { p_club_slug: BACKEND.slug });
   if (error) throw error;
   let running = 0;
   const rows = ((data ?? []) as WalletRow[]).map((r) => {
