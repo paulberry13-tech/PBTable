@@ -33,10 +33,11 @@ SplashScreen.preventAutoHideAsync();
 // Back from Stripe in the whole window, after starting a top-up inside the club site's side-panel
 // layout: go back into the layout's Booking > Wallet, carrying Stripe's reference, before anything
 // renders. See services/embed.ts.
+let REDIRECTING = false;
 if (Platform.OS === 'web' && typeof window !== 'undefined' && !EMBEDDED) {
   let target: string | null = null;
   try { target = layoutReturnTarget(window.location, window.sessionStorage); } catch {}
-  if (target) window.location.replace(target);
+  if (target) { REDIRECTING = true; window.location.replace(target); }
 }
 
 /** Inside the club site's layout, tells the side panel which booking page is showing. */
@@ -107,6 +108,8 @@ export default function RootLayout() {
     };
   }, []);
 
+  // Leaving for the layout: render nothing, so the wallet here cannot claim the payment first.
+  if (REDIRECTING) return null;
   if (!fontsLoaded && !fontError) return null;
   if (booking === null) return <View style={{ flex: 1, backgroundColor: colors.navy }} />;
   if (!booking.on) return <BookingNotOpen clubName={booking.clubName} />;

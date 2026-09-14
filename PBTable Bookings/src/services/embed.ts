@@ -36,11 +36,14 @@ const noSubscribe = () => () => {};
  *  page around it. Added to a screen's content style only when embedded. */
 export const EMBEDDED_FILL = { maxWidth: 1152 } as const;
 
-/** Keep identical to the club site's page scrollbar (site/index.html, "pb-page-scrollbar"). */
-export const SCROLLBAR_CSS =
-  '::-webkit-scrollbar{width:12px;height:12px}::-webkit-scrollbar-track{background:transparent}' +
-  '::-webkit-scrollbar-thumb{background:#C9CED8;border-radius:6px;border:3px solid #F9FAFB}' +
-  '::-webkit-scrollbar-thumb:hover{background:#AEB4C0}';
+/** The club site's own scrollbar (site/index.html: 5px, track var(--grid), thumb var(--scroll)), drawn
+ *  here too so both reserve the same space and look the same in every club theme. The colours are read
+ *  from the club site's page, which this frame can read because it is the same origin. */
+export function scrollbarCss(track: string, thumb: string): string {
+  return `::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:${track || 'transparent'};border-radius:3px}` +
+    `::-webkit-scrollbar-thumb{background:${thumb || '#C9CED8'};border-radius:3px}`;
+}
+const cssColour = (v: string) => (/^[#a-z0-9(),.%\s-]{1,40}$/i.test(v.trim()) ? v.trim() : '');
 
 /** Inside the layout the frame runs to the window's right edge, so this app's scroll areas put their
  *  scrollbar where the club site's own page scrollbar sits. Reserving that space even when a screen is
@@ -50,21 +53,27 @@ export const SCROLLBAR_CSS =
 export function reserveScrollbarSpace(doc: Document): void {
   const view = doc.defaultView;
   if (!view) return;
-  // One scrollbar, drawn the same in the club site and here (SCROLLBAR_CSS there too), so the space
-  // both reserve is identical whatever the browser's default width is.
-  if (!doc.getElementById('pb-embed-scrollbar')) {
-    const st = doc.createElement('style');
-    st.id = 'pb-embed-scrollbar';
-    st.textContent = SCROLLBAR_CSS;
-    doc.head.appendChild(st);
-  }
+  // The club site's scrollbar, in its current theme (re-read each pass, so a theme change follows).
+  let track = '', thumb = '';
+  try {
+    const top = view.top?.document?.documentElement;
+    if (top) { const tcs = view.top!.getComputedStyle(top); track = cssColour(tcs.getPropertyValue('--grid')); thumb = cssColour(tcs.getPropertyValue('--scroll')); }
+  } catch {}
+  let st = doc.getElementById('pb-embed-scrollbar') as HTMLStyleElement | null;
+  if (!st) { st = doc.createElement('style'); st.id = 'pb-embed-scrollbar'; doc.head.appendChild(st); }
+  const css = scrollbarCss(track, thumb);
+  if (st.textContent !== css) st.textContent = css;
+  // Only elements not looked at before: a long list adding rows must not re-measure the whole page.
   doc.querySelectorAll('div').forEach((el) => {
+    if (seen.has(el)) return;
+    seen.add(el);
     const cs = view.getComputedStyle(el);
-    if (/(auto|scroll)/.test(cs.overflowY) && !/(auto|scroll)/.test(cs.overflowX) && el.style.getPropertyValue('scrollbar-gutter') !== 'stable') {
+    if (/(auto|scroll)/.test(cs.overflowY) && !/(auto|scroll)/.test(cs.overflowX)) {
       el.style.setProperty('scrollbar-gutter', 'stable');
     }
   });
 }
+const seen = new WeakSet<Element>();
 
 /** Set before leaving for Stripe from inside the layout; read when Stripe sends the member back
  *  to /app/wallet in the whole window, so they can be put back inside the layout. Kept in
@@ -74,6 +83,9 @@ const RETURN_WINDOW_MS = 60 * 60 * 1000;
 
 /** Open a page that must not be shown inside the frame. */
 export async function openOutside(url: string): Promise<void> {
+  // Only ever Stripe's own checkout. Inside the layout this navigates the member's whole tab, so a
+  // wrong value from anywhere must not be able to take it somewhere else.
+  if (!/^https:\/\/checkout\.stripe\.com\//.test(url)) throw new Error('Could not start the payment.');
   if (EMBEDDED && typeof window !== 'undefined' && window.top) {
     try { window.sessionStorage.setItem(RETURN_KEY, String(Date.now())); } catch {}
     window.top.location.assign(url);
@@ -97,6 +109,9 @@ export function layoutReturnTarget(loc: { pathname: string; search: string }, st
   if (!Number.isFinite(t) || now - t > RETURN_WINDOW_MS || now < t) return null;
   const rest = loc.pathname.replace(/^\/app\/?/, '');
   if (!/^[a-z0-9/_-]*$/i.test(rest)) return null;
+  // Only Stripe coming back (it always adds topup=): any other /app page opened in this tab keeps
+  // opening on its own, and the marker is spent either way.
+  if (!/[?&]topup=(success|cancelled)(&|$)/.test(loc.search)) return null;
   return `/#/booking/${rest}${loc.search}`;
 }
 
