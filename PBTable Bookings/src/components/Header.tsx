@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BACKEND } from '@/services/backend';
 import * as data from '@/services/data';
+import { useEmbedded } from '@/services/embed';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, spacing } from '@/theme';
 
@@ -37,6 +38,11 @@ export function Header() {
     data.getClubBranding().then((b) => { if (alive) setClub(b); }).catch(() => {});
     return () => { alive = false; };
   }, []);
+
+  // Inside the club site's side-panel layout the panel carries the club's name, the admin
+  // sign-in and the way back to the site, so this header would only repeat it.
+  const embedded = useEmbedded();
+  if (embedded) return null;
 
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + spacing.sm }]}>

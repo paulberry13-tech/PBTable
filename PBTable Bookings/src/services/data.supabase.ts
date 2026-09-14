@@ -6,7 +6,7 @@
 // engine flows (create session, slips, enter scores) reuse the existing web
 // planner and are stubbed here.
 
-import { Linking, Platform } from 'react-native';
+import { Platform } from 'react-native';
 
 import { BACKEND } from '@/services/backend';
 import { STRIPE_TOPUP } from '@/services/config';
@@ -33,6 +33,7 @@ import type {
 } from '@/services/data.mock';
 import type { RatingChange } from '@/domain/ratings';
 import { cancelNotice, hoursUntilLondonStart } from '@/domain/cancelNotice';
+import { openOutside } from '@/services/embed';
 import { hostClubId } from '@/services/hostClub';
 
 export { InsufficientBalanceError };
@@ -786,7 +787,9 @@ export async function topUp(memberId: string, amountPence: number): Promise<Ledg
     if (error) throw await fnError(error, 'Could not start the payment.');
     const url = (data as { url?: string })?.url;
     if (!url) throw new Error((data as { error?: string })?.error ?? 'Could not start the payment.');
-    await Linking.openURL(url);
+    // Stripe Checkout refuses to be shown inside a frame: inside the club site's layout this
+    // opens it in the whole window, and the member is brought back into the layout afterwards.
+    await openOutside(url);
     return synthetic;
   }
 
@@ -807,7 +810,7 @@ export async function topUp(memberId: string, amountPence: number): Promise<Ledg
     if (error) throw await fnError(error, 'Could not start checkout.');
     const url = (data as { url?: string })?.url;
     if (!url) throw new Error((data as { error?: string })?.error ?? 'Could not start checkout.');
-    await Linking.openURL(url);
+    await openOutside(url);
     return synthetic;
   }
 
