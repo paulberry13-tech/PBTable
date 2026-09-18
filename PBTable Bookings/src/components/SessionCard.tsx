@@ -68,6 +68,10 @@ export function SessionCard({ session, profile }: { session: Session; profile: S
           </Row>
           <Row style={{ marginTop: 7, flexWrap: 'wrap' }} gap={5}>
             {session.affectsRating ? <Badge label="Graded" tone="coral" /> : <Badge label="Social" tone="green" />}
+            {/* Invite-only (migration 86). A hidden one only reaches this list for the people invited. */}
+            {session.inviteOnly ? (
+              <Badge label={session.youAreInvited ? 'You’re invited' : 'By invitation'} tone={session.youAreInvited ? 'green' : 'amber'} />
+            ) : null}
             {/* Preview clubs list sessions before booking opens; say so on the card
                 rather than letting the tap be the discovery. */}
             {session.bookingOpen === false && session.status === 'upcoming' ? (

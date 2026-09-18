@@ -123,6 +123,8 @@ function mapSession(r: SessionRow, kind: SessionKind, spots: Spots, mine: Bookin
     youAreMember: spots.youAreMember,
     youCanBookAt: spots.youCanBookAt,
     guardianRequired: spots.guardianRequired,
+    inviteOnly: spots.inviteOnly,
+    youAreInvited: spots.youAreInvited,
     isRecurring: false,
     bookings,
     waitlist,
@@ -179,7 +181,8 @@ async function myBookingsForSessions(ids: string[]): Promise<Map<string, Booking
  *  someone holding a free taster is quoted a fee they will not be charged.
  *  session_spots resolves both against auth.uid(), so it is always the caller's own. */
 type Spots = { booked: number; yourPricePence: number; tasterApplies: boolean; youAreMember: boolean | null;
-  youCanBookAt: string | null; guardianRequired: boolean };
+  youCanBookAt: string | null; guardianRequired: boolean;
+  inviteOnly: boolean; youAreInvited: boolean | null };
 
 async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Promise<Map<string, Spots>> {
   const counts = new Map<string, Spots>();
@@ -190,6 +193,7 @@ async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Prom
         booked?: number; your_price_pennies?: number; price_pennies?: number;
         taster_applies?: boolean; you_are_member?: boolean | null;
         you_can_book_at?: string | null; guardian_required?: boolean;
+        invite_only?: boolean; you_are_invited?: boolean | null;   // migration 86; absent before it
       };
       counts.set(id, {
         booked: d.booked ?? 0,
@@ -199,6 +203,8 @@ async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Prom
         // Non-null while a non-member is still inside the members-first window.
         youCanBookAt: d.you_can_book_at ?? null,
         guardianRequired: !!d.guardian_required,
+        inviteOnly: !!d.invite_only,
+        youAreInvited: d.you_are_invited ?? null,
       });
     })
   );
@@ -336,7 +342,7 @@ export async function getSessions(): Promise<Session[]> {
     clubBookingCutoffHours(club),
   ]);
   return rows
-    .map(([r, kind]) => ({ ...mapSession(r, kind, counts.get(r.id) ?? { booked: 0, yourPricePence: r.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(r.id) ?? []), bookingCutoffHours: cutoff }))
+    .map(([r, kind]) => ({ ...mapSession(r, kind, counts.get(r.id) ?? { booked: 0, yourPricePence: r.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false, inviteOnly: false, youAreInvited: null }, mine.get(r.id) ?? []), bookingCutoffHours: cutoff }))
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
 }
 
@@ -369,7 +375,7 @@ export async function getSession(id: string): Promise<Session> {
     fetchAttendees(kind, id),
     clubBookingCutoffHours(club),
   ]);
-  return { ...mapSession(row, kind, counts.get(id) ?? { booked: 0, yourPricePence: row.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(id) ?? []), attendees, bookingCutoffHours: cutoff };
+  return { ...mapSession(row, kind, counts.get(id) ?? { booked: 0, yourPricePence: row.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false, inviteOnly: false, youAreInvited: null }, mine.get(id) ?? []), attendees, bookingCutoffHours: cutoff };
 }
 
 export async function createSession(input: CreateSessionInput): Promise<Session> {
@@ -474,6 +480,8 @@ export async function bookSession(sessionId: string, memberId: string): Promise<
   if (error) {
     const m = /insufficient_credit:(\d+)/.exec(error.message);
     if (m) throw new InsufficientBalanceError(parseInt(m[1], 10));
+    // migration 86: the server has the last word on invite-only sessions, so say it plainly.
+    if (error.message === 'not_invited') throw new Error('This session is by invitation, and you’re not on the list.');
     throw new Error(error.message);
   }
   const r = data as { booking_id: string; waitlisted: boolean; position?: number; price_charged?: number };

@@ -98,6 +98,10 @@ export default function SessionDetailScreen() {
     ? waitUntil.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
     : '';
   const needsGuardian = !!session.guardianRequired;
+  // Invite-only (migration 86): someone signed in who isn't on the list gets no Book button at all.
+  // book_spot refuses them regardless; this just says so before the tap rather than after it.
+  const inviteOnly = !!session.inviteOnly;
+  const notInvited = inviteOnly && !!currentUser && session.youAreInvited === false;
   const canAfford = balancePence >= cost;
   // A balance that failed to load is not £0: don't push a top-up on a guess.
   const balanceUnknown = !!currentUser && !!balanceError && cost > 0;
@@ -308,8 +312,25 @@ export default function SessionDetailScreen() {
                   : 'The club isn’t taking bookings for this one. Check with them if you think that’s wrong.'}
             </Text>
           </Card>
+        ) : notInvited ? (
+          <Card>
+            <Text style={type.h2}>By invitation</Text>
+            <Text style={[type.caption, { marginTop: 4 }]}>
+              Only the players the club has invited can book this session. If you think you should be on the list, contact the club.
+            </Text>
+          </Card>
         ) : (
           <>
+            {inviteOnly && (
+              <Card style={{ paddingVertical: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.up }}>
+                <Text style={type.bodyBold}>{currentUser ? 'You’re invited' : 'By invitation'}</Text>
+                <Text style={[type.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                  {currentUser
+                    ? 'This session is by invitation, and you’re on the list. Book it as normal.'
+                    : 'Only the players the club has invited can book this session. If that’s you, sign in to book.'}
+                </Text>
+              </Card>
+            )}
             {/* The money, laid out BEFORE the button — no surprises at the tap. */}
             {mustWait && (
               <Card style={{ paddingVertical: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.amber }}>
