@@ -5,12 +5,12 @@
 // every session costs. They are different enough to keep apart, and the buy path will
 // be a redirect to Stripe's own checkout rather than anything that happens in here.
 //
-// READ-ONLY, deliberately. A member cannot cancel: ending a membership is a
-// conversation with the club, because the refund is the club's money and the club's
-// decision. See src/services/membership.ts.
+// A member can turn their own auto-renewal on or off (Paul, 2026-09-24) but cannot end
+// a membership early: that stays a conversation with the club, because a refund is the
+// club's money and the club's decision. See src/services/membership.ts.
 
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, LoadingView } from '@/components/ui';
@@ -21,6 +21,7 @@ import {
   getMyMembership,
   graceDaysLeft,
   membershipStateLabel,
+  setMembershipRenewal,
   type MembershipQuote,
   type MyMembership,
 } from '@/services/membership';
@@ -28,7 +29,7 @@ import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 
 export default function MembershipScreen() {
-  const { currentUser } = useApp();
+  const { currentUser, refresh } = useApp();
   const { data, loading } = useAsyncData<{ quote: MembershipQuote | null; mine: MyMembership | null }>(
     async () => {
       const [quote, mine] = await Promise.all([getMembershipQuote(), getMyMembership()]);
@@ -36,6 +37,8 @@ export default function MembershipScreen() {
     },
     [currentUser?.id],
   );
+  const [renewBusy, setRenewBusy] = useState(false);
+  const [renewError, setRenewError] = useState<string | null>(null);
 
   if (loading) return <LoadingView label="Loading your membership…" />;
 
@@ -43,6 +46,24 @@ export default function MembershipScreen() {
   const mine = data?.mine ?? null;
   const state = membershipStateLabel(mine);
   const days = graceDaysLeft(mine);
+
+  // The switch means the opposite of the membership's OWN flag: cancel_at_period_end
+  // true is what the member experiences as "off". Toggling asks for the state they are
+  // moving TO, which setMembershipRenewal takes as `renews`, so this is the one place
+  // that translation happens rather than it living in two files.
+  const toggleRenewal = async () => {
+    if (!mine || renewBusy) return;
+    const goingTo = !!mine.cancel_at_period_end; // currently off -> turning on, and vice versa
+    setRenewBusy(true);
+    setRenewError(null);
+    const result = await setMembershipRenewal(mine.id, goingTo);
+    setRenewBusy(false);
+    if (!result.ok) {
+      setRenewError(result.error);
+      return;
+    }
+    refresh();
+  };
 
   // The club does not sell memberships (or this build is older than the migrations).
   // The tab is normally hidden in that case; this is the belt to that braces.
@@ -97,6 +118,31 @@ export default function MembershipScreen() {
                 {mine.price_pennies != null ? ` · ${formatMoney(mine.price_pennies)} a year` : ''}
               </Text>
             )}
+            {state.key !== 'failing' && (
+              <View style={styles.renewRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.renewLabel}>Renew automatically</Text>
+                  <Text style={styles.meta}>
+                    {state.key === 'cancelling'
+                      ? 'Off. You keep member prices until it ends, then it stops.'
+                      : "On. You'll be charged again when your year ends."}
+                  </Text>
+                </View>
+                <Button
+                  title={state.key === 'cancelling' ? 'Turn on' : 'Turn off'}
+                  onPress={toggleRenewal}
+                  disabled={renewBusy}
+                  loading={renewBusy}
+                  variant="secondary"
+                />
+              </View>
+            )}
+            {renewError && (
+              <View style={styles.warn}>
+                <Ionicons name="alert-circle" size={16} color={colors.down} />
+                <Text style={styles.warnText}>{renewError}</Text>
+              </View>
+            )}
           </>
         ) : (
           <Text style={styles.body}>
@@ -146,14 +192,17 @@ export default function MembershipScreen() {
         </Card>
       )}
 
-      {/* The one thing they cannot do here, said before they go looking for it. */}
-      <Card>
-        <Text style={styles.h2}>Changing or ending your membership</Text>
-        <Text style={styles.body}>
-          Speak to your club. They can end a membership for you and agree any refund
-          directly — memberships cannot be cancelled from the app.
-        </Text>
-      </Card>
+      {/* The one thing they still cannot do here, said before they go looking for it.
+          Turning renewal off is the button above — this is only about ending early. */}
+      {isMember && (
+        <Card>
+          <Text style={styles.h2}>Ending your membership early</Text>
+          <Text style={styles.body}>
+            Speak to your club. They can end it for you straight away and agree any
+            refund directly — that part still isn't done from the app.
+          </Text>
+        </Card>
+      )}
     </ScrollView>
   );
 }
@@ -179,6 +228,16 @@ const styles = StyleSheet.create({
   body: { ...type.body, color: colors.text, marginTop: spacing.xs },
   strong: { fontFamily: fonts.bold },
   meta: { ...type.caption, color: colors.textMuted, marginTop: spacing.xs },
+  renewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  renewLabel: { ...type.body, fontFamily: fonts.bold, color: colors.text },
   small: { ...type.caption, color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' },
   price: { fontFamily: fonts.mono, fontSize: 30, color: colors.navy, marginTop: spacing.xs },
   pill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },

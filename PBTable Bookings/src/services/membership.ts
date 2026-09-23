@@ -1,17 +1,24 @@
-// What a member may know about their own club membership.
+// What a member may know and do about their own club membership.
 //
 // Memberships are the club's annual subscription, bought through Stripe and worth
-// MEMBER PRICING and nothing else. Everything here is READ-ONLY, and deliberately:
+// MEMBER PRICING and nothing else.
 //
-//   * A member cannot cancel. Decided by Paul, 2026-09-23: ending a membership is a
-//     conversation with the club, because a refund is the club's money and the club's
-//     decision. An admin ends it from the dashboard, which cancels the Stripe
-//     subscription so it can never renew again.
+//   * A member CAN turn their own auto-renewal on or off (Paul, 2026-09-24, reversing
+//     the 2026-09-23 "read-only" decision below this comment used to describe). Turning
+//     it off keeps member pricing for every day already paid for; it just stops Stripe
+//     charging again when the year ends. It can be turned back on any time before then.
+//     See setMembershipRenewal, which calls the membership-renewal edge function --
+//     never a direct table write, because only Stripe's own confirmation may change
+//     what the database believes about a subscription.
+//   * A member cannot END a membership early, still. That stays a conversation with the
+//     club: it stops billing immediately and the refund is the club's money and the
+//     club's decision to agree. An admin does that from the dashboard.
 //   * A member cannot create one here either. Buying is a Stripe transaction and will
 //     be a redirect to Stripe's own hosted checkout, the same shape as the wallet
 //     top-up: no card details ever reach this app or PBTable.
 //
-// The two calls below are migrations 88 and 89 and work TODAY. The buy path
+// getMembershipQuote/getMyMembership are migrations 88 and 89 and work TODAY.
+// setMembershipRenewal is migration 91 and works TODAY. The buy path
 // (membership-checkout) does not exist yet and is blocked on a Stripe test
 // environment, so the screen shows the offer and says joining is not open.
 
@@ -108,4 +115,27 @@ export function graceDaysLeft(m: MyMembership | null): number | null {
   if (!m || !m.grace_ends_at) return null;
   const left = Date.parse(m.grace_ends_at) - Date.now();
   return left <= 0 ? 0 : Math.ceil(left / 86400000);
+}
+
+/** What the edge function actually returned, so the screen can react to a real result
+ *  rather than assume the request that left the phone is the one that arrived. */
+export type RenewalResult =
+  | { ok: true; renews: boolean; message?: string }
+  | { ok: false; error: string };
+
+/** Turn this membership's own auto-renewal on or off. Never writes the database directly
+ *  — the edge function tells Stripe first, and only records it once Stripe agrees, so the
+ *  screen is never shown a state the subscription does not actually have. */
+export async function setMembershipRenewal(membershipId: string, renews: boolean): Promise<RenewalResult> {
+  const { data, error } = await supabase.functions.invoke('membership-renewal', {
+    body: { membership_id: membershipId, renews },
+  });
+  if (error) {
+    // supabase-js surfaces a non-2xx response as `error` with the body still reachable
+    // via context; fall back to a plain message if that shape is not present.
+    const bodyErr = (error as { context?: { json?: () => Promise<{ error?: string }> } }).context;
+    const parsed = await bodyErr?.json?.().catch(() => null);
+    return { ok: false, error: parsed?.error ?? error.message ?? 'Could not reach the server. Try again.' };
+  }
+  return data as RenewalResult;
 }
