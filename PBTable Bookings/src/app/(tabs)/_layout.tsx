@@ -1,12 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Header } from '@/components/Header';
+import { getMembershipQuote } from '@/services/membership';
+import { useApp } from '@/store/AppContext';
 import { colors, fonts } from '@/theme';
 
 export default function TabsLayout() {
+  // Most clubs do not sell memberships, so the tab is offered only where one does.
+  // PBTable switches it on per club; membership_quote answers {enabled:false} when it
+  // is off, and null on a backend without the migrations. Both mean "no tab".
+  const { currentUser } = useApp();
+  const [hasMemberships, setHasMemberships] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    getMembershipQuote()
+      .then((q) => alive && setHasMemberships(!!q?.enabled))
+      .catch(() => alive && setHasMemberships(false));
+    return () => { alive = false; };
+  }, [currentUser?.id]);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header />
@@ -42,6 +57,16 @@ export default function TabsLayout() {
           options={{
             title: 'Wallet',
             tabBarIcon: ({ color, size }) => <Ionicons name="wallet" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="membership"
+          options={{
+            title: 'Membership',
+            // href null removes it from the bar entirely rather than showing a tab that
+            // explains it has nothing to show.
+            href: hasMemberships ? undefined : null,
+            tabBarIcon: ({ color, size }) => <Ionicons name="card" size={size} color={color} />,
           }}
         />
       </Tabs>
