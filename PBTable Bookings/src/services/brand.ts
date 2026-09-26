@@ -15,3 +15,21 @@ export const PLATFORM_NAME = IS_TWOCLEAR ? 'twoclear' : 'PBTable';
 export const PLATFORM_LOGO_ON_DARK = IS_TWOCLEAR
   ? { uri: '/brand/twoclear/badge-dark.png' }
   : require('../../assets/images/pbtable-logo.png');
+
+/** The browser-tab and home-screen icons. The exported page links /app/favicon.ico, the PBTable
+ *  icon; on twoclear this repoints it to the club site's own twoclear files once the app starts.
+ *  Web only, and a no-op everywhere that is not twoclear. */
+export function applyPlatformIcons(): void {
+  if (!IS_TWOCLEAR || typeof document === 'undefined') return;
+  const set = (rel: string, href: string) => {
+    let link = document.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = rel;
+      document.head.appendChild(link);
+    }
+    link.href = href;
+  };
+  set('icon', '/brand/twoclear/favicon-32.png');
+  set('apple-touch-icon', '/brand/twoclear/apple-touch-icon.png');
+}

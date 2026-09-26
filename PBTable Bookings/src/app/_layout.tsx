@@ -22,6 +22,7 @@ import { BookingNotOpen } from '@/components/BookingNotOpen';
 import { DemoPersonSwitcher } from '@/components/DemoPersonSwitcher';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SignIn } from '@/components/SignIn';
+import { applyPlatformIcons } from '@/services/brand';
 import { bookingEnabledForThisHost } from '@/services/clubGate';
 import { announceRoute, EMBEDDED, layoutReturnTarget, reserveScrollbarSpace } from '@/services/embed';
 import { USE_SUPABASE } from '@/services/config';
@@ -95,6 +96,9 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
+  // twoclear addresses get twoclear's tab and home-screen icons (see services/brand).
+  useEffect(() => { applyPlatformIcons(); }, []);
 
   // Booking is switched on per club by the operator. The bundle is committed to
   // every club site, so this is what stops a club that has not launched booking
