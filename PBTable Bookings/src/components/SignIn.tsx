@@ -20,7 +20,7 @@ import { colors, fonts, radius, spacing, type } from '@/theme';
 
 const PBTABLE_LOGO = require('../../assets/images/pbtable-logo.png');
 
-/** Passwordless sign-in on the live backend: enter your club email, we email a
+/** Passwordless sign-in on the live backend: enter your email, we email a
  *  6-digit code, you type it in. No password to set or remember. Invite-only —
  *  only members the club has added can sign in. */
 /** onCancel is supplied only when the sign-in was raised on demand (someone tapped
@@ -72,7 +72,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
 
   const requestCode = async () => {
     if (!email.trim()) {
-      setError('Enter your club email first.');
+      setError('Enter your email first.');
       return;
     }
     setBusy(true);
@@ -276,7 +276,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
             <>
               <Text style={type.h1}>Sign in</Text>
               <Text style={[type.caption, { marginTop: 2, marginBottom: spacing.md }]}>
-                Enter your club email and we'll send you a one-time code. No password needed.
+                Enter your email and we'll send you a one-time code. No password needed.
               </Text>
 
               <Text style={styles.label}>Email</Text>
