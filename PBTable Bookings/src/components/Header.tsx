@@ -9,7 +9,7 @@ import { useEmbedded } from '@/services/embed';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, spacing } from '@/theme';
 
-const LOGO = require('../../assets/images/pbtable-logo.png');
+import { IS_TWOCLEAR, PLATFORM_LOGO_ON_DARK, PLATFORM_NAME } from '@/services/brand';
 
 
 /**
@@ -57,11 +57,11 @@ export function Header() {
           onPress={BACKEND.isDemo
             ? () => setSport(sportProfile.sport === 'pickleball' ? 'tennis' : 'pickleball')
             : undefined}
-          accessibilityLabel={club?.name || 'PBTable'}
+          accessibilityLabel={club?.name || PLATFORM_NAME}
           style={({ pressed }) => [styles.brand, pressed && { opacity: 0.85 }]}
         >
           <Image
-            source={club?.logoUrl ? { uri: club.logoUrl } : LOGO}
+            source={club?.logoUrl ? { uri: club.logoUrl } : PLATFORM_LOGO_ON_DARK}
             style={styles.logoImg}
             resizeMode="contain"
           />
@@ -71,8 +71,14 @@ export function Header() {
             ) : (
               <>
                 <Text style={styles.logo}>
-                  <Text style={styles.logoLight}>PB</Text>
-                  <Text style={styles.logoBold}>Table</Text>
+                  {IS_TWOCLEAR ? (
+                    <Text style={styles.logoBold}>twoclear</Text>
+                  ) : (
+                    <>
+                      <Text style={styles.logoLight}>PB</Text>
+                      <Text style={styles.logoBold}>Table</Text>
+                    </>
+                  )}
                 </Text>
                 <Text style={styles.sport}>{sportProfile.sport.toUpperCase()} CLUB</Text>
               </>

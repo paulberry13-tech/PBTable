@@ -18,7 +18,7 @@ import * as data from '@/services/data';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 
-const PBTABLE_LOGO = require('../../assets/images/pbtable-logo.png');
+import { IS_TWOCLEAR, PLATFORM_LOGO_ON_DARK } from '@/services/brand';
 
 /** Passwordless sign-in on the live backend: enter your email, we email a
  *  6-digit code, you type it in. No password to set or remember. Invite-only —
@@ -191,7 +191,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
           {club === undefined ? null : club?.name ? (
             <>
               <Image
-                source={club.logoUrl ? { uri: club.logoUrl } : PBTABLE_LOGO}
+                source={club.logoUrl ? { uri: club.logoUrl } : PLATFORM_LOGO_ON_DARK}
                 style={styles.clubLogo}
                 resizeMode="contain"
                 accessibilityLabel={club.name}
@@ -201,8 +201,14 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
           ) : (
             <>
               <Text style={styles.logo}>
-                <Text style={styles.logoLight}>PB</Text>
-                <Text style={styles.logoBold}>Table</Text>
+                {IS_TWOCLEAR ? (
+                  <Text style={styles.logoBold}>twoclear</Text>
+                ) : (
+                  <>
+                    <Text style={styles.logoLight}>PB</Text>
+                    <Text style={styles.logoBold}>Table</Text>
+                  </>
+                )}
               </Text>
               <Text style={styles.tagline}>Book. Play. Climb.</Text>
             </>
