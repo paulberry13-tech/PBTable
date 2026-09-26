@@ -83,6 +83,10 @@ export interface Session {
   youCanBookAt?: string | null;
   /** This member is a junior — a parent or guardian must be present. */
   guardianRequired?: boolean;
+  /** Only players on the session's invite list can book it (migration 86). */
+  inviteOnly?: boolean;
+  /** On an invite-only session: whether the signed-in member is on the list. null otherwise. */
+  youAreInvited?: boolean | null;
   isRecurring: boolean;
   bookings: Booking[];
   /** memberIds, in order. */
@@ -98,6 +102,9 @@ export interface Session {
    *  app tells "hasn't opened yet" from "was open, now closed" — different
    *  messages to a member deciding whether to check back. */
   bookingOpenedAt?: string | null;
+  /** clubs.settings.booking_cutoff_hours: members can't book this close to the start (the
+   *  session lock). 0 or absent = no lock. Admins can still book people in. */
+  bookingCutoffHours?: number;
   /** Who's playing, with real names — populated on the live backend via the
    *  session_attendees function (players can't read the bookings table directly). */
   attendees?: SessionAttendee[];

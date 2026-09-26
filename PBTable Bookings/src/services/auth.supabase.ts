@@ -5,6 +5,7 @@
 
 import { DEMO_EMAIL, DEMO_PASSWORD } from '@/services/config';
 import { getBalance } from '@/services/data.supabase';
+import { hostClubId } from '@/services/hostClub';
 import { supabase } from '@/services/supabaseClient';
 import { Member, Role } from '@/types';
 
@@ -75,11 +76,14 @@ export async function hasMemberRecord(): Promise<boolean | null> {
   const { data: sessionRes } = await supabase.auth.getSession();
   const uid = sessionRes.session?.user?.id;
   if (!uid) return null;
+  // At THIS site's club only: a member of another club is not a member here (see hostClub.ts).
+  // No club resolved = could not tell. Never look the login up across every club instead: that
+  // is exactly how a member of two clubs ended up in the wrong one.
+  const host = await hostClubId();
+  if (!host) return null;
   const { data, error } = await supabase
-    .from('booking_members')
-    .select('id')
-    .eq('auth_user_id', uid)
-    .is('revoked_at', null)
+    .from('booking_members').select('id')
+    .eq('auth_user_id', uid).eq('club_id', host).is('revoked_at', null)
     .maybeSingle();
   // null = could not tell. Fails OPEN: the caller signs the person out on this
   // answer, so a network blip must never be allowed to read as "not a member" and
@@ -107,11 +111,13 @@ export async function getCurrentUser(): Promise<Member> {
 
   // revoked_at set means an admin has taken this person's access away (migration
   // 49). The row survives so their history does, but it must not sign anyone in.
+  // The member is ALWAYS the one at this site's club. If the club can't be resolved (a network
+  // blip), refuse rather than fall back to "any club this login belongs to".
+  const host = await hostClubId();
+  if (!host) throw new Error('Could not reach your club just now. Check your connection and try again.');
   const { data: bm, error } = await supabase
-    .from('booking_members')
-    .select('id,display_name,email')
-    .eq('auth_user_id', uid)
-    .is('revoked_at', null)
+    .from('booking_members').select('id,display_name,email')
+    .eq('auth_user_id', uid).eq('club_id', host).is('revoked_at', null)
     .single();
   if (error) throw error;
 

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BACKEND } from '@/services/backend';
 import * as data from '@/services/data';
+import { useEmbedded } from '@/services/embed';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, spacing } from '@/theme';
 
@@ -32,11 +33,16 @@ export function Header() {
   // The club's own identity. Null until it loads and null if it cannot be read, in
   // which case the PBTable mark below is what shows — the header is never empty.
   const [club, setClub] = React.useState<{ name: string | null; logoUrl: string | null } | null>(null);
+  // Inside the club site's side-panel layout the panel carries the club's name, the admin
+  // sign-in and the way back to the site, so this header would only repeat it.
+  const embedded = useEmbedded();
   React.useEffect(() => {
+    if (embedded) return; // nothing to show it in
     let alive = true;
     data.getClubBranding().then((b) => { if (alive) setClub(b); }).catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, [embedded]);
+  if (embedded) return null;
 
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + spacing.sm }]}>

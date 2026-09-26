@@ -4,6 +4,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Badge, CapacityBar, DateBlock, Row } from '@/components/ui';
+import { hoursUntilLondonStart } from '@/domain/cancelNotice';
 import { FORMAT_LABELS } from '@/domain/sportProfile';
 import { formatMoneyShort } from '@/lib/money';
 import { dateBlockParts, formatTimeRange, skillBandLabel, spotsLeft } from '@/lib/format';
@@ -25,6 +26,8 @@ export function SessionCard({ session, profile }: { session: Session; profile: S
   const parts = dateBlockParts(session.date);
   const kind = session.affectsRating ? 'graded' : 'social';
   const nearlyFull = !full && session.capacity > 0 && booked / session.capacity >= 0.75;
+  const locked = (session.bookingCutoffHours ?? 0) > 0 && session.status === 'upcoming'
+    && hoursUntilLondonStart(session.date, session.startTime) < (session.bookingCutoffHours ?? 0);
 
   return (
     <Pressable
@@ -65,10 +68,16 @@ export function SessionCard({ session, profile }: { session: Session; profile: S
           </Row>
           <Row style={{ marginTop: 7, flexWrap: 'wrap' }} gap={5}>
             {session.affectsRating ? <Badge label="Graded" tone="coral" /> : <Badge label="Social" tone="green" />}
+            {/* Invite-only (migration 86). A hidden one only reaches this list for the people invited. */}
+            {session.inviteOnly ? (
+              <Badge label={session.youAreInvited ? 'You’re invited' : 'By invitation'} tone={session.youAreInvited ? 'green' : 'amber'} />
+            ) : null}
             {/* Preview clubs list sessions before booking opens; say so on the card
                 rather than letting the tap be the discovery. */}
             {session.bookingOpen === false && session.status === 'upcoming' ? (
               <Badge label={session.bookingOpenedAt ? 'Booking closed' : 'Not open yet'} tone="grey" />
+            ) : locked ? (
+              <Badge label="Booking closed" tone="grey" />
             ) : null}
             {session.format !== 'social' && FORMAT_LABELS[session.format] ? (
               <Badge label={FORMAT_LABELS[session.format]} tone="grey" />

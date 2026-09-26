@@ -6,7 +6,7 @@
 // engine flows (create session, slips, enter scores) reuse the existing web
 // planner and are stubbed here.
 
-import { Linking, Platform } from 'react-native';
+import { Platform } from 'react-native';
 
 import { BACKEND } from '@/services/backend';
 import { STRIPE_TOPUP } from '@/services/config';
@@ -32,6 +32,9 @@ import type {
   RosterEntry,
 } from '@/services/data.mock';
 import type { RatingChange } from '@/domain/ratings';
+import { cancelNotice, hoursUntilLondonStart } from '@/domain/cancelNotice';
+import { openOutside } from '@/services/embed';
+import { hostClubId } from '@/services/hostClub';
 
 export { InsufficientBalanceError };
 
@@ -120,6 +123,8 @@ function mapSession(r: SessionRow, kind: SessionKind, spots: Spots, mine: Bookin
     youAreMember: spots.youAreMember,
     youCanBookAt: spots.youCanBookAt,
     guardianRequired: spots.guardianRequired,
+    inviteOnly: spots.inviteOnly,
+    youAreInvited: spots.youAreInvited,
     isRecurring: false,
     bookings,
     waitlist,
@@ -176,7 +181,8 @@ async function myBookingsForSessions(ids: string[]): Promise<Map<string, Booking
  *  someone holding a free taster is quoted a fee they will not be charged.
  *  session_spots resolves both against auth.uid(), so it is always the caller's own. */
 type Spots = { booked: number; yourPricePence: number; tasterApplies: boolean; youAreMember: boolean | null;
-  youCanBookAt: string | null; guardianRequired: boolean };
+  youCanBookAt: string | null; guardianRequired: boolean;
+  inviteOnly: boolean; youAreInvited: boolean | null };
 
 async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Promise<Map<string, Spots>> {
   const counts = new Map<string, Spots>();
@@ -187,6 +193,7 @@ async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Prom
         booked?: number; your_price_pennies?: number; price_pennies?: number;
         taster_applies?: boolean; you_are_member?: boolean | null;
         you_can_book_at?: string | null; guardian_required?: boolean;
+        invite_only?: boolean; you_are_invited?: boolean | null;   // migration 86; absent before it
       };
       counts.set(id, {
         booked: d.booked ?? 0,
@@ -196,6 +203,8 @@ async function bookedCounts(sessions: { id: string; kind: SessionKind }[]): Prom
         // Non-null while a non-member is still inside the members-first window.
         youCanBookAt: d.you_can_book_at ?? null,
         guardianRequired: !!d.guardian_required,
+        inviteOnly: !!d.invite_only,
+        youAreInvited: d.you_are_invited ?? null,
       });
     })
   );
@@ -222,19 +231,15 @@ async function myClubId(): Promise<string | null> {
     // Without this the public session list is empty, because scoping is normally
     // done by the signed-in member's club. Reads still obey RLS — a visitor sees
     // exactly what the club's public dashboard already shows.
-    const { data: club } = await supabase
-      .from('clubs')
-      .select('id')
-      .eq('slug', BACKEND.slug)
-      .maybeSingle();
-    _clubId = (club as { id: string } | null)?.id ?? null;
+    _clubId = await hostClubId();
     return _clubId;
   }
-  const { data } = await supabase
-    .from('booking_members')
-    .select('club_id')
-    .eq('auth_user_id', uid)
-    .maybeSingle();
+  // Scoped to THIS site's club: one login can be a member of several clubs (see hostClub.ts).
+  // Never unscoped: if this site's club can't be resolved, return null (nothing shown, not cached)
+  // rather than guess from the login, which would pick one of a two-club member's clubs at random.
+  const host = await hostClubId();
+  if (!host) return null;
+  const { data } = await supabase.from('booking_members').select('club_id').eq('auth_user_id', uid).eq('club_id', host).maybeSingle();
   _clubId = (data as { club_id: string } | null)?.club_id ?? null;
   return _clubId;
 }
@@ -289,6 +294,24 @@ async function clubPreviewUpcoming(): Promise<boolean> {
   return _preview;
 }
 
+/** The club's booking lock, in hours (clubs.settings.booking_cutoff_hours; 0 = none). Cached
+ *  per club for the life of the page. Fails to 0 -- no lock shown -- because the server still
+ *  enforces it: the worst a blip can do is let a member tap Book and be told no. */
+const _cutoffByClub = new Map<string, number>();
+async function clubBookingCutoffHours(club: string): Promise<number> {
+  if (_cutoffByClub.has(club)) return _cutoffByClub.get(club)!;
+  try {
+    const { data, error } = await supabase.from('clubs').select('settings').eq('id', club).maybeSingle();
+    if (error) return 0;
+    const v = Number((data?.settings as { booking_cutoff_hours?: unknown } | null)?.booking_cutoff_hours ?? 0);
+    const hours = Number.isFinite(v) && v > 0 ? v : 0;
+    _cutoffByClub.set(club, hours);
+    return hours;
+  } catch {
+    return 0;
+  }
+}
+
 export async function getSessions(): Promise<Session[]> {
   // "Upcoming" means upcoming: only sessions from today onward. Past sessions that were
   // left booking_open shouldn't clutter the list.
@@ -313,12 +336,13 @@ export async function getSessions(): Promise<Session[]> {
     ...(social.data as unknown as SessionRow[]).map((r) => [r, 'social'] as [SessionRow, SessionKind]),
     ...(graded.data as unknown as SessionRow[]).map((r) => [r, 'graded'] as [SessionRow, SessionKind]),
   ];
-  const [counts, mine] = await Promise.all([
+  const [counts, mine, cutoff] = await Promise.all([
     bookedCounts(rows.map(([r, kind]) => ({ id: r.id, kind }))),
     myBookingsForSessions(rows.map(([r]) => r.id)),
+    clubBookingCutoffHours(club),
   ]);
   return rows
-    .map(([r, kind]) => mapSession(r, kind, counts.get(r.id) ?? { booked: 0, yourPricePence: r.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(r.id) ?? []))
+    .map(([r, kind]) => ({ ...mapSession(r, kind, counts.get(r.id) ?? { booked: 0, yourPricePence: r.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false, inviteOnly: false, youAreInvited: null }, mine.get(r.id) ?? []), bookingCutoffHours: cutoff }))
     .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`));
 }
 
@@ -345,12 +369,13 @@ export async function getSession(id: string): Promise<Session> {
     if (graded.error) throw graded.error;
     row = graded.data as SessionRow;
   }
-  const [counts, mine, attendees] = await Promise.all([
+  const [counts, mine, attendees, cutoff] = await Promise.all([
     bookedCounts([{ id, kind }]),
     myBookingsForSessions([id]),
     fetchAttendees(kind, id),
+    clubBookingCutoffHours(club),
   ]);
-  return { ...mapSession(row, kind, counts.get(id) ?? { booked: 0, yourPricePence: row.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false }, mine.get(id) ?? []), attendees };
+  return { ...mapSession(row, kind, counts.get(id) ?? { booked: 0, yourPricePence: row.price_pennies ?? 0, tasterApplies: false, youAreMember: null, youCanBookAt: null, guardianRequired: false, inviteOnly: false, youAreInvited: null }, mine.get(id) ?? []), attendees, bookingCutoffHours: cutoff };
 }
 
 export async function createSession(input: CreateSessionInput): Promise<Session> {
@@ -455,6 +480,8 @@ export async function bookSession(sessionId: string, memberId: string): Promise<
   if (error) {
     const m = /insufficient_credit:(\d+)/.exec(error.message);
     if (m) throw new InsufficientBalanceError(parseInt(m[1], 10));
+    // migration 86: the server has the last word on invite-only sessions, so say it plainly.
+    if (error.message === 'not_invited') throw new Error('This session is by invitation, and you’re not on the list.');
     throw new Error(error.message);
   }
   const r = data as { booking_id: string; waitlisted: boolean; position?: number; price_charged?: number };
@@ -484,20 +511,60 @@ export async function cancelBooking(sessionId: string, _memberId: string): Promi
     p_member_id: _memberId,
   });
   if (error) throw new Error(error.message);
-  const r = data as { refunded: boolean; refund_pence: number; promoted_name?: string; note: string };
+  const r = data as { refunded: boolean; refund_pence: number; promoted_name?: string; promotion_held?: boolean; note: string };
+  // Inside the session lock the server's note still reads "no refund (no waitlister took the spot)",
+  // as if one could have. promotion_held says the lock was in force, so say that instead.
+  const lockedNote =
+    !r.refunded && r.promotion_held === true && /^Cancelled within the cancellation cutoff/.test(r.note ?? '')
+      ? "Cancelled. The session was locked, so nobody could take your place and there's no refund."
+      : null;
   return {
     refunded: r.refunded,
     refundPence: r.refund_pence,
     promotedMemberName: r.promoted_name ?? undefined,
-    policyNote: r.note,
+    policyNote: lockedNote ?? r.note,
   };
 }
 
-export async function getCancellationWarning(): Promise<string> {
-  return (
-    'Cancelling follows your club’s cancellation policy. If you’re outside the cutoff (or a ' +
-    'waitlister takes your spot), the money goes back to your balance.'
-  );
+/** What cancelling THIS booking right now will mean, worked out from the club's own cut-off and lock
+ *  hours the same way cancel_booking does (see domain/cancelNotice.ts). The old fixed sentence
+ *  promised a refund "if a waitlister takes your spot", which a locked session makes impossible. */
+export async function getCancellationWarning(sessionId: string, memberId: string): Promise<string> {
+  const general =
+    'Cancelling follows your club’s cancellation rules. Close to the start of a session you may not get your money back.';
+  try {
+    const club = await myClubId();
+    if (!club) return general;
+    const [session, clubRes, bookingRes] = await Promise.all([
+      getSession(sessionId),
+      supabase.from('clubs').select('settings').eq('id', club).maybeSingle(),
+      supabase
+        .from('bookings')
+        .select('status,price_charged_pennies')
+        .eq('session_id', sessionId)
+        .eq('member_id', memberId)
+        .in('status', ['booked', 'waitlisted'])
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (clubRes.error || bookingRes.error || !bookingRes.data) return general;
+    const settings = (clubRes.data?.settings ?? {}) as {
+      cancel_cutoff_hours?: number | string | null;
+      promote_cutoff_hours?: number | string | null;
+      booking_mode?: string | null;
+    };
+    const bk = bookingRes.data as { status: string; price_charged_pennies: number | null };
+    return cancelNotice({
+      hoursUntilStart: hoursUntilLondonStart(session.date, session.startTime),
+      cancelCutoffHours: settings.cancel_cutoff_hours as number | null | undefined,
+      promoteCutoffHours: settings.promote_cutoff_hours as number | null | undefined,
+      bookingMode: settings.booking_mode ?? 'paid',
+      pricePence: bk.price_charged_pennies ?? 0,
+      waitlisted: bk.status === 'waitlisted',
+    }).text;
+  } catch {
+    return general;
+  }
 }
 
 export async function getMyBookings(memberId: string): Promise<MyBooking[]> {
@@ -508,10 +575,18 @@ export async function getMyBookings(memberId: string): Promise<MyBooking[]> {
     .in('status', ['booked', 'waitlisted', 'attended']);
   if (error) throw error;
   const rows = data as (BookingRow & { session_kind: SessionKind })[];
-  const out: MyBooking[] = [];
-  for (const b of rows) {
-    out.push({ booking: mapBooking(b), session: await getSession(b.session_id) });
-  }
+  // One unreadable session must not blank the whole list. Before, a single session the member
+  // could not read (closed and unpublished, say) threw, and My Bookings showed "Nothing booked
+  // yet" with no way to cancel anything. Now the rest still show, and the screen says how many
+  // could not be. Loaded in parallel rather than one after another.
+  const settled = await Promise.allSettled(rows.map((b) => getSession(b.session_id)));
+  const out: MyBooking[] & { unavailable?: number } = [];
+  let unavailable = 0;
+  settled.forEach((r, i) => {
+    if (r.status === 'fulfilled') out.push({ booking: mapBooking(rows[i]), session: r.value });
+    else unavailable += 1;
+  });
+  if (unavailable) out.unavailable = unavailable;
   return out;
 }
 
@@ -552,11 +627,12 @@ type WalletRow = {
 // Without it every row read "Session booking" plus the date the money moved, which
 // told a member nothing and made a balance impossible to reconcile.
 export async function getLedger(memberId: string): Promise<LedgerEntry[]> {
-  // NOTE: my_wallet_activity takes no argument — it is scoped server-side to
-  // auth.uid(). `memberId` is only stamped onto the returned rows, so calling this
+  // NOTE: my_wallet_activity is scoped server-side to auth.uid() AND to this site's club
+  // (migration 83): one login can be a member of two clubs, and each site must show only its
+  // own club's wallet. `memberId` is only stamped onto the returned rows, so calling this
   // with anyone other than the signed-in member would label THEIR rows with
   // SOMEONE ELSE'S id. The only caller passes currentUser.id; keep it that way.
-  const { data, error } = await supabase.rpc('my_wallet_activity');
+  const { data, error } = await supabase.rpc('my_wallet_activity', { p_club_slug: BACKEND.slug });
   if (error) throw error;
   let running = 0;
   const rows = ((data ?? []) as WalletRow[]).map((r) => {
@@ -719,7 +795,9 @@ export async function topUp(memberId: string, amountPence: number): Promise<Ledg
     if (error) throw await fnError(error, 'Could not start the payment.');
     const url = (data as { url?: string })?.url;
     if (!url) throw new Error((data as { error?: string })?.error ?? 'Could not start the payment.');
-    await Linking.openURL(url);
+    // Stripe Checkout refuses to be shown inside a frame: inside the club site's layout this
+    // opens it in the whole window, and the member is brought back into the layout afterwards.
+    await openOutside(url);
     return synthetic;
   }
 
@@ -740,7 +818,7 @@ export async function topUp(memberId: string, amountPence: number): Promise<Ledg
     if (error) throw await fnError(error, 'Could not start checkout.');
     const url = (data as { url?: string })?.url;
     if (!url) throw new Error((data as { error?: string })?.error ?? 'Could not start checkout.');
-    await Linking.openURL(url);
+    await openOutside(url);
     return synthetic;
   }
 

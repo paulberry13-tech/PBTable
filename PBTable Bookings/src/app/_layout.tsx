@@ -15,7 +15,7 @@ import { Stack, useRouter, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BannerHost } from '@/components/BannerHost';
 import { BookingNotOpen } from '@/components/BookingNotOpen';
@@ -23,11 +23,40 @@ import { DemoPersonSwitcher } from '@/components/DemoPersonSwitcher';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SignIn } from '@/components/SignIn';
 import { bookingEnabledForThisHost } from '@/services/clubGate';
+import { announceRoute, EMBEDDED, layoutReturnTarget, reserveScrollbarSpace } from '@/services/embed';
 import { USE_SUPABASE } from '@/services/config';
 import { AppProvider, useApp } from '@/store/AppContext';
 import { colors, fonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+// Back from Stripe in the whole window, after starting a top-up inside the club site's side-panel
+// layout: go back into the layout's Booking > Wallet, carrying Stripe's reference, before anything
+// renders. See services/embed.ts.
+let REDIRECTING = false;
+if (Platform.OS === 'web' && typeof window !== 'undefined' && !EMBEDDED) {
+  let target: string | null = null;
+  try { target = layoutReturnTarget(window.location, window.sessionStorage); } catch {}
+  if (target) { REDIRECTING = true; window.location.replace(target); }
+}
+
+/** Inside the club site's layout, tells the side panel which booking page is showing. */
+function EmbedBridge() {
+  const pathname = usePathname();
+  useEffect(() => { announceRoute(pathname); }, [pathname]);
+  // Screens mount their scroll areas as their data arrives, so keep reserving scrollbar space as the
+  // page changes (a no-op outside the layout).
+  useEffect(() => {
+    if (!EMBEDDED || typeof document === 'undefined') return;
+    let queued = false;
+    const run = () => { queued = false; reserveScrollbarSpace(document); };
+    run();
+    const obs = new MutationObserver(() => { if (!queued) { queued = true; setTimeout(run, 30); } });
+    obs.observe(document.body, { childList: true, subtree: true });
+    return () => obs.disconnect();
+  }, []);
+  return null;
+}
 
 // The stack only draws its own back button when the navigator has history. A
 // session opened from a shared link, a bookmark, or just a page reload has none,
@@ -79,6 +108,8 @@ export default function RootLayout() {
     };
   }, []);
 
+  // Leaving for the layout: render nothing, so the wallet here cannot claim the payment first.
+  if (REDIRECTING) return null;
   if (!fontsLoaded && !fontError) return null;
   if (booking === null) return <View style={{ flex: 1, backgroundColor: colors.navy }} />;
   if (!booking.on) return <BookingNotOpen clubName={booking.clubName} />;
@@ -108,6 +139,7 @@ export default function RootLayout() {
       </ErrorBoundary>
       <AuthGate />
       <BannerHost />
+      <EmbedBridge />
       <DemoPersonSwitcher />
     </AppProvider>
   );

@@ -4,11 +4,15 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { Header } from '@/components/Header';
+import { useEmbedded } from '@/services/embed';
 import { getMembershipQuote } from '@/services/membership';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts } from '@/theme';
 
 export default function TabsLayout() {
+  // Inside the club site's side-panel layout, Book a session / My bookings / Wallet are in the
+  // panel, so the bottom tab bar hides. Opened on its own at /app, it shows as always.
+  const embedded = useEmbedded();
   // Most clubs do not sell memberships, so the tab is offered only where one does.
   // PBTable switches it on per club; membership_quote answers {enabled:false} when it
   // is off, and null on a backend without the migrations. Both mean "no tab".
@@ -30,10 +34,12 @@ export default function TabsLayout() {
           headerShown: false,
           tabBarActiveTintColor: colors.coralBright,
           tabBarInactiveTintColor: 'rgba(255,255,255,0.6)',
-          tabBarStyle: {
-            backgroundColor: colors.navy,
-            borderTopColor: colors.navyDeep,
-          },
+          tabBarStyle: embedded
+            ? { display: 'none' }
+            : {
+                backgroundColor: colors.navy,
+                borderTopColor: colors.navyDeep,
+              },
           tabBarLabelStyle: { fontFamily: fonts.semibold, fontSize: 11 },
           sceneStyle: { backgroundColor: colors.background },
         }}

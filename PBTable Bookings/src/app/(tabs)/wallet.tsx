@@ -9,11 +9,13 @@ import { formatMoney } from '@/lib/money';
 import { DEMO_AUTOLOGIN, DEMO_TOPUP, STRIPE_TOPUP, USE_SUPABASE } from '@/services/config';
 import { clubTakesPayments } from '@/services/data';
 import * as data from '@/services/data';
+import { EMBEDDED_FILL, useEmbedded } from '@/services/embed';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 import { LedgerEntry } from '@/types';
 
 export default function WalletScreen() {
+  const embedded = useEmbedded();
   const { currentUser, refresh, showBanner, signOut } = useApp();
   const [topUpOpen, setTopUpOpen] = useState(false);
   // Whether THIS club can take a payment, asked of the database rather than
@@ -115,7 +117,7 @@ export default function WalletScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [claim, currentUser, settled]);
 
-  const { data: balance, loading: balLoading } = useAsyncData(
+  const { data: balance, loading: balLoading, error: balanceError } = useAsyncData(
     () => (currentUser ? data.getBalance(currentUser.id) : Promise.resolve(0)),
     [currentUser?.id]
   );
@@ -151,15 +153,17 @@ export default function WalletScreen() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, embedded && EMBEDDED_FILL]}>
       <Text style={type.display}>Wallet</Text>
 
       <View style={styles.balanceCard}>
         <View style={styles.balanceRule} />
         <Text style={styles.balanceLabel}>BALANCE</Text>
-        <Text style={styles.balanceMoney}>{formatMoney(pence)}</Text>
+        <Text style={styles.balanceMoney}>{balanceError && balance === null ? '£–' : formatMoney(pence)}</Text>
         <Text style={styles.balanceHint}>
-          {confirming
+          {balanceError && balance === null
+            ? 'We couldn’t load your balance just now. Please try again in a moment.'
+            : confirming
             ? 'Confirming your payment…'
             : awaitingStripe
               ? 'Your payment is still being confirmed by Stripe. This can take a few minutes.'
