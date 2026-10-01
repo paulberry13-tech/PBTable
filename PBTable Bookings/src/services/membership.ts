@@ -13,15 +13,17 @@
 //   * A member cannot END a membership early, still. That stays a conversation with the
 //     club: it stops billing immediately and the refund is the club's money and the
 //     club's decision to agree. An admin does that from the dashboard.
-//   * A member cannot create one here either. Buying is a Stripe transaction and will
-//     be a redirect to Stripe's own hosted checkout, the same shape as the wallet
-//     top-up: no card details ever reach this app or PBTable.
+//   * Joining is a redirect to Stripe's own hosted checkout on the club's account, the
+//     same shape as the wallet top-up: no card details ever reach this app or PBTable.
+//     startMembershipCheckout / confirmMembership call the membership-checkout edge
+//     function (migration 93); nothing here writes a membership row.
 //
-// getMembershipQuote/getMyMembership are migrations 88 and 89 and work TODAY.
-// setMembershipRenewal is migration 91 and works TODAY. The buy path
-// (membership-checkout) does not exist yet and is blocked on a Stripe test
-// environment, so the screen shows the offer and says joining is not open.
+// getMembershipQuote/getMyMembership are migrations 88 and 89; setMembershipRenewal is 91;
+// joining is 93.
 
+import { Platform } from 'react-native';
+
+import { BACKEND } from '@/services/backend';
 import { supabase } from '@/services/supabaseClient';
 
 /** One membership as its owner sees it. Null when they have never had one. */
@@ -115,6 +117,50 @@ export function graceDaysLeft(m: MyMembership | null): number | null {
   if (!m || !m.grace_ends_at) return null;
   const left = Date.parse(m.grace_ends_at) - Date.now();
   return left <= 0 ? 0 : Math.ceil(left / 86400000);
+}
+
+/** The message an edge function sent back with a non-2xx reply, or a plain fallback. */
+async function fnMessage(error: unknown, fallback: string): Promise<string> {
+  const ctx = (error as { context?: { json?: () => Promise<{ error?: string }> } } | null)?.context;
+  const body = await ctx?.json?.().catch(() => null);
+  return body?.error ?? (error as { message?: string } | null)?.message ?? fallback;
+}
+
+/** Start joining: membership-checkout checks the member may join, then hands back Stripe's
+ *  own checkout page on the CLUB's account. Card details never reach this app. */
+export async function startMembershipCheckout(): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const origin = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : '';
+  const { data, error } = await supabase.functions.invoke('membership-checkout', {
+    body: { action: 'start', slug: BACKEND.slug, origin },
+  });
+  if (error) return { ok: false, error: await fnMessage(error, 'Could not start joining. Try again.') };
+  const url = (data as { url?: string })?.url;
+  if (!url) return { ok: false, error: (data as { error?: string })?.error ?? 'Could not start joining. Try again.' };
+  return { ok: true, url };
+}
+
+export type MembershipConfirm =
+  | { ok: true; recorded: number; pending: boolean; status: string | null }
+  | { ok: false; error: string; terminal: boolean };
+
+/** Record what Stripe says after joining. With the session id from the return address it
+ *  records that sign-up; without one it looks through this member's recent membership
+ *  checkouts, which covers a cleared browser or a tab closed too soon. */
+export async function confirmMembership(sessionId: string | null): Promise<MembershipConfirm> {
+  const { data, error } = await supabase.functions.invoke('membership-checkout', {
+    body: { action: 'confirm', slug: BACKEND.slug, ...(sessionId ? { session_id: sessionId } : {}) },
+  });
+  if (error) {
+    const status = Number((error as { context?: { status?: number } })?.context?.status) || 0;
+    // A 4xx other than 401 will never succeed (most often a reference left by somebody who
+    // used this browser before), so the screen should stop retrying it. 401 is a token
+    // mid-refresh and is worth keeping.
+    return { ok: false, error: await fnMessage(error, 'Could not confirm your membership.'),
+             terminal: status >= 400 && status < 500 && status !== 401 };
+  }
+  const d = data as { ok?: boolean; error?: string; recorded?: number; pending?: boolean; status?: string | null };
+  if (!d?.ok) return { ok: false, error: d?.error ?? 'Could not confirm your membership.', terminal: true };
+  return { ok: true, recorded: d.recorded ?? 0, pending: !!d.pending, status: d.status ?? null };
 }
 
 /** What the edge function actually returned, so the screen can react to a real result

@@ -10,18 +10,21 @@
 // club's money and the club's decision. See src/services/membership.ts.
 
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, LoadingView } from '@/components/ui';
 import { formatDateLong } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
+import { openOutside } from '@/services/embed';
 import {
+  confirmMembership,
   getMembershipQuote,
   getMyMembership,
   graceDaysLeft,
   membershipStateLabel,
   setMembershipRenewal,
+  startMembershipCheckout,
   type MembershipQuote,
   type MyMembership,
 } from '@/services/membership';
@@ -29,7 +32,7 @@ import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 
 export default function MembershipScreen() {
-  const { currentUser, refresh } = useApp();
+  const { currentUser, refresh, showBanner } = useApp();
   const { data, loading } = useAsyncData<{ quote: MembershipQuote | null; mine: MyMembership | null }>(
     async () => {
       const [quote, mine] = await Promise.all([getMembershipQuote(), getMyMembership()]);
@@ -39,8 +42,90 @@ export default function MembershipScreen() {
   );
   const [renewBusy, setRenewBusy] = useState(false);
   const [renewError, setRenewError] = useState<string | null>(null);
+  const [joinBusy, setJoinBusy] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  // COMING BACK FROM STRIPE. Same shape as the wallet: Stripe returns to
+  // /app/membership?membership=success&session_id=cs_..., which is a full page load, so the
+  // sign-in is restored asynchronously. The reference is stashed first and the URL cleaned
+  // (a refresh cannot replay it, a copied link cannot carry it), then confirmed once there is
+  // a signed-in member. Kept while Stripe is still settling, dropped once recorded or once it
+  // can never succeed.
+  const PENDING_KEY = 'pb.pendingMembership';
+  const [claim, setClaim] = useState<{ id: string | null } | null>(null);
+  const [settled, setSettled] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') {
+      setClaim({ id: null });
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const back = params.get('membership');
+    const fromUrl = back === 'success' ? params.get('session_id') : null;
+    if (back) window.history.replaceState({}, '', window.location.pathname);
+    if (fromUrl) {
+      try { window.localStorage.setItem(PENDING_KEY, fromUrl); } catch {}
+    }
+    if (back === 'cancelled') showBanner('No payment was taken. You can join whenever you like.', 'info');
+    let stored: string | null = null;
+    try { stored = window.localStorage.getItem(PENDING_KEY); } catch {}
+    setClaim({ id: fromUrl ?? stored });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!claim || !currentUser || settled || loading) return;
+    // With no reference, only look for a sign-up when the screen does not already show one:
+    // that is the member who paid and then lost the page before it came back.
+    const shown = membershipStateLabel(data?.mine ?? null).key;
+    if (!claim.id && (shown === 'active' || shown === 'cancelling' || shown === 'failing')) return;
+    if (!claim.id && !data?.quote?.enabled) return;
+    setSettled(true);
+    if (claim.id) setConfirming(true);
+    const forget = () => { try { window.localStorage.removeItem(PENDING_KEY); } catch {} };
+    confirmMembership(claim.id)
+      .then((r) => {
+        if (r.ok) {
+          if (!r.pending) forget();
+          if (r.recorded > 0) {
+            showBanner('Welcome. You are now a member, and member prices apply when you book.', 'success');
+            refresh();
+          } else if (r.pending && claim.id) {
+            showBanner('Stripe is still finishing your payment. This page will update when it does.', 'info');
+          }
+        } else {
+          if (r.terminal) forget();
+          if (claim.id) showBanner(r.error, 'warning');
+        }
+      })
+      .finally(() => setConfirming(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claim, currentUser, settled, loading]);
+
+  const join = async () => {
+    if (joinBusy) return;
+    setJoinBusy(true);
+    setJoinError(null);
+    const r = await startMembershipCheckout();
+    if (!r.ok) {
+      setJoinBusy(false);
+      setJoinError(r.error);
+      return;
+    }
+    try {
+      // Stripe Checkout will not show inside a frame: inside the club site this opens it in
+      // the whole window, and the member is brought back to this page afterwards.
+      await openOutside(r.url);
+    } catch (e) {
+      setJoinBusy(false);
+      setJoinError((e as Error)?.message ?? 'Could not open the payment page.');
+    }
+  };
 
   if (loading) return <LoadingView label="Loading your membership…" />;
+  if (confirming) return <LoadingView label="Confirming your membership…" />;
 
   const quote = data?.quote ?? null;
   const mine = data?.mine ?? null;
@@ -182,12 +267,22 @@ export default function MembershipScreen() {
             </Text>
           )}
 
-          {/* Joining is a Stripe transaction and is not built yet. Say so plainly rather
-              than showing a button that fails, or hiding the price a club has set. */}
-          <Button title="Joining opens soon" onPress={() => {}} disabled />
+          <Button
+            title={quote.december_free ? 'Join now (nothing to pay today)' : 'Join now'}
+            onPress={join}
+            disabled={joinBusy}
+            loading={joinBusy}
+          />
+          {joinError && (
+            <View style={styles.warn}>
+              <Ionicons name="alert-circle" size={16} color={colors.down} />
+              <Text style={styles.warnText}>{joinError}</Text>
+            </View>
+          )}
           <Text style={styles.small}>
-            When it opens you will pay through Stripe, on their own secure page. Your card
-            details never reach this app.
+            {quote.december_free
+              ? 'You pay through Stripe, on their own secure page. Your card is saved and charged on 1 January. Your card details never reach this app.'
+              : 'You pay through Stripe, on their own secure page. Your card details never reach this app.'}
           </Text>
         </Card>
       )}

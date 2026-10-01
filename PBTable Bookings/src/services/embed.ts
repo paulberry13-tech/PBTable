@@ -109,9 +109,9 @@ export function layoutReturnTarget(loc: { pathname: string; search: string }, st
   if (!Number.isFinite(t) || now - t > RETURN_WINDOW_MS || now < t) return null;
   const rest = loc.pathname.replace(/^\/app\/?/, '');
   if (!/^[a-z0-9/_-]*$/i.test(rest)) return null;
-  // Only Stripe coming back (it always adds topup=): any other /app page opened in this tab keeps
+  // Only Stripe coming back (it always adds topup= or membership=): any other /app page opened in this tab keeps
   // opening on its own, and the marker is spent either way.
-  if (!/[?&]topup=(success|cancelled)(&|$)/.test(loc.search)) return null;
+  if (!/[?&](topup|membership)=(success|cancelled)(&|$)/.test(loc.search)) return null;
   return `/#/booking/${rest}${loc.search}`;
 }
 
