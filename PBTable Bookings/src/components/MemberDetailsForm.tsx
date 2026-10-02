@@ -174,7 +174,9 @@ function Tick({ on, onPress, label, link }: {
       </Pressable>
       <View style={{ flex: 1 }}>
         <Text style={styles.tickText} onPress={onPress}>{label}</Text>
-        {link && (
+        {/* https only: the link comes from the club's settings, and anything else (a javascript:
+            or http: link) is not opened at all. The database applies the same rule. */}
+        {link && /^https:\/\/\S+$/.test(link.url) && (
           <Text style={styles.link} onPress={() => Linking.openURL(link.url)} accessibilityRole="link">{link.title}</Text>
         )}
       </View>
