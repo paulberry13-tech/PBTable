@@ -155,7 +155,10 @@ export default function RootLayout() {
  *  the moment someone taps Book, which calls promptSignIn().
  *
  *  In mock mode this is always inert (there's a fixed user). */
-const PRIVATE_ROUTES = ['/bookings', '/wallet'];
+// My details and Membership are about YOU, so they need to know who you are. My details is
+// also where a club's join link lands (…/app/details?join=1): the sign-in it raises opens
+// straight onto joining, and the newcomer arrives on the page holding what they just entered.
+const PRIVATE_ROUTES = ['/bookings', '/wallet', '/details', '/membership'];
 
 function AuthGate() {
   const { authLoading, currentUser, signInPrompted, dismissSignIn } = useApp();
