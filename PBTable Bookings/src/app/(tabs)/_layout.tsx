@@ -66,6 +66,14 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="details"
+          options={{
+            title: 'My details',
+            // Every club: an emergency contact is a duty of care, not a membership feature.
+            tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
           name="membership"
           options={{
             title: 'Membership',

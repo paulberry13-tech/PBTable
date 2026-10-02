@@ -24,6 +24,8 @@
 import { Platform } from 'react-native';
 
 import { BACKEND } from '@/services/backend';
+import { openOutside } from '@/services/embed';
+import { hostClubId } from '@/services/hostClub';
 import { supabase } from '@/services/supabaseClient';
 
 /** One membership as its owner sees it. Null when they have never had one. */
@@ -57,18 +59,16 @@ export type MembershipQuote = {
   december_free?: boolean;
   /** Anniversary clubs only: the whole price, from today. */
   first_charge_pennies?: number | null;
+  /** Every type on sale (migration 94). `plan` is the first of them, for older screens. */
+  types?: { id: string; name: string; price_pennies: number; description: string | null }[];
 };
 
+// The club THIS site serves. It used to be "the club my login belongs to", which errored for
+// anyone in two clubs (maybeSingle refuses two rows), so the tab vanished for them.
 async function myClubId(): Promise<string | null> {
   const { data: sess } = await supabase.auth.getSession();
-  const uid = sess.session?.user?.id;
-  if (!uid) return null;
-  const { data } = await supabase
-    .from('booking_members')
-    .select('club_id')
-    .eq('auth_user_id', uid)
-    .maybeSingle();
-  return (data as { club_id: string } | null)?.club_id ?? null;
+  if (!sess.session?.user?.id) return null;
+  return hostClubId();
 }
 
 /** Null where the club does not sell memberships, or the migrations are not applied. */
@@ -128,15 +128,30 @@ async function fnMessage(error: unknown, fallback: string): Promise<string> {
 
 /** Start joining: membership-checkout checks the member may join, then hands back Stripe's
  *  own checkout page on the CLUB's account. Card details never reach this app. */
-export async function startMembershipCheckout(): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+export async function startMembershipCheckout(planId: string, playerId: string):
+    Promise<{ ok: true; url: string } | { ok: false; error: string; needDetails?: boolean }> {
   const origin = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : '';
   const { data, error } = await supabase.functions.invoke('membership-checkout', {
-    body: { action: 'start', slug: BACKEND.slug, origin },
+    body: { action: 'start', slug: BACKEND.slug, origin, plan_id: planId, player_id: playerId },
   });
   if (error) return { ok: false, error: await fnMessage(error, 'Could not start joining. Try again.') };
   const url = (data as { url?: string })?.url;
   if (!url) return { ok: false, error: (data as { error?: string })?.error ?? 'Could not start joining. Try again.' };
   return { ok: true, url };
+}
+
+/** Stripe's own page, on the club's account, to update the card behind a membership the
+ *  caller pays for. Opens it in the whole window (it will not show inside a frame). */
+export async function openMembershipPortal(membershipId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const origin = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : '';
+  const { data, error } = await supabase.functions.invoke('membership-portal', {
+    body: { membership_id: membershipId, origin },
+  });
+  if (error) return { ok: false, error: await fnMessage(error, 'Could not open the card page. Try again.') };
+  const url = (data as { url?: string })?.url;
+  if (!url) return { ok: false, error: (data as { error?: string })?.error ?? 'Could not open the card page.' };
+  try { await openOutside(url); } catch (e) { return { ok: false, error: (e as Error)?.message ?? 'Could not open the card page.' }; }
+  return { ok: true };
 }
 
 export type MembershipConfirm =

@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,10 +12,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MemberDetailsForm, type DetailsSubmit } from '@/components/MemberDetailsForm';
 import { Button } from '@/components/ui';
 import * as auth from '@/services/auth';
 import { BACKEND } from '@/services/backend';
 import * as data from '@/services/data';
+import { clubJoinInfo, joinClubWithDetails, type ClubJoinInfo } from '@/services/people';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 
@@ -29,7 +32,10 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
   const { sendOtp, verifyOtp, refreshUser } = useApp();
   // 'join*' stages are self-signup: same OTP, but the code is allowed to CREATE
   // the account, and the club roster row is written only after it verifies.
-  const [stage, setStage] = useState<'email' | 'code' | 'joinEmail' | 'joinCode' | 'joinName'>('email');
+  // 'joinDetails' replaced 'joinName' (migration 94): a newcomer gives the details the club
+  // needs -- emergency contact, consents -- in the same step as their name.
+  const [stage, setStage] = useState<'email' | 'code' | 'joinEmail' | 'joinCode' | 'joinDetails'>('email');
+  const [joinInfo, setJoinInfo] = useState<ClubJoinInfo | null>(null);
   const [fullName, setFullName] = useState('');
   const [signupOpen, setSignupOpen] = useState<boolean | null>(null);
   const [email, setEmail] = useState(process.env.EXPO_PUBLIC_DEMO_EMAIL ?? '');
@@ -65,8 +71,20 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
   useEffect(() => {
     let live = true;
     auth.clubSignupInfo(BACKEND.slug)
-      .then((info) => { if (live) setSignupOpen(!!info?.self_signup); })
+      .then((info) => {
+        if (!live) return;
+        const open = !!info?.self_signup;
+        setSignupOpen(open);
+        // A club's "join us" link (…/app?join=1) opens straight onto joining.
+        try {
+          if (open && Platform.OS === 'web' && typeof window !== 'undefined'
+              && new URLSearchParams(window.location.search).get('join') === '1') setStage('joinEmail');
+        } catch {}
+      })
       .catch(() => { if (live) setSignupOpen(false); });
+    // The two links and the club's name for the details step. Null on an older backend, in
+    // which case the form simply shows no links.
+    clubJoinInfo().then((j) => { if (live) setJoinInfo(j); }).catch(() => {});
     return () => { live = false; };
   }, []);
 
@@ -148,7 +166,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
       // auth.verifyOtp is the RAW verify — AppContext's wrapper also loads the member
       // record, which does not exist yet for someone joining.
       await auth.verifyOtp(email, code);
-      setStage('joinName');
+      setStage('joinDetails');
     } catch (e) {
       // Supabase throws PostgrestError, which is NOT an Error instance -- an
       // `instanceof` check alone silently turned real causes into a generic
@@ -161,11 +179,11 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
     } finally { setBusy(false); }
   };
 
-  const finishJoin = async () => {
-    if (fullName.trim().length < 2) { setError('Please give your full name.'); return; }
+  const finishJoin = async (v: DetailsSubmit) => {
     setBusy(true); setError(null);
     try {
-      await auth.joinClub(BACKEND.slug, fullName);
+      const r = await joinClubWithDetails(v.name, v.gender, v.details);
+      if (!r.ok) { setError(r.error); return; }
       await refreshUser();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not complete your sign-up.');
@@ -176,8 +194,11 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.center}
+        style={{ flex: 1 }}
       >
+       {/* Scrolls, because joining now asks for a full set of details. The short sign-in
+           card still sits in the middle: flexGrow + justifyContent centre it when it fits. */}
+       <ScrollView contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
         {/* Whose app is this? A member arriving at glos.pbtable.com was met by
             PBTable's own wordmark, which is the platform's name and not their club's
             -- the header two lines up already said "Pickleball Gloucestershire Club".
@@ -264,19 +285,18 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
               <Button title={busy ? 'Checking' : 'Confirm'} onPress={verifyJoinCode}
                 loading={busy} style={{ marginTop: spacing.lg }} />
             </>
-          ) : stage === 'joinName' ? (
+          ) : stage === 'joinDetails' ? (
             <>
-              <Text style={type.h1}>What's your name?</Text>
-              <Text style={[type.caption, { marginTop: 2, marginBottom: spacing.md }]}>
-                This is the name the club and other players will see on a session line-up.
+              <Text style={type.h1}>About you</Text>
+              <Text style={[type.caption, { marginTop: 2, marginBottom: spacing.sm }]}>
+                What the club needs to run sessions safely. You can change any of it later in My details.
               </Text>
-              <Text style={styles.label}>Full name</Text>
-              <TextInput style={styles.input} value={fullName} onChangeText={setFullName}
-                autoCapitalize="words" placeholder="Alex Morgan" placeholderTextColor={colors.textFaint}
-                onSubmitEditing={finishJoin} returnKeyType="go" />
-              {error ? <Text style={styles.error}>{error}</Text> : null}
-              <Button title={busy ? 'Joining' : 'Join the club'} onPress={finishJoin}
-                loading={busy} style={{ marginTop: spacing.lg }} />
+              <MemberDetailsForm mode="join" initialName={fullName}
+                conductUrl={joinInfo?.code_of_conduct_url ?? null}
+                privacyUrl={joinInfo?.privacy_notice_url ?? null}
+                clubName={joinInfo?.club_name ?? club?.name ?? null}
+                submitLabel={busy ? 'Joining' : 'Join the club'} busy={busy} error={error}
+                onSubmit={(v) => { setFullName(v.name); finishJoin(v); }} />
             </>
           ) : stage === 'email' ? (
             <>
@@ -391,6 +411,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
               </Pressable>
             )}
         </View>
+       </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
@@ -398,7 +419,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.navy },
-  center: { flex: 1, justifyContent: 'center', padding: spacing.xl },
+  center: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl },
   brandWrap: { alignItems: 'center', justifyContent: 'flex-end', height: 96, marginBottom: spacing.xl },
   clubLogo: { width: 56, height: 56, borderRadius: 13, marginBottom: 10 },
   clubName: {

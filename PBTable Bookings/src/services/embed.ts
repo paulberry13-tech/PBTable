@@ -83,9 +83,10 @@ const RETURN_WINDOW_MS = 60 * 60 * 1000;
 
 /** Open a page that must not be shown inside the frame. */
 export async function openOutside(url: string): Promise<void> {
-  // Only ever Stripe's own checkout. Inside the layout this navigates the member's whole tab, so a
+  // Only ever Stripe's own pages. Inside the layout this navigates the member's whole tab, so a
   // wrong value from anywhere must not be able to take it somewhere else.
-  if (!/^https:\/\/checkout\.stripe\.com\//.test(url)) throw new Error('Could not start the payment.');
+  // Stripe Checkout, or Stripe's billing portal ("manage my card" for a membership).
+  if (!/^https:\/\/(checkout|billing)\.stripe\.com\//.test(url)) throw new Error('Could not start the payment.');
   if (EMBEDDED && typeof window !== 'undefined' && window.top) {
     try { window.sessionStorage.setItem(RETURN_KEY, String(Date.now())); } catch {}
     window.top.location.assign(url);
