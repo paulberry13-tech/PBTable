@@ -110,6 +110,8 @@ export interface Session {
   attendees?: SessionAttendee[];
   /** Venue / address, shown on the sessions showcase. */
   location?: string;
+  /** Who is running the session, so members know who to tell about a late change. */
+  host?: string;
 }
 
 export interface SessionAttendee {
