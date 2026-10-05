@@ -79,6 +79,13 @@ export default function SessionDetailScreen() {
   const myBooking = session.bookings.find(
     (b) => b.memberId === currentUser?.id && (b.status === 'booked' || b.status === 'waitlisted')
   );
+  // Where I am in the queue. The database keeps it numbered 1, 2, 3 with no gaps (migration 97).
+  const myQueuePlace = myBooking?.status === 'waitlisted'
+    ? (() => {
+        const i = waiting.findIndex((p) => p.memberId === currentUser?.id);
+        return i < 0 ? null : (waiting[i].waitlistPos ?? i + 1);
+      })()
+    : null;
   const outsideBand =
     session.skillMin !== undefined &&
     currentUser?.rating !== undefined &&
@@ -113,7 +120,12 @@ export default function SessionDetailScreen() {
       const result = await data.bookSession(session.id, currentUser.id);
       refresh();
       if (result.waitlisted) {
-        showBanner(`You're #${result.position} on the waitlist for ${session.title}.`, 'info');
+        showBanner(
+          cost > 0 && !canAfford
+            ? `You're #${result.position} on the waitlist for ${session.title}. Top up to ${formatMoneyShort(cost)} or you'll be passed over when a place comes up.`
+            : `You're #${result.position} on the waitlist for ${session.title}.`,
+          'info',
+        );
       } else if (cost > 0) {
         showBanner(`Booked! ${formatMoneyShort(cost)} drawn from your balance.`, 'success');
       } else {
@@ -202,6 +214,14 @@ export default function SessionDetailScreen() {
                 </Text>
               </Row>
             ) : null}
+            {session.host ? (
+              <Row gap={5} style={{ marginTop: 4 }}>
+                <Ionicons name="person-outline" size={14} color={colors.coralBright} />
+                <Text style={[styles.heroMeta, { flexShrink: 1 }]} numberOfLines={1}>
+                  Hosted by {session.host}
+                </Text>
+              </Row>
+            ) : null}
             <Row style={{ marginTop: spacing.md, flexWrap: 'wrap' }} gap={5}>
               {session.affectsRating ? <Badge label="Graded" tone="coral" /> : <Badge label="Social" tone="green" />}
               {session.format !== 'social' && FORMAT_LABELS[session.format] ? (
@@ -277,8 +297,18 @@ export default function SessionDetailScreen() {
         {myBooking ? (
           <Card style={{ backgroundColor: colors.upSoft, borderColor: 'transparent' }}>
             <Text style={[type.h2, { color: colors.upText }]}>
-              {myBooking.status === 'waitlisted' ? "You're on the waitlist" : "You're booked in"}
+              {myBooking.status === 'waitlisted'
+                ? (myQueuePlace ? `You're #${myQueuePlace} on the waitlist` : "You're on the waitlist")
+                : "You're booked in"}
             </Text>
+            {myBooking.status === 'waitlisted' && cost > 0 ? (
+              <Text style={[type.caption, { marginTop: 4 }]}>
+                When a place comes up, it goes to the first person on the list with {formatMoneyShort(cost)} in their
+                wallet. {balanceUnknown || canAfford
+                  ? 'Keep it topped up so the place is yours.'
+                  : `You have ${formatMoneyShort(balancePence)}, so top up now or the place passes to the next person.`}
+              </Text>
+            ) : null}
             <Text style={[type.caption, { marginTop: 4 }]}>
               Manage or cancel from the My Bookings tab.
             </Text>
@@ -401,6 +431,9 @@ export default function SessionDetailScreen() {
             {full ? (
               <Text style={[type.caption, { textAlign: 'center' }]}>
                 Nothing is charged while you wait. You only pay if a spot frees up.
+                {cost > 0
+                  ? ` A place goes to the first person on the list with ${formatMoneyShort(cost)} in their wallet, so keep yours topped up.`
+                  : ''}
               </Text>
             ) : null}
           </>

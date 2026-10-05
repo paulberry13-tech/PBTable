@@ -67,6 +67,7 @@ type SessionRow = {
   format?: string | null;
   courts?: number | null;
   location?: string | null;
+  host?: string | null;
 };
 
 /** Whether the session has happened — derived from ITS DATE AND TIME, never from
@@ -133,6 +134,7 @@ function mapSession(r: SessionRow, kind: SessionKind, spots: Spots, mine: Bookin
     bookingOpensAt: r.booking_opens_at ?? null,
     bookingOpenedAt: r.booking_opened_at ?? null,
     location: r.location ?? undefined,
+    host: r.host?.trim() || undefined,
   };
 }
 
@@ -322,7 +324,7 @@ export async function getSessions(): Promise<Session[]> {
   // what is actually visible either way, so the filter here is belt-and-braces for
   // clubs that have NOT opted in -- their behaviour stays byte-identical.
   const preview = await clubPreviewUpcoming();
-  const cols = 'id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,booking_opens_at,booking_opened_at,location';
+  const cols = 'id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,booking_opens_at,booking_opened_at,location,host';
   let socialQ = supabase.from('social_sessions').select(cols).eq('club_id', club).gte('played_on', today);
   let gradedQ = supabase.from('session_plans').select(cols + ',courts').eq('club_id', club).gte('played_on', today);
   if (!preview) {
@@ -353,7 +355,7 @@ export async function getSession(id: string): Promise<Session> {
   if (!club) throw new Error('Not signed in.');
   const social = await supabase
     .from('social_sessions')
-    .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,booking_opens_at,booking_opened_at,location')
+    .select('id,name,played_on,start_time,end_time,capacity,format,price_pennies,booking_open,booking_opens_at,booking_opened_at,location,host')
     .eq('id', id)
     .eq('club_id', club)
     .maybeSingle();
@@ -362,7 +364,7 @@ export async function getSession(id: string): Promise<Session> {
   if (!row) {
     const graded = await supabase
       .from('session_plans')
-      .select('id,name,played_on,start_time,end_time,capacity,courts,format,price_pennies,booking_open,booking_opens_at,booking_opened_at,location')
+      .select('id,name,played_on,start_time,end_time,capacity,courts,format,price_pennies,booking_open,booking_opens_at,booking_opened_at,location,host')
       .eq('id', id)
       .eq('club_id', club)
       .single();
