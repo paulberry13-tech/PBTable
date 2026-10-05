@@ -50,6 +50,9 @@ export type PersonMembership = {
   cancel_at_period_end: boolean;
   ended_at: string | null;
   i_pay: boolean;
+  /** A payment above £0 has gone through (migration 94, section 11). Until then renewal stays
+   *  on: a December joiner pays on 1 January. Absent on a backend before that change. */
+  first_payment_made?: boolean;
   plan_id: string | null;
   plan_name: string | null;
   price_pennies: number | null;
@@ -90,6 +93,8 @@ export function friendlyError(raw: string): string {
   if (m.includes('bad_date_of_birth')) return 'That date of birth does not look right.';
   if (m.includes('name_taken')) return 'Somebody at the club already has that name. Add a middle initial or a surname.';
   if (m.includes('signup_closed')) return "This club isn't taking online sign-ups at the moment.";
+  if (m.includes('email_on_another_record') || m.includes('player_already_has_login') || m.includes('player_is_looked_after'))
+    return 'Your email address is on a player record that is already in use at this club. Ask the club to check it.';
   if (m.includes('too_many_dependants')) return 'You can look after up to 8 people here. Ask the club if you need more.';
   if (m.includes('too_long')) return 'One of the answers is too long.';
   return raw;

@@ -179,6 +179,8 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
     : membershipStateLabel(m as unknown as MyMembership | null);
   const live = isLive(m);
   const days = graceDaysLeft(m as unknown as MyMembership | null);
+  // Renewal on and nothing paid yet (a December joiner): turning it off waits for the first payment.
+  const awaitingFirst = !!m && m.first_payment_made === false && !m.cancel_at_period_end;
   const [pick, setPick] = useState<string | null>(types.length === 1 ? types[0].id : null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -230,12 +232,17 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.renewLabel}>Renew automatically</Text>
                     <Text style={styles.meta}>
-                      {state.key === 'cancelling' ? 'Off. Member prices continue until it ends, then it stops.' : "On. It's charged again when the year ends."}
+                      {state.key === 'cancelling' ? 'Off. Member prices continue until it ends, then it stops.'
+                        : awaitingFirst ? `On. Your first payment is taken${m.current_period_end ? ' on ' + formatDateLong(m.current_period_end.slice(0, 10)) : ' soon'}; you can turn this off after that.`
+                        : "On. It's charged again when the year ends."}
                     </Text>
                   </View>
-                  <Button title={state.key === 'cancelling' ? 'Turn on' : 'Turn off'} variant="secondary"
+                  {/* Not before the first real payment: a December joiner pays on 1 January, and
+                      turning renewal off first would be a membership never paid for. The server
+                      refuses it too (membership-renewal); this just doesn't offer it. */}
+                  {!awaitingFirst && <Button title={state.key === 'cancelling' ? 'Turn on' : 'Turn off'} variant="secondary"
                     loading={busy === 'renew'} disabled={!!busy}
-                    onPress={() => run('renew', () => setMembershipRenewal(m.id, !!m.cancel_at_period_end)).then((ok) => ok && onChanged())} />
+                    onPress={() => run('renew', () => setMembershipRenewal(m.id, !!m.cancel_at_period_end)).then((ok) => ok && onChanged())} />}
                 </View>
               )}
               <Pressable onPress={() => run('card', () => openMembershipPortal(m.id))} disabled={!!busy}
