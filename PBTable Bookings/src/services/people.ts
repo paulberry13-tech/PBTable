@@ -31,6 +31,9 @@ export type MemberDetails = {
   conduct_accepted: boolean;
   photo_consent: boolean | null;
   marketing_opt_in: boolean | null;
+  /** Agreed to their details being passed on to register a membership (migration 94, section
+   *  12). Optional here; buying a membership asks for it on the membership card. */
+  share_consent: boolean;
 };
 
 export const EMPTY_DETAILS: MemberDetails = {
@@ -38,7 +41,7 @@ export const EMPTY_DETAILS: MemberDetails = {
   emergency1_name: null, emergency1_relationship: null, emergency1_phone: null,
   emergency2_name: null, emergency2_relationship: null, emergency2_phone: null,
   medical_notes: null, medical_consent: false, privacy_consent: false, conduct_accepted: false,
-  photo_consent: null, marketing_opt_in: null,
+  photo_consent: null, marketing_opt_in: null, share_consent: false,
 };
 
 export type PersonMembership = {
@@ -75,6 +78,8 @@ export type ClubJoinInfo = {
   self_signup: boolean;
   code_of_conduct_url: string | null;
   privacy_notice_url: string | null;
+  /** The "pass my details on" wording (section 12). Absent on a backend before it. */
+  share_wording?: string | null;
   memberships: {
     billing_mode: 'calendar' | 'anniversary' | null;
     types: { id: string; name: string; price_pennies: number; description: string | null }[];

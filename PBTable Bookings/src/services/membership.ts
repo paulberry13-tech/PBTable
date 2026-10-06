@@ -61,6 +61,9 @@ export type MembershipQuote = {
   first_charge_pennies?: number | null;
   /** Every type on sale (migration 94). `plan` is the first of them, for older screens. */
   types?: { id: string; name: string; price_pennies: number; description: string | null }[];
+  /** The words of the "pass my details on to register the membership" tick (migration 94,
+   *  section 12). Absent on a backend before it. */
+  share_wording?: string | null;
 };
 
 // The club THIS site serves. It used to be "the club my login belongs to", which errored for

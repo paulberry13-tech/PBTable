@@ -32,7 +32,7 @@ import {
   type MembershipQuote,
   type MyMembership,
 } from '@/services/membership';
-import { getMyPeople, type Person } from '@/services/people';
+import { getMyPeople, savePersonDetails, type Person } from '@/services/people';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 
@@ -181,6 +181,11 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
   const days = graceDaysLeft(m as unknown as MyMembership | null);
   // Renewal on and nothing paid yet (a December joiner): turning it off waits for the first payment.
   const awaitingFirst = !!m && m.first_payment_made === false && !m.cancel_at_period_end;
+  // A new member's details are passed on to register the membership (migration 94, section 12),
+  // so the tick is asked for here, at the point of buying, if it is not already on file.
+  const shareWording = quote.share_wording ?? null;
+  const needShare = !!shareWording && !person.details?.share_consent;
+  const [agree, setAgree] = useState(false);
   const [pick, setPick] = useState<string | null>(types.length === 1 ? types[0].id : null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -285,16 +290,29 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
               <Text style={styles.typePrice}>{formatMoney(t.price_pennies)}</Text>
             </Pressable>
           ))}
+          {needShare && (
+            <Pressable onPress={() => setAgree(!agree)} style={styles.shareRow} accessibilityRole="checkbox"
+              accessibilityState={{ checked: agree }} accessibilityLabel={shareWording ?? ''}>
+              <Ionicons name={agree ? 'checkbox' : 'square-outline'} size={22} color={agree ? colors.coral : colors.textMuted} />
+              <Text style={[styles.body, { flex: 1, marginTop: 0 }]}>{shareWording}</Text>
+            </Pressable>
+          )}
           <Button
             title={quote.december_free ? 'Join (nothing to pay today)' : person.self ? 'Join now' : `Join for ${who}`}
             onPress={() => run('join', async () => {
               if (!pick) return { ok: false, error: 'Choose a membership type first.' };
+              if (needShare) {
+                if (!agree) return { ok: false, error: 'Please tick to agree to the details being passed on to register the membership.' };
+                if (!person.details) return { ok: false, error: 'Please finish the details first.' };
+                const saved = await savePersonDetails(person.player_id, { ...person.details, share_consent: true });
+                if (!saved.ok) return saved;
+              }
               const r = await startMembershipCheckout(pick, person.player_id);
               if (!r.ok) return r;
               try { await openOutside(r.url); return { ok: true }; }
               catch (e) { return { ok: false, error: (e as Error)?.message ?? 'Could not open the payment page.' }; }
             })}
-            loading={busy === 'join'} disabled={!!busy || !pick} style={{ marginTop: spacing.md }} />
+            loading={busy === 'join'} disabled={!!busy || !pick || (needShare && !agree)} style={{ marginTop: spacing.md }} />
           <Text style={styles.small}>
             You pay through Stripe, on their own secure page. Card details never reach this app.
           </Text>
@@ -327,6 +345,7 @@ function pillFg(k: string) {
 const styles = StyleSheet.create({
   page: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  shareRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginTop: spacing.md },
   h1: { ...type.h1, color: colors.navy },
   h2: { ...type.h2, color: colors.navy },
   body: { ...type.body, color: colors.text, marginTop: spacing.xs },

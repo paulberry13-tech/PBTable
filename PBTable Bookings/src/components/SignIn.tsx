@@ -295,6 +295,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
                 conductUrl={joinInfo?.code_of_conduct_url ?? null}
                 privacyUrl={joinInfo?.privacy_notice_url ?? null}
                 clubName={joinInfo?.club_name ?? club?.name ?? null}
+                shareWording={joinInfo?.share_wording ?? null}
                 submitLabel={busy ? 'Joining' : 'Join the club'} busy={busy} error={error}
                 onSubmit={(v) => { setFullName(v.name); finishJoin(v); }} />
             </>

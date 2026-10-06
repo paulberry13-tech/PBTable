@@ -22,7 +22,7 @@ type Mode = 'join' | 'self' | 'dependant' | 'newDependant';
 export type DetailsSubmit = { name: string; gender: string | null; details: MemberDetails };
 
 export function MemberDetailsForm({
-  mode, initialName = '', initialGender = null, initial, conductUrl, privacyUrl, clubName,
+  mode, initialName = '', initialGender = null, initial, conductUrl, privacyUrl, clubName, shareWording = null,
   submitLabel, busy, error, onSubmit, onCancel,
 }: {
   mode: Mode;
@@ -32,6 +32,8 @@ export function MemberDetailsForm({
   conductUrl: string | null;
   privacyUrl: string | null;
   clubName?: string | null;
+  /** The "pass my details on to register the membership" wording; the tick is shown when set. */
+  shareWording?: string | null;
   submitLabel: string;
   busy?: boolean;
   error?: string | null;
@@ -151,6 +153,10 @@ export function MemberDetailsForm({
         label={`The club may use photos of ${dependant ? 'them' : 'me'} playing (optional).`} />
       <Tick on={d.marketing_opt_in === true} onPress={() => set('marketing_opt_in', !(d.marketing_opt_in === true))}
         label="Send me club news by email (optional)." />
+      {shareWording ? (
+        <Tick on={d.share_consent} onPress={() => set('share_consent', !d.share_consent)}
+          label={`${shareWording} (Needed to buy a membership.)`} />
+      ) : null}
 
       {(localError || error) ? <Text style={styles.error}>{localError || error}</Text> : null}
       <Button title={submitLabel} onPress={submit} loading={busy} disabled={busy} style={{ marginTop: spacing.lg }} />

@@ -82,6 +82,7 @@ export default function DetailsScreen() {
           {open === p.player_id && (
             <MemberDetailsForm key={p.player_id} mode={p.self ? 'self' : 'dependant'} initialName={p.name}
               initial={p.details} conductUrl={conductUrl} privacyUrl={privacyUrl} clubName={info?.club_name}
+              shareWording={info?.share_wording ?? null}
               submitLabel="Save" busy={busy} error={error} onCancel={close}
               onSubmit={async (v) => {
                 setBusy(true); setError(null);
@@ -104,7 +105,7 @@ export default function DetailsScreen() {
               {me && !me.details_complete ? ' Please finish your own details first: the club contacts you about them.' : ''}
             </Text>
             <MemberDetailsForm mode="newDependant" conductUrl={conductUrl} privacyUrl={privacyUrl}
-              clubName={info?.club_name} submitLabel="Add them" busy={busy} error={error} onCancel={close}
+              clubName={info?.club_name} shareWording={info?.share_wording ?? null} submitLabel="Add them" busy={busy} error={error} onCancel={close}
               onSubmit={async (v) => {
                 setBusy(true); setError(null);
                 const r = await addDependant(v.name, v.gender, v.details);
