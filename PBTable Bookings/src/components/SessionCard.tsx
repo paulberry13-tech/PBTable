@@ -17,8 +17,18 @@ import { Session, SportProfile } from '@/types';
  * dashboard (coral vs green rule); the capacity strip does the "should I
  * hurry?" job at a glance.
  */
-export function SessionCard({ session, profile }: { session: Session; profile: SportProfile }) {
+/** Where the signed-in member stands on this session: their own booking rows come back with
+ *  each session (everyone else's are anonymous), so this needs no extra loading. */
+export function myPlaceOn(session: Session, meId?: string | null): 'booked' | 'waitlisted' | null {
+  if (!meId) return null;
+  if (session.bookings.some((b) => b.memberId === meId && (b.status === 'booked' || b.status === 'attended'))) return 'booked';
+  if (session.waitlist.includes(meId) || session.bookings.some((b) => b.memberId === meId && b.status === 'waitlisted')) return 'waitlisted';
+  return null;
+}
+
+export function SessionCard({ session, profile, meId }: { session: Session; profile: SportProfile; meId?: string | null }) {
   const router = useRouter();
+  const mine = myPlaceOn(session, meId);
   const left = spotsLeft(session);
   const full = left === 0;
   const band = skillBandLabel(session);
@@ -67,6 +77,8 @@ export function SessionCard({ session, profile }: { session: Session; profile: S
             ) : null}
           </Row>
           <Row style={{ marginTop: 7, flexWrap: 'wrap' }} gap={5}>
+            {/* First, so a member scanning the list sees at once which ones they are already on. */}
+            {mine === 'booked' ? <Badge label="✓ Booked" tone="navy" /> : mine === 'waitlisted' ? <Badge label="On the waitlist" tone="amber" /> : null}
             {session.affectsRating ? <Badge label="Graded" tone="coral" /> : <Badge label="Social" tone="green" />}
             {/* Invite-only (migration 86). A hidden one only reaches this list for the people invited. */}
             {session.inviteOnly ? (
