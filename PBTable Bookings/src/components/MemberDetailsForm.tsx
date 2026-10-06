@@ -13,7 +13,7 @@ import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-nat
 
 import { Button } from '@/components/ui';
 import {
-  detailsProblem, EMPTY_DETAILS, parseUkDate, toUkDate, type MemberDetails,
+  detailsProblem, EMPTY_DETAILS, INTERESTS, parseUkDate, PLAY_LEVELS, toUkDate, type Interest, type MemberDetails,
 } from '@/services/people';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 
@@ -50,12 +50,26 @@ export function MemberDetailsForm({
   const set = <K extends keyof MemberDetails>(k: K, v: MemberDetails[K]) => setD((x) => ({ ...x, [k]: v }));
   const text = (k: keyof MemberDetails) => (d[k] as string | null) ?? '';
 
+  // Under 18 by the date typed, or someone a parent looks after: show the junior questions.
+  const dobIso = dob.trim() ? parseUkDate(dob) : null;
+  const junior = dependant || (!!dobIso && Date.parse(dobIso) > Date.now() - 18 * 365.25 * 864e5);
+  const toggleInterest = (i: Interest) => {
+    const cur = d.interests ?? [];
+    set('interests', cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]);
+  };
+
   const submit = () => {
     setLocalError(null);
     if (askName && name.trim().length < 2) { setLocalError('Please give a full name.'); return; }
     const iso = dob.trim() ? parseUkDate(dob) : null;
     if (dob.trim() && !iso) { setLocalError('Date of birth should be like 21/06/1985.'); return; }
-    const details: MemberDetails = { ...d, date_of_birth: iso };
+    // First name and surname default from the full name when left blank.
+    const full = (askName ? name : initialName).trim().split(/\s+/);
+    const details: MemberDetails = {
+      ...d, date_of_birth: iso,
+      first_name: d.first_name?.trim() || (full.length > 1 ? full.slice(0, -1).join(' ') : full[0] || null),
+      last_name: d.last_name?.trim() || (full.length > 1 ? full[full.length - 1] : null),
+    };
     const problem = detailsProblem(details, { dependant, conductUrl });
     if (problem) { setLocalError(problem); return; }
     onSubmit({ name: name.trim(), gender, details });
@@ -93,14 +107,35 @@ export function MemberDetailsForm({
         </>
       )}
 
+      <Text style={styles.label}>Name on official records (optional)</Text>
+      <View style={styles.pair}>
+        <TextInput style={[styles.input, { flex: 1 }]} value={text('first_name')} onChangeText={(v) => set('first_name', v)}
+          autoCapitalize="words" placeholder="First name" placeholderTextColor={colors.textFaint} accessibilityLabel="First name" />
+        <TextInput style={[styles.input, { flex: 1 }]} value={text('last_name')} onChangeText={(v) => set('last_name', v)}
+          autoCapitalize="words" placeholder="Surname" placeholderTextColor={colors.textFaint} accessibilityLabel="Surname" />
+      </View>
+      <Text style={styles.hint}>Left blank, they are taken from the name above.</Text>
+
       <Text style={styles.label}>{dependant ? 'Their mobile (optional)' : 'Mobile'}</Text>
       <TextInput style={styles.input} value={text('phone')} onChangeText={(v) => set('phone', v)}
         keyboardType="phone-pad" placeholder="07700 900123" placeholderTextColor={colors.textFaint} />
       {dependant && <Text style={styles.hint}>The club contacts you about them.</Text>}
 
-      <Text style={styles.label}>Postcode (optional)</Text>
-      <TextInput style={styles.input} value={text('postcode')} onChangeText={(v) => set('postcode', v)}
-        autoCapitalize="characters" placeholder="GL1 2AB" placeholderTextColor={colors.textFaint} />
+      <Text style={styles.label}>Another phone (optional)</Text>
+      <TextInput style={styles.input} value={text('phone2')} onChangeText={(v) => set('phone2', v)}
+        keyboardType="phone-pad" placeholder="Home or work" placeholderTextColor={colors.textFaint} />
+
+      <Text style={styles.label}>Address (optional)</Text>
+      <TextInput style={styles.input} value={text('address_line1')} onChangeText={(v) => set('address_line1', v)}
+        placeholder="House and street" placeholderTextColor={colors.textFaint} accessibilityLabel="Address line 1" />
+      <TextInput style={[styles.input, { marginTop: spacing.sm }]} value={text('address_line2')} onChangeText={(v) => set('address_line2', v)}
+        placeholder="Second line" placeholderTextColor={colors.textFaint} accessibilityLabel="Address line 2" />
+      <View style={styles.pair}>
+        <TextInput style={[styles.input, { flex: 1 }]} value={text('town')} onChangeText={(v) => set('town', v)}
+          autoCapitalize="words" placeholder="Town" placeholderTextColor={colors.textFaint} accessibilityLabel="Town" />
+        <TextInput style={[styles.input, { flex: 1 }]} value={text('postcode')} onChangeText={(v) => set('postcode', v)}
+          autoCapitalize="characters" placeholder="Postcode" placeholderTextColor={colors.textFaint} accessibilityLabel="Postcode" />
+      </View>
 
       <Text style={styles.section}>Emergency contact</Text>
       <Text style={styles.hint}>
@@ -129,14 +164,67 @@ export function MemberDetailsForm({
           placeholderTextColor={colors.textFaint} />
       </View>
 
+      <Text style={styles.section}>Playing (optional)</Text>
+      <Text style={styles.label}>{dependant ? 'Their level' : 'Your level'}</Text>
+      <View style={styles.chips}>
+        {PLAY_LEVELS.map(([v, l]) => (
+          <Pressable key={v} onPress={() => set('play_level', d.play_level === v ? null : v)}
+            style={[styles.chip, d.play_level === v && styles.chipOn]} accessibilityRole="radio"
+            accessibilityState={{ selected: d.play_level === v }}>
+            <Text style={[styles.chipText, d.play_level === v && styles.chipTextOn]}>{l}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <Text style={styles.label}>Interested in</Text>
+      <View style={styles.chips}>
+        {INTERESTS.map(([v, l]) => {
+          const on = (d.interests ?? []).includes(v);
+          return (
+            <Pressable key={v} onPress={() => toggleInterest(v)} style={[styles.chip, on && styles.chipOn]}
+              accessibilityRole="checkbox" accessibilityState={{ checked: on }}>
+              <Text style={[styles.chipText, on && styles.chipTextOn]}>{l}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={styles.pair}>
+        <TextInput style={[styles.input, { flex: 1 }]} value={text('dupr_id')} onChangeText={(v) => set('dupr_id', v)}
+          autoCapitalize="characters" placeholder="DUPR ID" placeholderTextColor={colors.textFaint} accessibilityLabel="DUPR ID" />
+        <TextInput style={[styles.input, { flex: 1 }]} value={text('pe_number')} onChangeText={(v) => set('pe_number', v)}
+          autoCapitalize="characters" placeholder="Pickleball England no." placeholderTextColor={colors.textFaint}
+          accessibilityLabel="Pickleball England membership number" />
+      </View>
+
+      {junior && (
+        <>
+          <Text style={styles.section}>For a junior</Text>
+          <Text style={styles.hint}>From their parent or guardian, for whoever runs the session.</Text>
+          <YesNo label="May the club give them first aid if needed?" value={d.junior_first_aid}
+            onChange={(v) => set('junior_first_aid', v)} />
+          <YesNo label="May they leave a session on their own?" value={d.junior_leave_alone}
+            onChange={(v) => set('junior_leave_alone', v)} />
+          <Text style={styles.label}>Who else may collect them? (optional)</Text>
+          <TextInput style={styles.input} value={text('junior_collect_by')} onChangeText={(v) => set('junior_collect_by', v)}
+            placeholder="Name and relationship, e.g. Joan Smith (grandparent)" placeholderTextColor={colors.textFaint} />
+        </>
+      )}
+
       <Text style={styles.section}>Health (optional)</Text>
       <Text style={styles.hint}>
-        Anything a first aider should know: a condition, an allergy, medication. Only the people
-        running a session can see it, and only to help in an emergency.
+        Anything a first aider should know. Only the people running a session can see it, and only to
+        help in an emergency.
       </Text>
-      <TextInput style={[styles.input, styles.area]} value={text('medical_notes')}
-        onChangeText={(v) => set('medical_notes', v)} multiline placeholder="Leave blank if nothing to add"
-        placeholderTextColor={colors.textFaint} />
+      {([['medical_conditions', 'Medical conditions', 'e.g. asthma, diabetes, heart condition'],
+         ['allergies', 'Allergies', 'e.g. nuts, bee stings'],
+         ['medication', 'Medication', 'e.g. carries an inhaler'],
+         ['adjustments', 'Anything needed to play', 'e.g. a knee support, hearing or sight needs'],
+         ['medical_notes', 'Anything else', 'Leave blank if nothing to add']] as [keyof MemberDetails, string, string][]).map(([k, l, ph]) => (
+        <View key={k}>
+          <Text style={styles.label}>{l}</Text>
+          <TextInput style={[styles.input, styles.areaSmall]} value={text(k)} onChangeText={(v) => set(k, v as never)}
+            multiline placeholder={ph} placeholderTextColor={colors.textFaint} />
+        </View>
+      ))}
       <Tick on={d.medical_consent} onPress={() => set('medical_consent', !d.medical_consent)}
         label={`I agree to the club keeping ${who} health notes for use in an emergency. Without this tick they are not saved.`} />
 
@@ -165,6 +253,23 @@ export function MemberDetailsForm({
           <Text style={styles.link}>Cancel</Text>
         </Pressable>
       )}
+    </View>
+  );
+}
+
+// Yes / No with nothing chosen until the parent answers: a junior question must not default.
+function YesNo({ label, value, onChange }: { label: string; value: boolean | null; onChange: (v: boolean | null) => void }) {
+  return (
+    <View style={{ marginTop: spacing.md }}>
+      <Text style={styles.tickText}>{label}</Text>
+      <View style={[styles.chips, { marginTop: 6 }]}>
+        {([[true, 'Yes'], [false, 'No']] as [boolean, string][]).map(([v, l]) => (
+          <Pressable key={l} onPress={() => onChange(value === v ? null : v)} style={[styles.chip, value === v && styles.chipOn]}
+            accessibilityRole="radio" accessibilityState={{ selected: value === v }} accessibilityLabel={`${label} ${l}`}>
+            <Text style={[styles.chipText, value === v && styles.chipTextOn]}>{l}</Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
@@ -200,6 +305,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular, color: colors.text, backgroundColor: colors.card,
   },
   area: { minHeight: 80, textAlignVertical: 'top', marginTop: spacing.sm },
+  areaSmall: { minHeight: 48, textAlignVertical: 'top' },
   pair: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   chip: { borderWidth: 1.5, borderColor: colors.borderStrong, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 },

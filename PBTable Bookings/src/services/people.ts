@@ -34,7 +34,35 @@ export type MemberDetails = {
   /** Agreed to their details being passed on to register a membership (migration 94, section
    *  12). Optional here; buying a membership asks for it on the membership card. */
   share_consent: boolean;
+  // 2026-10-06: what other clubs ask for. All optional.
+  first_name: string | null;
+  last_name: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  town: string | null;
+  phone2: string | null;
+  play_level: PlayLevel | null;
+  dupr_id: string | null;
+  pe_number: string | null;
+  interests: Interest[] | null;
+  junior_first_aid: boolean | null;
+  junior_leave_alone: boolean | null;
+  junior_collect_by: string | null;
+  // Health: kept only with medical_consent, like medical_notes ("anything else").
+  medical_conditions: string | null;
+  allergies: string | null;
+  medication: string | null;
+  adjustments: string | null;
 };
+
+export type PlayLevel = 'new' | 'beginner' | 'intermediate' | 'advanced';
+export type Interest = 'social' | 'competitive' | 'coaching' | 'volunteering';
+export const PLAY_LEVELS: [PlayLevel, string][] = [
+  ['new', 'New to pickleball'], ['beginner', 'Beginner'], ['intermediate', 'Intermediate'], ['advanced', 'Advanced'],
+];
+export const INTERESTS: [Interest, string][] = [
+  ['social', 'Social play'], ['competitive', 'Competitive / graded'], ['coaching', 'Coaching'], ['volunteering', 'Helping the club'],
+];
 
 export const EMPTY_DETAILS: MemberDetails = {
   date_of_birth: null, phone: null, postcode: null,
@@ -42,6 +70,10 @@ export const EMPTY_DETAILS: MemberDetails = {
   emergency2_name: null, emergency2_relationship: null, emergency2_phone: null,
   medical_notes: null, medical_consent: false, privacy_consent: false, conduct_accepted: false,
   photo_consent: null, marketing_opt_in: null, share_consent: false,
+  first_name: null, last_name: null, address_line1: null, address_line2: null, town: null, phone2: null,
+  play_level: null, dupr_id: null, pe_number: null, interests: null,
+  junior_first_aid: null, junior_leave_alone: null, junior_collect_by: null,
+  medical_conditions: null, allergies: null, medication: null, adjustments: null,
 };
 
 export type PersonMembership = {
@@ -102,6 +134,8 @@ export function friendlyError(raw: string): string {
     return 'Your email address is on a player record that is already in use at this club. Ask the club to check it.';
   if (m.includes('too_many_dependants')) return 'You can look after up to 8 people here. Ask the club if you need more.';
   if (m.includes('too_long')) return 'One of the answers is too long.';
+  if (m.includes('bad_dupr_id')) return 'That DUPR ID does not look right. It is letters and numbers only.';
+  if (m.includes('bad_pe_number')) return 'That Pickleball England number does not look right.';
   return raw;
 }
 
@@ -156,7 +190,8 @@ export function detailsProblem(d: MemberDetails, opts: { dependant: boolean; con
     return 'Please add an emergency contact: name, relationship and phone.';
   }
   const phoneOk = (p: string | null) => !p || /^[0-9+() -]{7,20}$/.test(p.trim());
-  if (![d.phone, d.emergency1_phone, d.emergency2_phone].every(phoneOk)) return 'One of the phone numbers does not look right.';
+  if (![d.phone, d.phone2, d.emergency1_phone, d.emergency2_phone].every(phoneOk)) return 'One of the phone numbers does not look right.';
+  if (d.dupr_id && !/^[A-Za-z0-9-]{3,30}$/.test(d.dupr_id.trim())) return 'That DUPR ID does not look right. It is letters and numbers only.';
   if (!d.privacy_consent) return 'Please tick to agree to the privacy notice.';
   if (opts.conductUrl && !d.conduct_accepted) return "Please tick to agree to the club's code of conduct.";
   return null;
