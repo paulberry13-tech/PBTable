@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { HelpLink } from '@/components/HelpLink';
 import { TopUpSheet } from '@/components/TopUpSheet';
 import { Avatar, Badge, Button, Card, CapacityBar, DateBlock, ErrorState, LoadingView, Row } from '@/components/ui';
 import { hoursUntilLondonStart } from '@/domain/cancelNotice';
@@ -436,6 +437,7 @@ export default function SessionDetailScreen() {
                   : ''}
               </Text>
             ) : null}
+            <HelpLink guide={full ? 'waiting-list' : 'book'} label={full ? 'How the waiting list works' : 'How booking works'} center />
           </>
         )}
       </View>

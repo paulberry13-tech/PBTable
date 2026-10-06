@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmSheet } from '@/components/ConfirmSheet';
+import { HelpLink } from '@/components/HelpLink';
 import { Badge, Button, DateBlock, EmptyState, ErrorState, LoadingView, Row } from '@/components/ui';
 import { sessionStart } from '@/domain/cancellation';
 import { formatMoney, formatMoneyShort } from '@/lib/money';
@@ -68,6 +69,7 @@ export default function MyBookingsScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, embedded && EMBEDDED_FILL]}>
       <Text style={type.display}>My bookings</Text>
+      <HelpLink guide="cancel" label="Cancelling and refunds" />
 
       <Pressable
         onPress={() => router.push('/wallet')}

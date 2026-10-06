@@ -1,6 +1,8 @@
 import { usePathname, useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+
+import { openHelp } from '@/components/HelpLink';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BACKEND } from '@/services/backend';
@@ -116,6 +118,13 @@ export function Header() {
             style={({ pressed }) => [styles.navBtn, styles.backBtn, pressed && { opacity: 0.8 }]}
           >
             <Text style={[styles.navText, styles.backText]}>‹ Club site</Text>
+          </Pressable>
+        ) : null}
+        {/* The player guides (/help.html), with screenshots. Web only, like the link above. */}
+        {Platform.OS === 'web' ? (
+          <Pressable onPress={() => openHelp()} accessibilityRole="link" accessibilityLabel="Help: how booking works"
+            style={({ pressed }) => [styles.navBtn, pressed && { opacity: 0.8 }]}>
+            <Text style={styles.navText}>Help</Text>
           </Pressable>
         ) : null}
         {NAV.map((item) => {

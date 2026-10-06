@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { HelpLink } from '@/components/HelpLink';
 import { TopUpSheet } from '@/components/TopUpSheet';
 import { Button, Card, EmptyState, LoadingView, Row } from '@/components/ui';
 import { formatDate } from '@/lib/format';
@@ -188,6 +189,8 @@ export default function WalletScreen() {
           </Row>
         ) : null}
       </View>
+
+      <HelpLink guide="top-up" label="How topping up works" />
 
       <Text style={[type.h1, { marginTop: spacing.xl, marginBottom: spacing.md }]}>Activity</Text>
 
