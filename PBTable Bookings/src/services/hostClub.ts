@@ -13,13 +13,19 @@ import { supabase } from './supabaseClient';
  *  Cached per slug. A failed lookup is not cached, so a network blip is retried next time
  *  rather than remembered as "no club". */
 let cached: { slug: string; id: string | null } | null = null;
+// Screens starting together share one lookup instead of each asking (start-up asked three times).
+let inFlight: Promise<string | null> | null = null;
 
 export async function hostClubId(): Promise<string | null> {
   const slug = BACKEND.slug;
   if (!slug) return null;
   if (cached && cached.slug === slug) return cached.id;
-  const { data, error } = await supabase.from('clubs').select('id').eq('slug', slug).maybeSingle();
-  if (error) return null;
-  cached = { slug, id: (data as { id: string } | null)?.id ?? null };
-  return cached.id;
+  if (inFlight) return inFlight;
+  inFlight = (async () => {
+    const { data, error } = await supabase.from('clubs').select('id').eq('slug', slug).maybeSingle();
+    if (error) return null;
+    cached = { slug, id: (data as { id: string } | null)?.id ?? null };
+    return cached.id;
+  })().finally(() => { inFlight = null; });
+  return inFlight;
 }

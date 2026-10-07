@@ -288,8 +288,10 @@ async function clubPreviewUpcoming(): Promise<boolean> {
   const club = await myClubId();
   if (!club) return false;
   try {
-    const { data, error } = await supabase.from('clubs').select('settings').eq('id', club).maybeSingle();
-    _preview = !error && !!(data?.settings as { preview_upcoming?: boolean } | null)?.preview_upcoming;
+    // Only the settings keys needed, never the whole settings object: it also carries the club's
+    // logo as an embedded picture (the demo's was 2.6 MB), and this runs on most screens.
+    const { data, error } = await supabase.from('clubs').select('preview_upcoming:settings->preview_upcoming').eq('id', club).maybeSingle();
+    _preview = !error && (data as { preview_upcoming?: unknown } | null)?.preview_upcoming === true;
   } catch {
     return false;
   }
@@ -303,9 +305,9 @@ const _cutoffByClub = new Map<string, number>();
 async function clubBookingCutoffHours(club: string): Promise<number> {
   if (_cutoffByClub.has(club)) return _cutoffByClub.get(club)!;
   try {
-    const { data, error } = await supabase.from('clubs').select('settings').eq('id', club).maybeSingle();
+    const { data, error } = await supabase.from('clubs').select('booking_cutoff_hours:settings->booking_cutoff_hours').eq('id', club).maybeSingle();
     if (error) return 0;
-    const v = Number((data?.settings as { booking_cutoff_hours?: unknown } | null)?.booking_cutoff_hours ?? 0);
+    const v = Number((data as { booking_cutoff_hours?: unknown } | null)?.booking_cutoff_hours ?? 0);
     const hours = Number.isFinite(v) && v > 0 ? v : 0;
     _cutoffByClub.set(club, hours);
     return hours;
@@ -539,7 +541,9 @@ export async function getCancellationWarning(sessionId: string, memberId: string
     if (!club) return general;
     const [session, clubRes, bookingRes] = await Promise.all([
       getSession(sessionId),
-      supabase.from('clubs').select('settings').eq('id', club).maybeSingle(),
+      supabase.from('clubs')
+        .select('cancel_cutoff_hours:settings->cancel_cutoff_hours,promote_cutoff_hours:settings->promote_cutoff_hours,booking_mode:settings->booking_mode')
+        .eq('id', club).maybeSingle(),
       supabase
         .from('bookings')
         .select('status,price_charged_pennies')
@@ -550,7 +554,7 @@ export async function getCancellationWarning(sessionId: string, memberId: string
         .maybeSingle(),
     ]);
     if (clubRes.error || bookingRes.error || !bookingRes.data) return general;
-    const settings = (clubRes.data?.settings ?? {}) as {
+    const settings = (clubRes.data ?? {}) as {
       cancel_cutoff_hours?: number | string | null;
       promote_cutoff_hours?: number | string | null;
       booking_mode?: string | null;
@@ -740,18 +744,18 @@ let _branding: ClubBranding | null | undefined;
 export async function getClubBranding(): Promise<ClubBranding | null> {
   if (_branding !== undefined) return _branding;
   try {
+    // The one read that needs the logo: just the name and the logo, once per page.
     const { data, error } = await supabase
       .from('clubs')
-      .select('name,settings')
+      .select('name, logo_url:settings->>logo_url')
       .eq('slug', BACKEND.slug)
       .maybeSingle();
     // Do NOT cache a failure: one dropped request would pin the header to the
     // PBTable mark for the rest of the session, on every screen, even after the
     // connection came back. Only success is remembered.
     if (error || !data) return null;
-    const row = data as { name?: string | null; settings?: Record<string, unknown> | null };
-    const s = row.settings ?? {};
-    const logo = typeof s.logo_url === 'string' && s.logo_url.trim() ? s.logo_url.trim() : null;
+    const row = data as { name?: string | null; logo_url?: string | null };
+    const logo = typeof row.logo_url === 'string' && row.logo_url.trim() ? row.logo_url.trim() : null;
     _branding = { name: (row.name ?? '').trim() || null, logoUrl: logo };
   } catch {
     return null;   // transient — try again on the next mount rather than caching it

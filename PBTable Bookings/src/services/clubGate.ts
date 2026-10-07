@@ -21,14 +21,16 @@ import { supabase } from './supabaseClient';
 export async function bookingEnabledForThisHost(): Promise<{ on: boolean; clubName?: string }> {
   if (!USE_SUPABASE) return { on: true }; // mock mode has no database to ask
   try {
+    // Only the settings keys needed, never the whole settings object: it also carries the club's
+    // logo as an embedded picture (the demo's was 2.6 MB), and this runs on most screens.
     const { data, error } = await supabase
       .from('clubs')
-      .select('name, settings')
+      .select('name, booking_enabled:settings->booking_enabled')
       .eq('slug', BACKEND.slug)
       .maybeSingle();
     if (error || !data) return { on: false };
-    const row = data as { name: string | null; settings: Record<string, unknown> | null };
-    return { on: row.settings?.booking_enabled === true, clubName: row.name ?? undefined };
+    const row = data as { name: string | null; booking_enabled: unknown };
+    return { on: row.booking_enabled === true, clubName: row.name ?? undefined };
   } catch {
     return { on: false };
   }
