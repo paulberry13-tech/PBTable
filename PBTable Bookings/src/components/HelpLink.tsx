@@ -11,7 +11,7 @@ import { colors, fonts } from '@/theme';
 
 export type HelpGuide =
   | 'home-screen' | 'join' | 'sign-in' | 'top-up' | 'book' | 'waiting-list' | 'cancel'
-  | 'details' | 'child' | 'membership';
+  | 'details' | 'child' | 'membership' | 'renewal';
 
 export function openHelp(guide?: HelpGuide): void {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return;

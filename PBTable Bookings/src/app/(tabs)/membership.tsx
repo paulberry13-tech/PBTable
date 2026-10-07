@@ -196,6 +196,7 @@ export default function MembershipScreen() {
             <Text style={styles.link}>{contact}</Text>
           </Pressable>
         ) : null}
+        <HelpLink guide="renewal" label="Renewing, leaving and card problems" />
       </Card>
     </ScrollView>
   );
