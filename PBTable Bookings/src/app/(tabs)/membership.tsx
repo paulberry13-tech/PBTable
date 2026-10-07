@@ -21,7 +21,7 @@ import { Button, Card, LoadingView } from '@/components/ui';
 import { HelpLink } from '@/components/HelpLink';
 import { formatDateLong } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
-import { openOutside } from '@/services/embed';
+import { EMBEDDED_FILL, openOutside, useEmbedded } from '@/services/embed';
 import {
   confirmMembership,
   getMembershipQuote,
@@ -40,6 +40,7 @@ import { colors, fonts, radius, spacing, type } from '@/theme';
 const PENDING_KEY = 'pb.pendingMembership';
 
 export default function MembershipScreen() {
+  const embedded = useEmbedded();
   const { currentUser, refresh, showBanner } = useApp();
   const router = useRouter();
   const [reload, setReload] = useState(0);
@@ -102,7 +103,7 @@ export default function MembershipScreen() {
 
   if (!quote || !quote.enabled) {
     return (
-      <ScrollView contentContainerStyle={styles.page}>
+      <ScrollView contentContainerStyle={[styles.page, embedded && EMBEDDED_FILL]}>
         <Card>
           <Text style={styles.h1}>Membership</Text>
           <Text style={styles.body}>This club does not offer memberships.</Text>
@@ -114,7 +115,7 @@ export default function MembershipScreen() {
   const types = quote.types ?? (quote.plan ? [{ ...quote.plan, description: null }] : []);
 
   return (
-    <ScrollView contentContainerStyle={styles.page}>
+    <ScrollView contentContainerStyle={[styles.page, embedded && EMBEDDED_FILL]}>
       <Card>
         <Text style={styles.h1}>Membership</Text>
         <Text style={styles.body}>
@@ -345,7 +346,8 @@ function pillFg(k: string) {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl },
+  // The same column as the other screens: 720 wide on its own, the site's 1152 inside the club site.
+  page: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl, maxWidth: 720, width: '100%', alignSelf: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   shareRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginTop: spacing.md },
   h1: { ...type.h1, color: colors.navy },

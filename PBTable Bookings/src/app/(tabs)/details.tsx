@@ -12,6 +12,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { HelpLink } from '@/components/HelpLink';
+import { EMBEDDED_FILL, useEmbedded } from '@/services/embed';
 import { MemberDetailsForm } from '@/components/MemberDetailsForm';
 import { Button, Card, LoadingView } from '@/components/ui';
 import {
@@ -21,6 +22,7 @@ import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 
 export default function DetailsScreen() {
+  const embedded = useEmbedded();
   const { currentUser, showBanner } = useApp();
   const [reload, setReload] = useState(0);
   const { data: people, loading } = useAsyncData<Person[] | null>(() => getMyPeople(), [currentUser?.id, reload]);
@@ -34,7 +36,7 @@ export default function DetailsScreen() {
   if (loading) return <LoadingView label="Loading your details…" />;
   if (!people) {
     return (
-      <ScrollView contentContainerStyle={styles.page}>
+      <ScrollView contentContainerStyle={[styles.page, embedded && EMBEDDED_FILL]}>
         <Card><Text style={styles.h1}>My details</Text>
           <Text style={styles.body}>Sign in to see the details the club holds about you.</Text></Card>
       </ScrollView>
@@ -47,7 +49,7 @@ export default function DetailsScreen() {
   const close = () => { setOpen(null); setError(null); };
 
   return (
-    <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.page, embedded && EMBEDDED_FILL]} keyboardShouldPersistTaps="handled">
       <Card>
         <Text style={styles.h1}>My details</Text>
         <Text style={styles.body}>
@@ -132,7 +134,8 @@ export default function DetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl },
+  // The same column as the other screens: 720 wide on its own, the site's 1152 inside the club site.
+  page: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl, maxWidth: 720, width: '100%', alignSelf: 'center' },
   h1: { ...type.h1, color: colors.navy },
   h2: { ...type.h2, color: colors.navy },
   body: { ...type.body, color: colors.text, marginTop: spacing.xs },

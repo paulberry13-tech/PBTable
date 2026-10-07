@@ -92,6 +92,12 @@ export async function openOutside(url: string): Promise<void> {
     window.top.location.assign(url);
     return;
   }
+  // On its own on the web, the same tab too. Linking.openURL opens a NEW tab there, which left the
+  // old one behind and brought Stripe back to whoever that browser was signed in as by then.
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.location.assign(url);
+    return;
+  }
   await Linking.openURL(url);
 }
 
