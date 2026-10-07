@@ -269,7 +269,7 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
           )}
           {m.period_from && m.period_to ? (
             <MembershipPeriod from={m.period_from} to={m.period_to} offline={m.source === 'offline'}
-              renews={m.source === 'stripe' && state.key !== 'cancelling'} />
+              renews={m.source === 'stripe' && m.has_card !== false && state.key !== 'cancelling'} />
           ) : null}
           {m.source === 'offline' ? (
             m.period_to ? null : (
