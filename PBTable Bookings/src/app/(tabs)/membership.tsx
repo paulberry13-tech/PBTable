@@ -210,6 +210,9 @@ function termsLine(q: MembershipQuote): string {
   const on = q.renews_on ? formatDateLong(q.renews_on) : null;
   if (q.billing_mode === 'calendar') {
     if (q.december_free) return `Join now and pay nothing until ${on ?? '1 January'}, when the year's price is taken.`;
+    // A club with joining price steps shows a clear price on each type rather than a by-the-day figure.
+    if ((q.types ?? []).some((t) => t.join_pennies != null))
+      return `Memberships run to 31 December. Joining now, you pay the price shown for the rest of this year, then the full price on ${on ?? '1 January'}.`;
     if (q.pro_rata) return `Memberships run to 31 December. You pay for the rest of this year now, then the full price on ${on ?? '1 January'}.`;
     return `Memberships run to 31 December and renew on ${on ?? '1 January'}.`;
   }
@@ -218,7 +221,7 @@ function termsLine(q: MembershipQuote): string {
 
 function PersonCard({ person, types, quote, onChanged, onDetails }: {
   person: Person;
-  types: { id: string; name: string; price_pennies: number; description: string | null }[];
+  types: { id: string; name: string; price_pennies: number; description: string | null; join_pennies?: number | null }[];
   quote: MembershipQuote;
   onChanged: () => void;
   onDetails: () => void;
@@ -344,7 +347,14 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
                 <Text style={styles.typeName}>{t.name}</Text>
                 {t.description ? <Text style={styles.meta}>{t.description}</Text> : null}
               </View>
-              <Text style={styles.typePrice}>{formatMoney(t.price_pennies)}</Text>
+              {t.join_pennies != null && t.join_pennies !== t.price_pennies ? (
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={styles.typePrice}>{formatMoney(t.join_pennies)}</Text>
+                  <Text style={styles.typeThen}>then {formatMoney(t.price_pennies)} a year</Text>
+                </View>
+              ) : (
+                <Text style={styles.typePrice}>{formatMoney(t.price_pennies)}</Text>
+              )}
             </Pressable>
           ))}
           {needShare && (
@@ -355,7 +365,8 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
             </Pressable>
           )}
           <Button
-            title={quote.december_free ? 'Join (nothing to pay today)' : person.self ? 'Join now' : `Join for ${who}`}
+            title={quote.december_free ? 'Join (nothing to pay today)'
+              : `${person.self ? 'Join now' : `Join for ${who}`}${(() => { const j = types.find((t) => t.id === pick)?.join_pennies; return j != null ? ` · ${formatMoney(j)}` : ''; })()}`}
             onPress={() => run('join', async () => {
               if (!pick) return { ok: false, error: 'Choose a membership type first.' };
               if (needShare) {
@@ -428,6 +439,7 @@ const styles = StyleSheet.create({
   typeOn: { borderColor: colors.coral },
   typeName: { ...type.body, fontFamily: fonts.bold, color: colors.text },
   typePrice: { fontFamily: fonts.mono, fontSize: 16, color: colors.navy },
+  typeThen: { ...type.caption, color: colors.textMuted },
   pill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
   pillText: { ...type.caption, fontFamily: fonts.bold },
   warn: { flexDirection: 'row', gap: spacing.sm, backgroundColor: colors.downSoft, borderRadius: radius.md,

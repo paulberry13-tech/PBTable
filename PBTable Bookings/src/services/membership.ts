@@ -60,7 +60,9 @@ export type MembershipQuote = {
   /** Anniversary clubs only: the whole price, from today. */
   first_charge_pennies?: number | null;
   /** Every type on sale (migration 94). `plan` is the first of them, for older screens. */
-  types?: { id: string; name: string; price_pennies: number; description: string | null }[];
+  /** join_pennies: what joining costs today under the type's joining price steps, or null (no steps:
+   *  the by-the-day part-year charge applies). Migration 94, section 13. */
+  types?: { id: string; name: string; price_pennies: number; description: string | null; join_pennies?: number | null }[];
   /** The words of the "pass my details on to register the membership" tick (migration 94,
    *  section 12). Absent on a backend before it. */
   share_wording?: string | null;
