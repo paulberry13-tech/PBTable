@@ -1,12 +1,8 @@
-// The platform brand, from the address the app was opened on. Same rule as the club site's own
-// (site/index.html, BRAND): *.twoclear.co.uk is twoclear, everything else -- pbtable.com, demo,
-// localhost, native -- is PBTable. It only decides what shows when a club has not uploaded a logo.
-import { Platform } from 'react-native';
-
-const host =
-  Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
-
-export const IS_TWOCLEAR = /(^|\.)twoclear\.co\.uk$/.test(host);
+// The platform brand. twoclear on every address, the same as the club site's own (site/index.html,
+// BRAND): PBTable was retired as a name on 2026-10-07. It decides what shows when a club has not
+// uploaded a logo, and the browser-tab icons. The twoclear files are served by the club site the
+// app lives under (/brand/twoclear/...).
+export const IS_TWOCLEAR = true;
 
 export const PLATFORM_NAME = IS_TWOCLEAR ? 'twoclear' : 'PBTable';
 
