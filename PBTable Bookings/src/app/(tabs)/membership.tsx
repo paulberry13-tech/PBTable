@@ -295,7 +295,7 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
                     <Text style={styles.renewLabel}>Renew automatically</Text>
                     <Text style={styles.meta}>
                       {state.key === 'cancelling' ? 'Off. Member prices continue until it ends, then it stops.'
-                        : awaitingFirst ? `On. Your first payment is taken${m.current_period_end ? ' on ' + formatDateLong(m.current_period_end.slice(0, 10)) : ' soon'}; you can turn this off after that.`
+                        : awaitingFirst ? `On. Your first payment is taken${m.period_to ? ' on ' + formatDateLong(addDay(m.period_to)) : m.current_period_end ? ' on ' + formatDateLong(m.current_period_end.slice(0, 10)) : ' soon'}; you can turn this off after that.`
                         : "On. It's charged again when the year ends."}
                     </Text>
                   </View>
