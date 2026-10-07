@@ -92,6 +92,10 @@ export type PersonMembership = {
   plan_name: string | null;
   price_pennies: number | null;
   billing_mode: 'calendar' | 'anniversary' | null;
+  /** The current period in UK days, first and last day covered (YYYY-MM-DD). Absent on a
+   *  backend before 94f; the card then falls back to the end date alone. */
+  period_from?: string | null;
+  period_to?: string | null;
 };
 
 export type Person = {

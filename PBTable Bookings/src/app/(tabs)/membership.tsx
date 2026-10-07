@@ -152,6 +152,54 @@ export default function MembershipScreen() {
   );
 }
 
+/** Whole days from a to b (YYYY-MM-DD), counted on the calendar, not by the clock. */
+function dayDiff(a: string, b: string): number {
+  return Math.round((Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10)) -
+    Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10))) / 86400000);
+}
+function todayUk(): string {
+  try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date()); }
+  catch { return new Date().toISOString().slice(0, 10); }
+}
+function addDay(d: string): string {
+  const t = new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10) + 1));
+  return t.toISOString().slice(0, 10);
+}
+
+/** "Runs from ... to ...", a bar of how far through the period they are, and a countdown to
+ *  what happens next: it renews (card, renewal on), or it ends (renewal off, or paid to the club). */
+function MembershipPeriod({ from, to, renews, offline }: { from: string; to: string; renews: boolean; offline: boolean }) {
+  const today = todayUk();
+  const total = Math.max(1, dayDiff(from, to) + 1);
+  const done = Math.min(total, Math.max(0, dayDiff(from, today) + 1));
+  const pct = Math.round((done / total) * 100);
+  const nextDay = addDay(to);                         // the renewal date, or the first day not covered
+  const left = Math.max(0, dayDiff(today, nextDay));  // days until then
+  const soon = !renews && left <= 30;
+  const tone = soon ? colors.amberText : colors.upText;
+  const count = left <= 0 ? (renews ? 'Renewing today' : 'Ended')
+    : left === 1 ? (renews ? 'Renews tomorrow' : 'Last day today') : `${left} days to go`;
+  const next = renews
+    ? `Renews on ${formatDateLong(nextDay)}`
+    : `${offline ? 'Paid to the club directly. ' : ''}Ends after ${formatDateLong(to)}`;
+  return (
+    <View style={styles.period}>
+      <Text style={styles.periodRange}>
+        {formatDateLong(from)} <Text style={styles.periodTo}>to</Text> {formatDateLong(to)}
+      </Text>
+      <View style={styles.periodTrack} accessibilityRole="progressbar"
+        accessibilityLabel={`${pct}% of the membership year used`}
+        accessibilityValue={{ min: 0, max: 100, now: pct }}>
+        <View style={[styles.periodFill, { width: `${pct}%`, backgroundColor: soon ? colors.amberText : colors.coral }]} />
+      </View>
+      <View style={styles.periodFoot}>
+        <Text style={[styles.periodCount, { color: tone }]}>{count}</Text>
+        <Text style={styles.periodNext}>{next}</Text>
+      </View>
+    </View>
+  );
+}
+
 function isLive(m: Person['membership']): boolean {
   if (!m || m.ended_at) return false;
   if (m.source === 'offline') return m.status === 'active' && !!m.current_period_end && Date.parse(m.current_period_end) > Date.now();
@@ -216,8 +264,14 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
           {m.plan_name && (
             <Text style={styles.meta}>{m.plan_name}{m.price_pennies != null ? ` · ${formatMoney(m.price_pennies)} a year` : ''}</Text>
           )}
+          {m.period_from && m.period_to ? (
+            <MembershipPeriod from={m.period_from} to={m.period_to} offline={m.source === 'offline'}
+              renews={m.source === 'stripe' && state.key !== 'cancelling'} />
+          ) : null}
           {m.source === 'offline' ? (
-            <Text style={styles.meta}>Paid to the club directly. Runs to {formatDateLong(m.current_period_end!.slice(0, 10))}.</Text>
+            m.period_to ? null : (
+              <Text style={styles.meta}>Paid to the club directly. Runs to {formatDateLong(m.current_period_end!.slice(0, 10))}.</Text>
+            )
           ) : state.key === 'failing' ? (
             <View style={styles.warn}>
               <Ionicons name="alert-circle" size={16} color={colors.down} />
@@ -227,7 +281,7 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
                 {m.i_pay ? ' Update the card below to fix it.' : ''}
               </Text>
             </View>
-          ) : m.current_period_end ? (
+          ) : m.current_period_end && !m.period_to ? (
             <Text style={styles.meta}>
               {state.key === 'cancelling' ? 'Member until ' : 'Renews on '}{formatDateLong(m.current_period_end.slice(0, 10))}
             </Text>
@@ -355,6 +409,14 @@ const styles = StyleSheet.create({
   body: { ...type.body, color: colors.text, marginTop: spacing.xs },
   strong: { fontFamily: fonts.bold },
   meta: { ...type.caption, color: colors.textMuted, marginTop: spacing.xs },
+  period: { marginTop: spacing.sm, gap: 6 },
+  periodRange: { fontFamily: fonts.semibold, fontSize: 14, color: colors.navy },
+  periodTo: { fontFamily: fonts.medium, color: colors.textMuted },
+  periodTrack: { height: 10, borderRadius: 999, backgroundColor: colors.border, overflow: 'hidden' },
+  periodFill: { height: '100%', borderRadius: 999 },
+  periodFoot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 6 },
+  periodCount: { fontFamily: fonts.bold, fontSize: 14 },
+  periodNext: { ...type.caption, color: colors.textMuted },
   small: { ...type.caption, color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' },
   actions: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.md },
   renewRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
