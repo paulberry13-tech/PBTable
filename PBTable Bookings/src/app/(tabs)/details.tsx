@@ -130,6 +130,8 @@ export default function DetailsScreen() {
         </Card>
       ))}
 
+      {/* Section 20: a club that does not take children switches this off (Club settings). */}
+      {info && info.dependants !== false && (
       <Card>
         {open === 'new' ? (
           <>
@@ -163,6 +165,7 @@ export default function DetailsScreen() {
           </View>
         )}
       </Card>
+      )}
     </ScrollView>
   );
 }

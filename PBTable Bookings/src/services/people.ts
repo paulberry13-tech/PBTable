@@ -123,6 +123,8 @@ export type ClubJoinInfo = {
   privacy_notice_url: string | null;
   /** The "pass my details on" wording (section 12). Absent on a backend before it. */
   share_wording?: string | null;
+  /** False when the club has switched off "add someone you look after" (section 20). */
+  dependants?: boolean;
   memberships: {
     billing_mode: 'calendar' | 'anniversary' | null;
     types: { id: string; name: string; price_pennies: number; description: string | null }[];
@@ -143,6 +145,7 @@ export function friendlyError(raw: string): string {
   if (m.includes('signup_closed')) return "This club isn't taking online sign-ups at the moment.";
   if (m.includes('email_on_another_record') || m.includes('player_already_has_login') || m.includes('player_is_looked_after'))
     return 'Your email address is on a player record that is already in use at this club. Ask the club to check it.';
+  if (m.includes('dependants_off')) return 'This club does not add people you look after here. Ask the club if you need to.';
   if (m.includes('too_many_dependants')) return 'You can look after up to 8 people here. Ask the club if you need more.';
   if (m.includes('too_long')) return 'One of the answers is too long.';
   if (m.includes('bad_dupr_id')) return 'That DUPR ID does not look right. It is letters and numbers only.';

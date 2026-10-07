@@ -68,6 +68,8 @@ export type MembershipQuote = {
   share_wording?: string | null;
   /** Where "contact the club" goes (Club settings, section 15). */
   contact_email?: string | null;
+  /** False when the club has switched off "add someone you look after" (section 20). */
+  dependants?: boolean;
   /** Set when the quote could not be fetched at all (offline, server error): not "no memberships". */
   loadError?: string;
 };
@@ -77,6 +79,8 @@ export type MembershipQuote = {
 export type MembershipType = {
   id: string; name: string; price_pennies: number; description: string | null;
   join_pennies?: number | null; today_pennies?: number | null;
+  /** 13b: the club charges the full price whenever someone joins (no part-year price). */
+  full_price_all_year?: boolean;
 };
 
 // The club THIS site serves. It used to be "the club my login belongs to", which errored for

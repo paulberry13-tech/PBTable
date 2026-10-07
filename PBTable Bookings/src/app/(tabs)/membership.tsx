@@ -177,7 +177,11 @@ export default function MembershipScreen() {
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
             <Text style={styles.h2}>Your details</Text>
-            <Text style={styles.meta}>Keep your emergency contact up to date, and add anyone you look after. Anyone you add appears here.</Text>
+            <Text style={styles.meta}>
+              {quote.dependants === false
+                ? 'Keep your emergency contact and other details up to date.'
+                : 'Keep your emergency contact up to date, and add anyone you look after. Anyone you add appears here.'}
+            </Text>
           </View>
           <Button title="My details" variant="secondary" onPress={() => router.push('/details')} />
         </View>
@@ -185,10 +189,9 @@ export default function MembershipScreen() {
 
       <Card>
         <Text style={styles.h2}>Leaving, or a question</Text>
-        <Text style={styles.body}>
+        <Text style={styles.meta}>
           To stop a card membership renewing, turn renewal off above: it then ends when the year you've paid
-          for runs out. To end one straight away, or to ask about a refund, contact the club
-          {contact ? ':' : '.'}
+          for runs out. To end it straight away, {contact ? 'email the club:' : 'contact the club.'}
         </Text>
         {contact ? (
           <Pressable onPress={() => Linking.openURL(`mailto:${contact}`)} accessibilityRole="link" style={styles.linkRow}>
@@ -313,6 +316,10 @@ function termsLine(q: MembershipQuote): string {
   const on = q.renews_on ? formatDateLong(q.renews_on) : null;
   if (q.billing_mode === 'calendar') {
     if (q.december_free) return `Join now and pay nothing until ${on ?? '1 January'}, when the year's price is taken.`;
+    // 13b: the club charges the full price whenever someone joins -- nothing here may read as pro rata.
+    const types = q.types ?? [];
+    if (types.length > 0 && types.every((t) => t.full_price_all_year))
+      return `Memberships run to 31 December and cost the full price whenever you join. They renew on ${on ?? '1 January'}.`;
     // A club with joining price steps shows a clear price on each type rather than a by-the-day figure.
     if ((q.types ?? []).some((t) => t.join_pennies != null))
       return `Memberships run to 31 December. Joining now, you pay the price shown for the rest of this year, then the full price on ${on ?? '1 January'}.`;
