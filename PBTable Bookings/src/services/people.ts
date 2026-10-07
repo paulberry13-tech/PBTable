@@ -34,6 +34,8 @@ export type MemberDetails = {
   /** Agreed to their details being passed on to register a membership (migration 94, section
    *  12). Optional here; buying a membership asks for it on the membership card. */
   share_consent: boolean;
+  /** Section 17: false when an admin ticked it from a paper form; the member confirms it. */
+  share_confirmed?: boolean;
   // 2026-10-06: what other clubs ask for. All optional.
   first_name: string | null;
   last_name: string | null;
@@ -145,6 +147,8 @@ export function friendlyError(raw: string): string {
   if (m.includes('too_long')) return 'One of the answers is too long.';
   if (m.includes('bad_dupr_id')) return 'That DUPR ID does not look right. It is letters and numbers only.';
   if (m.includes('bad_pe_number')) return 'That Pickleball England number does not look right.';
+  if (m.includes('not_a_child')) return 'Someone 18 or over joins with their own email address, so their details are their own.';
+  if (m.includes('login_removed')) return 'The club removed this login. Ask the club if you think that is wrong.';
   return raw;
 }
 

@@ -340,7 +340,8 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
   // A new member's details are passed on to register the membership (migration 94, section 12),
   // so the tick is asked for here, at the point of buying, if it is not already on file.
   const shareWording = quote.share_wording ?? null;
-  const needShare = !!shareWording && !person.details?.share_consent;
+  // Also when an admin ticked it from a paper form: the member confirms it themselves (section 17).
+  const needShare = !!shareWording && !(person.details?.share_consent && person.details?.share_confirmed !== false);
   const [agree, setAgree] = useState(false);
   const [pick, setPick] = useState<string | null>(types.length === 1 ? types[0].id : null);
   const [busy, setBusy] = useState<string | null>(null);
