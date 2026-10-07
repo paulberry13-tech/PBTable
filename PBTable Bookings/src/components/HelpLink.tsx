@@ -1,6 +1,7 @@
 // A small "How does this work?" link to the player guides (/help.html, a page on the club's own
-// site, built from screenshots of the app). Inside the club site's layout the app is in a frame,
-// so the guide opens in the whole window, where it can be read and shared; on its own, in place.
+// site, built from screenshots of the app). Inside the club site's layout the app is in a frame:
+// the guide then opens in the site's own help view (#/help/<topic>), beside its menu, rather than
+// leaving the site. On its own, the app opens the guide page in place.
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text } from 'react-native';
@@ -8,13 +9,21 @@ import { Platform, Pressable, StyleSheet, Text } from 'react-native';
 import { EMBEDDED } from '@/services/embed';
 import { colors, fonts } from '@/theme';
 
-export type HelpGuide = 'sign-in' | 'top-up' | 'book' | 'waiting-list' | 'cancel';
+export type HelpGuide =
+  | 'home-screen' | 'join' | 'sign-in' | 'top-up' | 'book' | 'waiting-list' | 'cancel'
+  | 'details' | 'child' | 'membership';
 
 export function openHelp(guide?: HelpGuide): void {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-  const url = `/help.html${guide ? `#${guide}` : ''}`;
-  const win = EMBEDDED && window.top ? window.top : window;
-  win.location.assign(url);
+  if (EMBEDDED && window.top && window.top !== window) {
+    try {
+      window.top.location.hash = `#/help${guide ? `/${guide}` : ''}`;
+      return;
+    } catch {
+      // not the club site around us after all: fall through to the page
+    }
+  }
+  window.location.assign(`/help.html${guide ? `#${guide}` : ''}`);
 }
 
 export function HelpLink({ guide, label, center = false }: { guide: HelpGuide; label: string; center?: boolean }) {

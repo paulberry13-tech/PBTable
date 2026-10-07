@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { HelpLink } from '@/components/HelpLink';
 import { MemberDetailsForm } from '@/components/MemberDetailsForm';
 import { Button, Card, LoadingView } from '@/components/ui';
 import {
@@ -53,6 +54,7 @@ export default function DetailsScreen() {
           Your emergency contact and anything a first aider should know. The people running a
           session can see these if something happens. Nobody else at the club can.
         </Text>
+        <HelpLink guide="details" label="Help with your details" />
       </Card>
 
       {people.map((p) => (

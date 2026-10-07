@@ -18,6 +18,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, LoadingView } from '@/components/ui';
+import { HelpLink } from '@/components/HelpLink';
 import { formatDateLong } from '@/lib/format';
 import { formatMoney } from '@/lib/money';
 import { openOutside } from '@/services/embed';
@@ -121,6 +122,7 @@ export default function MembershipScreen() {
           book anything for you or include any sessions.
         </Text>
         <Text style={styles.meta}>{termsLine(quote)}</Text>
+        <HelpLink guide="membership" label="How buying a membership works" />
       </Card>
 
       {people.map((p) => (
