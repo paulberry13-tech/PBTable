@@ -133,8 +133,8 @@ export default function MembershipScreen() {
       <Card>
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.h2}>Buying for a child?</Text>
-            <Text style={styles.meta}>Add them in My details, then they appear here.</Text>
+            <Text style={styles.h2}>Your details</Text>
+            <Text style={styles.meta}>Keep your emergency contact up to date, and add anyone you look after. Anyone you add appears here.</Text>
           </View>
           <Button title="My details" variant="secondary" onPress={() => router.push('/details')} />
         </View>
