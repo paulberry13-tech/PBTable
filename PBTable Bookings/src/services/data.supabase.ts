@@ -10,7 +10,7 @@ import { Platform } from 'react-native';
 
 import { BACKEND } from '@/services/backend';
 import { STRIPE_TOPUP } from '@/services/config';
-import { InsufficientBalanceError } from '@/services/contracts';
+import { EmergencyContactNeededError, InsufficientBalanceError } from '@/services/contracts';
 import { supabase } from '@/services/supabaseClient';
 import type {
   Booking,
@@ -486,6 +486,7 @@ export async function bookSession(sessionId: string, memberId: string): Promise<
     if (m) throw new InsufficientBalanceError(parseInt(m[1], 10));
     // migration 86: the server has the last word on invite-only sessions, so say it plainly.
     if (error.message === 'not_invited') throw new Error('This session is by invitation, and you’re not on the list.');
+    if (error.message.includes('emergency_contact_needed')) throw new EmergencyContactNeededError();
     throw new Error(error.message);
   }
   const r = data as { booking_id: string; waitlisted: boolean; position?: number; price_charged?: number };

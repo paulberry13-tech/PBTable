@@ -7,7 +7,7 @@ import { USE_SUPABASE } from '@/services/config';
 import * as mock from '@/services/data.mock';
 import * as supa from '@/services/data.supabase';
 
-export { InsufficientBalanceError } from '@/services/contracts';
+export { EmergencyContactNeededError, InsufficientBalanceError } from '@/services/contracts';
 export type {
   CreateSessionInput,
   BookResult,

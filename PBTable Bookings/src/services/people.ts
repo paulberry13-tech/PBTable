@@ -180,6 +180,26 @@ export async function savePersonDetails(playerId: string, details: MemberDetails
   return error ? { ok: false, error: friendlyError(error.message) } : { ok: true };
 }
 
+/** Section 21: does this club ask everyone who books for an emergency contact, and is one on file.
+ *  Null when it can't be told (signed out, an older backend): the database still has the last word. */
+export async function emergencyContactStatus(): Promise<{ required: boolean; on_file: boolean } | null> {
+  const club = await hostClubId();
+  if (!club) return null;
+  const { data, error } = await supabase.rpc('my_emergency_contact_status', { p_club: club });
+  if (error || !data) return null;
+  return data as { required: boolean; on_file: boolean };
+}
+
+/** Section 21: just the emergency contact, for someone who books without joining. */
+export async function saveEmergencyContact(name: string, relationship: string, phone: string, agree: boolean): Promise<Result> {
+  const club = await hostClubId();
+  if (!club) return { ok: false, error: 'Could not find the club.' };
+  const { error } = await supabase.rpc('save_my_emergency_contact', {
+    p_club: club, p_name: name.trim(), p_relationship: relationship.trim(), p_phone: phone.trim(), p_agree: agree,
+  });
+  return error ? { ok: false, error: friendlyError(error.message) } : { ok: true };
+}
+
 export async function addDependant(name: string, gender: string | null, details: MemberDetails): Promise<Result> {
   const club = await hostClubId();
   if (!club) return { ok: false, error: 'Could not find the club.' };

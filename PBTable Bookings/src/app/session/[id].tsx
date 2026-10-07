@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { EmergencyContactCard } from '@/components/EmergencyContactCard';
 import { HelpLink } from '@/components/HelpLink';
 import { TopUpSheet } from '@/components/TopUpSheet';
 import { Avatar, Badge, Button, Card, CapacityBar, DateBlock, ErrorState, LoadingView, Row } from '@/components/ui';
@@ -12,6 +13,7 @@ import { formatMoney, formatMoneyShort } from '@/lib/money';
 import { dateBlockParts, formatTimeRange, initialsOf, skillBandLabel, spotsLeft } from '@/lib/format';
 import { STRIPE_TOPUP } from '@/services/config';
 import * as data from '@/services/data';
+import { emergencyContactStatus } from '@/services/people';
 import { EMBEDDED_FILL, useEmbedded } from '@/services/embed';
 import { useApp, useAsyncData } from '@/store/AppContext';
 import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
@@ -24,6 +26,15 @@ export default function SessionDetailScreen() {
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [shortfallPence, setShortfallPence] = useState(0);
   const [booking, setBooking] = useState(false);
+  // Section 21: a club that asks everyone who books for an emergency contact. Asked here, before
+  // the Book button, rather than after a refusal. The database refuses the booking regardless.
+  const [needContact, setNeedContact] = useState(false);
+  useEffect(() => {
+    let live = true;
+    if (!currentUser) { setNeedContact(false); return; }
+    emergencyContactStatus().then((s) => { if (live) setNeedContact(!!s && s.required && !s.on_file); });
+    return () => { live = false; };
+  }, [currentUser?.id]);
 
   const { data: session, error } = useAsyncData(() => data.getSession(id), [id]);
   const { data: members } = useAsyncData(() => data.getMembers());
@@ -135,7 +146,10 @@ export default function SessionDetailScreen() {
       if (router.canGoBack()) router.back();
       else router.replace('/bookings');
     } catch (e) {
-      if (e instanceof data.InsufficientBalanceError) {
+      if (e instanceof data.EmergencyContactNeededError) {
+        setNeedContact(true);
+        showBanner('The club asks everyone who books for an emergency contact. Add one just above the Book button.', 'info');
+      } else if (e instanceof data.InsufficientBalanceError) {
         // Balance moved under us (e.g. concurrent booking) — send to top-up.
         setShortfallPence(e.shortfallPence);
         setTopUpOpen(true);
@@ -150,6 +164,10 @@ export default function SessionDetailScreen() {
   const onBookPress = () => {
     // Browsing is public, so this is the first point identity is needed.
     if (!currentUser) { promptSignIn(); return; }
+    if (needContact) {
+      showBanner('Add an emergency contact first, just above the Book button.', 'info');
+      return;
+    }
     if (balanceUnknown) {
       showBanner('We couldn’t check your balance just now. Please try again in a moment.', 'warning');
       return;
@@ -407,6 +425,12 @@ export default function SessionDetailScreen() {
                   />
                 )}
               </Card>
+            ) : null}
+            {needContact ? (
+              <EmergencyContactCard onSaved={() => {
+                setNeedContact(false);
+                showBanner('Emergency contact saved. Now you can book.', 'success');
+              }} />
             ) : null}
             <Button
               title={
