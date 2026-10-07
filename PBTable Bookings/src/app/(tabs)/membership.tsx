@@ -15,7 +15,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, LoadingView } from '@/components/ui';
 import { HelpLink } from '@/components/HelpLink';
@@ -31,6 +31,7 @@ import {
   setMembershipRenewal,
   startMembershipCheckout,
   type MembershipQuote,
+  type MembershipType,
   type MyMembership,
 } from '@/services/membership';
 import { getMyPeople, savePersonDetails, type Person } from '@/services/people';
@@ -59,6 +60,7 @@ export default function MembershipScreen() {
   const renewalBack = useRef(false);   // came back from setting up card renewal, not joining
   const [settled, setSettled] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const tries = useRef(0);   // checks so far while Stripe finishes the payment
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') { setClaim({ id: null }); return; }
     const params = new URLSearchParams(window.location.search);
@@ -71,6 +73,8 @@ export default function MembershipScreen() {
       showBanner(renewal ? 'Card renewal was not set up. Nothing was taken.' : 'No payment was taken. You can join whenever you like.', 'info');
     }
     if (back === 'success' && renewal) renewalBack.current = true;
+    // Back from Stripe's card page: a new card or a paid invoice reaches us by webhook, so look again shortly.
+    if (back === 'portal') setTimeout(again, 3000);
     let stored: string | null = null;
     try { stored = window.localStorage.getItem(PENDING_KEY); } catch {}
     setClaim({ id: fromUrl ?? stored });
@@ -83,7 +87,7 @@ export default function MembershipScreen() {
     const anyoneMissing = (data?.people ?? []).some((p) => !isLive(p.membership));
     if (!claim.id && (!anyoneMissing || !data?.quote?.enabled)) return;
     setSettled(true);
-    if (claim.id) setConfirming(true);
+    if (claim.id && tries.current === 0) setConfirming(true);   // the full-page wait only the first time
     const forget = () => { try { window.localStorage.removeItem(PENDING_KEY); } catch {} };
     confirmMembership(claim.id)
       .then((r) => {
@@ -95,7 +99,16 @@ export default function MembershipScreen() {
               : 'Membership confirmed. Member prices apply when you book.', 'success');
             again();
           }
-          else if (r.pending && claim.id) showBanner('Stripe is still finishing the payment. This page will update when it does.', 'info');
+          else if (r.pending && claim.id) {
+            // Ask again every few seconds for about half a minute, so "this page will update" is true.
+            if (tries.current < 8) {
+              tries.current += 1;
+              if (tries.current === 1) showBanner('Stripe is still finishing the payment. This page will update when it does.', 'info');
+              setTimeout(() => setSettled(false), 4000);
+            } else {
+              showBanner('Stripe is taking longer than usual. Your membership will appear here once it has gone through.', 'info');
+            }
+          }
         } else {
           if (r.terminal) forget();
           if (claim.id) showBanner(r.error, 'warning');
@@ -111,6 +124,17 @@ export default function MembershipScreen() {
   const quote = data?.quote ?? null;
   const people = data?.people ?? [];
 
+  if (quote?.loadError) {
+    return (
+      <ScrollView contentContainerStyle={[styles.page, embedded && EMBEDDED_FILL]}>
+        <Card>
+          <Text style={styles.h1}>Membership</Text>
+          <Text style={styles.body}>Memberships could not be loaded just now. Check your connection and try again.</Text>
+          <Button title="Try again" variant="secondary" onPress={again} style={{ marginTop: spacing.md }} />
+        </Card>
+      </ScrollView>
+    );
+  }
   if (!quote || !quote.enabled) {
     return (
       <ScrollView contentContainerStyle={[styles.page, embedded && EMBEDDED_FILL]}>
@@ -122,7 +146,8 @@ export default function MembershipScreen() {
     );
   }
 
-  const types = quote.types ?? (quote.plan ? [{ ...quote.plan, description: null }] : []);
+  const types: MembershipType[] = quote.types ?? (quote.plan ? [{ ...quote.plan, description: null }] : []);
+  const contact = quote.contact_email ?? null;
 
   return (
     <ScrollView contentContainerStyle={[styles.page, embedded && EMBEDDED_FILL]}>
@@ -138,7 +163,7 @@ export default function MembershipScreen() {
 
       {people.map((p) => (
         <PersonCard key={p.player_id} person={p} types={types} quote={quote}
-          onChanged={again} onDetails={() => router.push('/details')} />
+          onChanged={again} onDetails={() => router.push(`/details?open=${p.player_id}&back=membership`)} />
       ))}
 
       <Card>
@@ -152,11 +177,18 @@ export default function MembershipScreen() {
       </Card>
 
       <Card>
-        <Text style={styles.h2}>Ending a membership early</Text>
+        <Text style={styles.h2}>Leaving, or a question</Text>
         <Text style={styles.body}>
-          Speak to your club. They can end it straight away and agree any refund directly. Turning
-          renewal off, above, simply stops it renewing at the end of the year you've paid for.
+          To stop a card membership renewing, turn renewal off above: it then ends when the year you've paid
+          for runs out. To end one straight away, or to ask about a refund, contact the club
+          {contact ? ':' : '.'}
         </Text>
+        {contact ? (
+          <Pressable onPress={() => Linking.openURL(`mailto:${contact}`)} accessibilityRole="link" style={styles.linkRow}>
+            <Ionicons name="mail-outline" size={16} color={colors.coralText} />
+            <Text style={styles.link}>{contact}</Text>
+          </Pressable>
+        ) : null}
       </Card>
     </ScrollView>
   );
@@ -224,6 +256,42 @@ function lapsedText(m: Person['membership'], whose: string): string {
   return 'The membership has lapsed.';
 }
 
+/** What joining costs today, as a member reads it: "£30.00", or "about £18.30" when it is the
+ *  by-the-day part year (Stripe works it out to the second, so it can be a penny either way). */
+function todayText(t: MembershipType): string {
+  const today = t.today_pennies ?? t.join_pennies ?? t.price_pennies;
+  const byDay = t.today_pennies != null && t.join_pennies == null && t.today_pennies !== t.price_pennies && t.today_pennies > 0;
+  return `${byDay ? 'about ' : ''}${formatMoney(today)}`;
+}
+
+/** The price on a type: today's figure, and what it is after that. */
+function TypePrice({ t, quote }: { t: MembershipType; quote: MembershipQuote }) {
+  const on = quote.renews_on ? formatDateLong(quote.renews_on) : '1 January';
+  const today = t.today_pennies ?? t.join_pennies ?? null;
+  if (quote.december_free || today === 0) {
+    return (
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={styles.typePrice}>£0 today</Text>
+        <Text style={styles.typeThen}>then {formatMoney(t.price_pennies)} on {on}</Text>
+      </View>
+    );
+  }
+  if (today != null && today !== t.price_pennies) {
+    return (
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={styles.typePrice}>{todayText(t)} today</Text>
+        <Text style={styles.typeThen}>then {formatMoney(t.price_pennies)} on {on}</Text>
+      </View>
+    );
+  }
+  return (
+    <View style={{ alignItems: 'flex-end' }}>
+      <Text style={styles.typePrice}>{formatMoney(t.price_pennies)}</Text>
+      <Text style={styles.typeThen}>a year</Text>
+    </View>
+  );
+}
+
 function isLive(m: Person['membership']): boolean {
   if (!m || m.ended_at) return false;
   if (m.source === 'offline') return m.status === 'active' && !!m.current_period_end && Date.parse(m.current_period_end) > Date.now();
@@ -248,7 +316,7 @@ function termsLine(q: MembershipQuote): string {
 
 function PersonCard({ person, types, quote, onChanged, onDetails }: {
   person: Person;
-  types: { id: string; name: string; price_pennies: number; description: string | null; join_pennies?: number | null }[];
+  types: MembershipType[];
   quote: MembershipQuote;
   onChanged: () => void;
   onDetails: () => void;
@@ -367,8 +435,8 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
                     <Text style={styles.renewLabel}>Renew automatically</Text>
                     <Text style={styles.meta}>
                       {state.key === 'cancelling' ? 'Off. Member prices continue until it ends, then it stops.'
-                        : awaitingFirst ? `On. Your first payment is taken${m.period_to ? ' on ' + formatDateLong(addDay(m.period_to)) : m.current_period_end ? ' on ' + formatDateLong(m.current_period_end.slice(0, 10)) : ' soon'}; you can turn this off after that.`
-                        : "On. It's charged again when the year ends."}
+                        : awaitingFirst ? `On. Your first payment${m.price_pennies != null ? ' of ' + formatMoney(m.price_pennies) : ''} is taken${m.period_to ? ' on ' + formatDateLong(addDay(m.period_to)) : m.current_period_end ? ' on ' + formatDateLong(m.current_period_end.slice(0, 10)) : ' soon'}. You can turn this off once it has been paid; to stop it before then, contact the club.`
+                        : `On. ${m.price_pennies != null ? formatMoney(m.price_pennies) + ' is' : "It's"} taken again${m.period_to ? ' on ' + formatDateLong(addDay(m.period_to)) : ' when the year ends'}.`}
                     </Text>
                   </View>
                   {/* Not before the first real payment: a December joiner pays on 1 January, and
@@ -392,9 +460,23 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
         </>
       ) : !person.details_complete ? (
         <>
-          <Text style={styles.body}>
-            Before joining, the club needs {person.self ? 'your' : `${who}'s`} emergency contact and
-            agreements.
+          {types.length > 0 && (
+            <>
+              <Text style={styles.body}>{lapsedText(m, person.self ? 'Your' : `${who}'s`)} Memberships on sale:</Text>
+              {types.map((t) => (
+                <View key={t.id} style={[styles.type, { opacity: 0.85 }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.typeName}>{t.name}</Text>
+                    {t.description ? <Text style={styles.meta}>{t.description}</Text> : null}
+                  </View>
+                  <TypePrice t={t} quote={quote} />
+                </View>
+              ))}
+            </>
+          )}
+          <Text style={[styles.body, { marginTop: spacing.md }]}>
+            Before joining, the club needs {person.self ? 'your' : `${who}'s`} date of birth, phone, emergency
+            contact and agreements.
           </Text>
           <Button title={person.self ? 'Finish my details' : `Finish ${who}'s details`} onPress={onDetails}
             variant="secondary" style={{ marginTop: spacing.md }} />
@@ -416,14 +498,7 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
                 <Text style={styles.typeName}>{t.name}</Text>
                 {t.description ? <Text style={styles.meta}>{t.description}</Text> : null}
               </View>
-              {t.join_pennies != null && t.join_pennies !== t.price_pennies ? (
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.typePrice}>{formatMoney(t.join_pennies)}</Text>
-                  <Text style={styles.typeThen}>then {formatMoney(t.price_pennies)} a year</Text>
-                </View>
-              ) : (
-                <Text style={styles.typePrice}>{formatMoney(t.price_pennies)}</Text>
-              )}
+              <TypePrice t={t} quote={quote} />
             </Pressable>
           ))}
           {needShare && (
@@ -435,7 +510,7 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
           )}
           <Button
             title={quote.december_free ? 'Join (nothing to pay today)'
-              : `${person.self ? 'Join now' : `Join for ${who}`}${(() => { const j = types.find((t) => t.id === pick)?.join_pennies; return j != null ? ` · ${formatMoney(j)}` : ''; })()}`}
+              : `${person.self ? 'Join now' : `Join for ${who}`}${(() => { const t = types.find((x) => x.id === pick); return t ? ` · ${todayText(t)} today` : ''; })()}`}
             onPress={() => run('join', async () => {
               if (!pick) return { ok: false, error: 'Choose a membership type first.' };
               if (needShare) {

@@ -8,6 +8,7 @@
 // (logged) and a printable member record. Nothing here is visible to other members.
 
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -24,6 +25,11 @@ import { colors, fonts, radius, spacing, type } from '@/theme';
 export default function DetailsScreen() {
   const embedded = useEmbedded();
   const { currentUser, showBanner } = useApp();
+  const router = useRouter();
+  // ?open=<player id or new>&back=membership: sent here from the membership page to finish someone's
+  // details, then straight back to choosing their membership (council 2026-10-07).
+  const params = useLocalSearchParams<{ open?: string; back?: string }>();
+  const backToMembership = params.back === 'membership';
   const [reload, setReload] = useState(0);
   const { data: people, loading } = useAsyncData<Person[] | null>(() => getMyPeople(), [currentUser?.id, reload]);
   const [info, setInfo] = useState<ClubJoinInfo | null>(null);
@@ -32,13 +38,27 @@ export default function DetailsScreen() {
   const [open, setOpen] = useState<string | null>(null);   // player_id being edited, or 'new'
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [opened, setOpened] = useState(false);
+  useEffect(() => {
+    if (opened || !people || !params.open) return;
+    setOpened(true);
+    if (params.open === 'new' || people.some((x) => x.player_id === params.open)) setOpen(params.open);
+  }, [people, params.open, opened]);
 
   if (loading) return <LoadingView label="Loading your details…" />;
   if (!people) {
     return (
       <ScrollView contentContainerStyle={[styles.page, embedded && EMBEDDED_FILL]}>
         <Card><Text style={styles.h1}>My details</Text>
-          <Text style={styles.body}>Sign in to see the details the club holds about you.</Text></Card>
+          {currentUser ? (
+            <>
+              <Text style={styles.body}>Your details could not be loaded just now. Check your connection and try again.</Text>
+              <Button title="Try again" variant="secondary" onPress={() => setReload((n) => n + 1)} style={{ marginTop: spacing.md }} />
+            </>
+          ) : (
+            <Text style={styles.body}>Sign in to see the details the club holds about you.</Text>
+          )}
+        </Card>
       </ScrollView>
     );
   }
@@ -93,8 +113,11 @@ export default function DetailsScreen() {
                 const r = await savePersonDetails(p.player_id, v.details);
                 setBusy(false);
                 if (!r.ok) { setError(r.error); return; }
-                showBanner('Details saved.', 'success');
                 close(); setReload((n) => n + 1);
+                if (backToMembership) {
+                  showBanner(`Details saved. Now choose ${p.self ? 'your' : `${p.name.split(' ')[0]}'s`} membership.`, 'success');
+                  router.replace('/membership');
+                } else showBanner('Details saved.', 'success');
               }} />
           )}
         </Card>
@@ -109,14 +132,18 @@ export default function DetailsScreen() {
               {me && !me.details_complete ? ' Please finish your own details first: the club contacts you about them.' : ''}
             </Text>
             <MemberDetailsForm mode="newDependant" conductUrl={conductUrl} privacyUrl={privacyUrl}
+              me={me ? { name: me.name, phone: me.details?.phone ?? null } : null}
               clubName={info?.club_name} shareWording={info?.share_wording ?? null} submitLabel="Add them" busy={busy} error={error} onCancel={close}
               onSubmit={async (v) => {
                 setBusy(true); setError(null);
                 const r = await addDependant(v.name, v.gender, v.details);
                 setBusy(false);
                 if (!r.ok) { setError(r.error); return; }
-                showBanner(`${v.name} added.`, 'success');
                 close(); setReload((n) => n + 1);
+                if (backToMembership) {
+                  showBanner(`${v.name} added. Now choose ${v.name.split(' ')[0]}'s membership.`, 'success');
+                  router.replace('/membership');
+                } else showBanner(`${v.name} added.`, 'success');
               }} />
           </>
         ) : (

@@ -23,7 +23,7 @@ export type DetailsSubmit = { name: string; gender: string | null; details: Memb
 
 export function MemberDetailsForm({
   mode, initialName = '', initialGender = null, initial, conductUrl, privacyUrl, clubName, shareWording = null,
-  submitLabel, busy, error, onSubmit, onCancel,
+  submitLabel, busy, error, onSubmit, onCancel, me = null,
 }: {
   mode: Mode;
   initialName?: string;
@@ -39,6 +39,8 @@ export function MemberDetailsForm({
   error?: string | null;
   onSubmit: (v: DetailsSubmit) => void;
   onCancel?: () => void;
+  /** The parent adding a child: their own name and phone, offered as the child's emergency contact. */
+  me?: { name: string | null; phone: string | null } | null;
 }) {
   const dependant = mode === 'dependant' || mode === 'newDependant';
   const askName = mode === 'join' || mode === 'newDependant';
@@ -47,6 +49,10 @@ export function MemberDetailsForm({
   const [d, setD] = useState<MemberDetails>({ ...EMPTY_DETAILS, ...(initial ?? {}) });
   const [dob, setDob] = useState(toUkDate(initial?.date_of_birth ?? null));
   const [localError, setLocalError] = useState<string | null>(null);
+  const OPTIONAL: (keyof MemberDetails)[] = ['phone2', 'address_line1', 'address_line2', 'town', 'postcode', 'emergency2_name',
+    'emergency2_relationship', 'emergency2_phone', 'play_level', 'dupr_id', 'pe_number'];
+  const [more, setMore] = useState(() => OPTIONAL.some((k) => !!(initial as Record<string, unknown> | null | undefined)?.[k])
+    || ((initial?.interests ?? []).length > 0));
   const set = <K extends keyof MemberDetails>(k: K, v: MemberDetails[K]) => setD((x) => ({ ...x, [k]: v }));
   const text = (k: keyof MemberDetails) => (d[k] as string | null) ?? '';
 
@@ -107,6 +113,47 @@ export function MemberDetailsForm({
         </>
       )}
 
+      <Text style={styles.label}>{dependant ? 'Their mobile (optional)' : 'Mobile'}</Text>
+      <TextInput style={styles.input} value={text('phone')} onChangeText={(v) => set('phone', v)}
+        keyboardType="phone-pad" placeholder="07700 900123" placeholderTextColor={colors.textFaint} />
+      {dependant && <Text style={styles.hint}>The club contacts you about them.</Text>}
+
+
+      <Text style={styles.section}>Emergency contact</Text>
+      <Text style={styles.hint}>
+        Who the club should call if something happens to {dependant ? 'them' : 'you'} at a session.
+      </Text>
+      {dependant && me && (me.name || me.phone) ? (
+        <Pressable onPress={() => setD((x) => ({ ...x, emergency1_name: me.name ?? x.emergency1_name,
+            emergency1_relationship: x.emergency1_relationship || 'Parent', emergency1_phone: me.phone ?? x.emergency1_phone }))}
+          style={styles.useMe} accessibilityRole="button" hitSlop={6}>
+          <Ionicons name="person-circle-outline" size={16} color={colors.coralText} />
+          <Text style={styles.link}>Use my name and phone</Text>
+        </Pressable>
+      ) : null}
+      <Text style={styles.label}>Name</Text>
+      <TextInput style={styles.input} value={text('emergency1_name')} onChangeText={(v) => set('emergency1_name', v)}
+        autoCapitalize="words" placeholder="Sam Morgan" placeholderTextColor={colors.textFaint} />
+      <Text style={styles.label}>Relationship</Text>
+      <TextInput style={styles.input} value={text('emergency1_relationship')}
+        onChangeText={(v) => set('emergency1_relationship', v)} placeholder="Partner, parent, friend…"
+        placeholderTextColor={colors.textFaint} />
+      <Text style={styles.label}>Phone</Text>
+      <TextInput style={styles.input} value={text('emergency1_phone')} onChangeText={(v) => set('emergency1_phone', v)}
+        keyboardType="phone-pad" placeholder="07700 900456" placeholderTextColor={colors.textFaint} />
+
+      {/* Everything optional, folded away so joining on a phone is short (council 2026-10-07).
+          Open from the start when any of it is already filled in. */}
+      <Pressable onPress={() => setMore(!more)} style={styles.moreRow} accessibilityRole="button"
+        accessibilityState={{ expanded: more }}>
+        <Ionicons name={more ? 'chevron-down' : 'chevron-forward'} size={18} color={colors.navy} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.moreTitle}>More about {dependant ? 'them' : 'you'} (optional)</Text>
+          <Text style={styles.hint}>Name on official records, another phone, address, a second emergency contact, playing level.</Text>
+        </View>
+      </Pressable>
+      {more && (
+        <View>
       <Text style={styles.label}>Name on official records (optional)</Text>
       <View style={styles.pair}>
         <TextInput style={[styles.input, { flex: 1 }]} value={text('first_name')} onChangeText={(v) => set('first_name', v)}
@@ -115,11 +162,6 @@ export function MemberDetailsForm({
           autoCapitalize="words" placeholder="Surname" placeholderTextColor={colors.textFaint} accessibilityLabel="Surname" />
       </View>
       <Text style={styles.hint}>Left blank, they are taken from the name above.</Text>
-
-      <Text style={styles.label}>{dependant ? 'Their mobile (optional)' : 'Mobile'}</Text>
-      <TextInput style={styles.input} value={text('phone')} onChangeText={(v) => set('phone', v)}
-        keyboardType="phone-pad" placeholder="07700 900123" placeholderTextColor={colors.textFaint} />
-      {dependant && <Text style={styles.hint}>The club contacts you about them.</Text>}
 
       <Text style={styles.label}>Another phone (optional)</Text>
       <TextInput style={styles.input} value={text('phone2')} onChangeText={(v) => set('phone2', v)}
@@ -137,21 +179,6 @@ export function MemberDetailsForm({
           autoCapitalize="characters" placeholder="Postcode" placeholderTextColor={colors.textFaint} accessibilityLabel="Postcode" />
       </View>
 
-      <Text style={styles.section}>Emergency contact</Text>
-      <Text style={styles.hint}>
-        Who the club should call if something happens to {dependant ? 'them' : 'you'} at a session.
-      </Text>
-      <Text style={styles.label}>Name</Text>
-      <TextInput style={styles.input} value={text('emergency1_name')} onChangeText={(v) => set('emergency1_name', v)}
-        autoCapitalize="words" placeholder="Sam Morgan" placeholderTextColor={colors.textFaint} />
-      <Text style={styles.label}>Relationship</Text>
-      <TextInput style={styles.input} value={text('emergency1_relationship')}
-        onChangeText={(v) => set('emergency1_relationship', v)} placeholder="Partner, parent, friend…"
-        placeholderTextColor={colors.textFaint} />
-      <Text style={styles.label}>Phone</Text>
-      <TextInput style={styles.input} value={text('emergency1_phone')} onChangeText={(v) => set('emergency1_phone', v)}
-        keyboardType="phone-pad" placeholder="07700 900456" placeholderTextColor={colors.textFaint} />
-
       <Text style={styles.label}>Second contact (optional)</Text>
       <TextInput style={styles.input} value={text('emergency2_name')} onChangeText={(v) => set('emergency2_name', v)}
         autoCapitalize="words" placeholder="Name" placeholderTextColor={colors.textFaint} />
@@ -164,7 +191,7 @@ export function MemberDetailsForm({
           placeholderTextColor={colors.textFaint} />
       </View>
 
-      <Text style={styles.section}>Playing (optional)</Text>
+      <Text style={styles.subsection}>Playing</Text>
       <Text style={styles.label}>{dependant ? 'Their level' : 'Your level'}</Text>
       <View style={styles.chips}>
         {PLAY_LEVELS.map(([v, l]) => (
@@ -194,6 +221,9 @@ export function MemberDetailsForm({
           autoCapitalize="characters" placeholder="Pickleball England no." placeholderTextColor={colors.textFaint}
           accessibilityLabel="Pickleball England membership number" />
       </View>
+
+        </View>
+      )}
 
       {junior && (
         <>
@@ -298,6 +328,11 @@ function Tick({ on, onPress, label, link }: {
 const styles = StyleSheet.create({
   label: { ...type.tiny, textTransform: 'uppercase', marginTop: spacing.md, marginBottom: 6 },
   section: { ...type.h2, color: colors.navy, marginTop: spacing.xl },
+  subsection: { ...type.tiny, textTransform: 'uppercase', color: colors.navy, marginTop: spacing.lg },
+  moreRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start', marginTop: spacing.xl,
+    paddingVertical: spacing.sm, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border },
+  moreTitle: { ...type.body, fontFamily: fonts.bold, color: colors.navy },
+  useMe: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm },
   hint: { ...type.caption, color: colors.textMuted, marginTop: 4 },
   input: {
     borderWidth: 1.5, borderColor: colors.borderStrong, borderRadius: radius.sm,

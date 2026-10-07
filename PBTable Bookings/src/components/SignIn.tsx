@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MemberDetailsForm, type DetailsSubmit } from '@/components/MemberDetailsForm';
@@ -29,7 +30,7 @@ import { IS_TWOCLEAR, PLATFORM_LOGO_ON_DARK } from '@/services/brand';
 /** onCancel is supplied only when the sign-in was raised on demand (someone tapped
  *  Book while signed out). Browsing is public, so they must be able to back out. */
 export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
-  const { sendOtp, verifyOtp, refreshUser } = useApp();
+  const { sendOtp, verifyOtp, refreshUser, showBanner } = useApp();
   // 'join*' stages are self-signup: same OTP, but the code is allowed to CREATE
   // the account, and the club roster row is written only after it verifies.
   // 'joinDetails' replaced 'joinName' (migration 94): a newcomer gives the details the club
@@ -185,6 +186,14 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
       const r = await joinClubWithDetails(v.name, v.gender, v.details);
       if (!r.ok) { setError(r.error); return; }
       await refreshUser();
+      // Joined. Where the club sells memberships, that is the next thing to do, so go straight there
+      // rather than leave them on the page they started from (council 2026-10-07).
+      if ((joinInfo?.memberships?.types ?? []).length > 0) {
+        showBanner(`Welcome to ${joinInfo?.club_name ?? 'the club'}! Next, choose your membership.`, 'success');
+        router.replace('/membership');
+      } else {
+        showBanner(`Welcome to ${joinInfo?.club_name ?? 'the club'}!`, 'success');
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not complete your sign-up.');
     } finally { setBusy(false); }
@@ -278,12 +287,24 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
                 We've sent a code to {email}. Enter it to confirm your address.
               </Text>
               <Text style={styles.label}>Code</Text>
-              <TextInput style={styles.input} value={code} onChangeText={setCode}
-                keyboardType="number-pad" placeholder="12345678" placeholderTextColor={colors.textFaint}
-                onSubmitEditing={verifyJoinCode} returnKeyType="go" />
+              {/* The same as the sign-in code: digits only, the phone offers the code from the email,
+                  and a way out -- resend, or a different address (council 2026-10-07). */}
+              <TextInput style={[styles.input, styles.codeInput]} value={code}
+                onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 8))}
+                keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="one-time-code" maxLength={8}
+                placeholder="••••••••" placeholderTextColor={colors.textFaint}
+                onSubmitEditing={verifyJoinCode} returnKeyType="go" autoFocus />
               {error ? <Text style={styles.error}>{error}</Text> : null}
               <Button title={busy ? 'Checking' : 'Confirm'} onPress={verifyJoinCode}
                 loading={busy} style={{ marginTop: spacing.lg }} />
+              <View style={styles.linkRow}>
+                <Pressable onPress={() => { setError(null); setStage('joinEmail'); }} hitSlop={8}>
+                  <Text style={styles.switchLink}>Use a different email</Text>
+                </Pressable>
+                <Pressable onPress={requestJoinCode} hitSlop={8} disabled={busy}>
+                  <Text style={styles.switchLink}>Resend code</Text>
+                </Pressable>
+              </View>
             </>
           ) : stage === 'joinDetails' ? (
             <>

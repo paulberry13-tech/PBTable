@@ -118,7 +118,8 @@ export function layoutReturnTarget(loc: { pathname: string; search: string }, st
   if (!/^[a-z0-9/_-]*$/i.test(rest)) return null;
   // Only Stripe coming back (it always adds topup= or membership=): any other /app page opened in this tab keeps
   // opening on its own, and the marker is spent either way.
-  if (!/[?&](topup|membership)=(success|cancelled)(&|$)/.test(loc.search)) return null;
+  // membership=portal: back from Stripe's card/receipts page (membership-portal).
+  if (!/[?&](topup|membership)=(success|cancelled|portal)(&|$)/.test(loc.search)) return null;
   return `/#/booking/${rest}${loc.search}`;
 }
 

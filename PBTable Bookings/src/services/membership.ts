@@ -62,10 +62,21 @@ export type MembershipQuote = {
   /** Every type on sale (migration 94). `plan` is the first of them, for older screens. */
   /** join_pennies: what joining costs today under the type's joining price steps, or null (no steps:
    *  the by-the-day part-year charge applies). Migration 94, section 13. */
-  types?: { id: string; name: string; price_pennies: number; description: string | null; join_pennies?: number | null }[];
+  types?: MembershipType[];
   /** The words of the "pass my details on to register the membership" tick (migration 94,
    *  section 12). Absent on a backend before it. */
   share_wording?: string | null;
+  /** Where "contact the club" goes (Club settings, section 15). */
+  contact_email?: string | null;
+  /** Set when the quote could not be fetched at all (offline, server error): not "no memberships". */
+  loadError?: string;
+};
+
+/** A type on sale. today_pennies (section 15): what joining costs today under whichever rule
+ *  applies -- the step, the by-the-day part year (when join_pennies is null), nothing in December. */
+export type MembershipType = {
+  id: string; name: string; price_pennies: number; description: string | null;
+  join_pennies?: number | null; today_pennies?: number | null;
 };
 
 // The club THIS site serves. It used to be "the club my login belongs to", which errored for
@@ -83,7 +94,10 @@ export async function getMembershipQuote(): Promise<MembershipQuote | null> {
   // Throws on a backend without migration 89 (PGRST202). That is not an error worth
   // showing anybody: it means this club has no memberships, which is most of them.
   const { data, error } = await supabase.rpc('membership_quote', { p_club: club });
-  if (error || !data) return null;
+  // A backend without the function (PGRST202) has no memberships; anything else is a failure
+  // to load, which must not read as "this club does not offer memberships".
+  if (error) return error.code === 'PGRST202' ? null : { enabled: false, loadError: error.message };
+  if (!data) return null;
   return data as MembershipQuote;
 }
 
