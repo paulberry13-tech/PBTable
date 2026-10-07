@@ -429,7 +429,7 @@ export default function SessionDetailScreen() {
             {needContact ? (
               <EmergencyContactCard onSaved={() => {
                 setNeedContact(false);
-                showBanner('Emergency contact saved. Now you can book.', 'success');
+                showBanner('Emergency contact saved. Now tap Book.', 'success');
               }} />
             ) : null}
             <Button

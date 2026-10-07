@@ -67,7 +67,8 @@ export function EmergencyContactCard({ onSaved }: { onSaved: () => void }) {
         </View>
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Button title="Save, then book" onPress={save} loading={busy} style={{ marginTop: spacing.md }} />
+      {/* Saves only: the Book button below still books, so this must not look like a second one. */}
+      <Button title="Save contact" variant="secondary" onPress={save} loading={busy} style={{ marginTop: spacing.md }} />
     </Card>
   );
 }
