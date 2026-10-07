@@ -422,6 +422,18 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
                     ))}
                   </>
                 )}
+                {!person.details_complete ? (
+                  // Rehearsal 2026-10-07: members brought in from a spreadsheet often have no details on
+                  // file, and setting up card renewal needs them. Ask first, rather than refuse after.
+                  <>
+                    <Text style={styles.meta}>
+                      First, the club needs {person.self ? 'your' : `${person.name.split(' ')[0]}'s`} date of birth, phone,
+                      emergency contact and agreements.
+                    </Text>
+                    <Button title={person.self ? 'Finish my details' : `Finish ${person.name.split(' ')[0]}'s details`}
+                      variant="secondary" onPress={onDetails} style={{ marginTop: spacing.sm }} />
+                  </>
+                ) : (<>
                 <Button title="Set up card renewal" variant="secondary"
                   onPress={() => run('renew', async () => {
                     if (!planId) return { ok: false, error: 'Choose a membership type first.' };
@@ -432,6 +444,7 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
                   })}
                   loading={busy === 'renew'} disabled={!!busy || !planId} style={{ marginTop: spacing.sm }} />
                 <Text style={styles.small}>You save your card on Stripe's secure page. Nothing is charged today.</Text>
+                </>)}
               </View>
             );
           })()}
