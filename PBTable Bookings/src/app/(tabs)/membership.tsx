@@ -14,7 +14,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, LoadingView } from '@/components/ui';
@@ -56,6 +56,7 @@ export default function MembershipScreen() {
   // COMING BACK FROM STRIPE. Same shape as the wallet: the reference is stashed and the URL
   // cleaned first (a refresh cannot replay it), then confirmed once somebody is signed in.
   const [claim, setClaim] = useState<{ id: string | null } | null>(null);
+  const renewalBack = useRef(false);   // came back from setting up card renewal, not joining
   const [settled, setSettled] = useState(false);
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
@@ -65,7 +66,11 @@ export default function MembershipScreen() {
     const fromUrl = back === 'success' ? params.get('session_id') : null;
     if (back) window.history.replaceState({}, '', window.location.pathname);
     if (fromUrl) { try { window.localStorage.setItem(PENDING_KEY, fromUrl); } catch {} }
-    if (back === 'cancelled') showBanner('No payment was taken. You can join whenever you like.', 'info');
+    const renewal = params.get('renew') === '1';
+    if (back === 'cancelled') {
+      showBanner(renewal ? 'Card renewal was not set up. Nothing was taken.' : 'No payment was taken. You can join whenever you like.', 'info');
+    }
+    if (back === 'success' && renewal) renewalBack.current = true;
     let stored: string | null = null;
     try { stored = window.localStorage.getItem(PENDING_KEY); } catch {}
     setClaim({ id: fromUrl ?? stored });
@@ -84,7 +89,12 @@ export default function MembershipScreen() {
       .then((r) => {
         if (r.ok) {
           if (!r.pending) forget();
-          if (r.recorded > 0) { showBanner('Membership confirmed. Member prices apply when you book.', 'success'); again(); }
+          if (r.recorded > 0) {
+            showBanner(renewalBack.current
+              ? 'Card saved. Nothing is taken until your membership ends; then it renews by itself.'
+              : 'Membership confirmed. Member prices apply when you book.', 'success');
+            again();
+          }
           else if (r.pending && claim.id) showBanner('Stripe is still finishing the payment. This page will update when it does.', 'info');
         } else {
           if (r.terminal) forget();
@@ -200,10 +210,27 @@ function MembershipPeriod({ from, to, renews, offline }: { from: string; to: str
   );
 }
 
+/** Why someone with a membership on file is not a member now, in their words. */
+function lapsedText(m: Person['membership'], whose: string): string {
+  if (!m) return 'Not a member.';
+  // A membership paid to the club ends on its own end date (94): that is not the club ending it.
+  const ranOut = m.source === 'offline' && !!m.ended_at && !!m.current_period_end
+    && Math.abs(Date.parse(m.ended_at) - Date.parse(m.current_period_end)) < 1000;
+  if (ranOut || (m.source === 'offline' && !m.ended_at)) {
+    return `${whose} membership ran to ${m.period_to ? formatDateLong(m.period_to) : 'its end date'} and has ended.`;
+  }
+  if (m.ended_at) return 'The membership was ended by the club.';
+  if (m.status === 'past_due') return "The last payment didn't go through, so the membership has lapsed and member prices have stopped.";
+  return 'The membership has lapsed.';
+}
+
 function isLive(m: Person['membership']): boolean {
   if (!m || m.ended_at) return false;
   if (m.source === 'offline') return m.status === 'active' && !!m.current_period_end && Date.parse(m.current_period_end) > Date.now();
-  return m.status === 'active' || m.status === 'trialing' || m.status === 'past_due';
+  // A failed card counts only while the bank is still retrying (the 30-day grace); after that the
+  // membership has lapsed and they can simply join again.
+  if (m.status === 'past_due') return !!m.grace_ends_at && Date.parse(m.grace_ends_at) > Date.now();
+  return m.status === 'active' || m.status === 'trialing';
 }
 
 function termsLine(q: MembershipQuote): string {
@@ -377,7 +404,7 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
       ) : (
         <>
           <Text style={styles.body}>
-            {state.key === 'ended' ? 'The membership was ended by the club.' : state.key === 'lapsed' ? 'The membership has lapsed.' : 'Not a member.'}
+            {lapsedText(m, person.self ? 'Your' : `${who}'s`)}
             {' '}Choose a type:
           </Text>
           {types.map((t) => (

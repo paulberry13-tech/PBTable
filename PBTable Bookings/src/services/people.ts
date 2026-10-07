@@ -201,6 +201,12 @@ export function detailsProblem(d: MemberDetails, opts: { dependant: boolean; con
   const phoneOk = (p: string | null) => !p || /^[0-9+() -]{7,20}$/.test(p.trim());
   if (![d.phone, d.phone2, d.emergency1_phone, d.emergency2_phone].every(phoneOk)) return 'One of the phone numbers does not look right.';
   if (d.dupr_id && !/^[A-Za-z0-9-]{3,30}$/.test(d.dupr_id.trim())) return 'That DUPR ID does not look right. It is letters and numbers only.';
+  // Health notes are only kept with the tick (94 clears them without it), so never let them be
+  // typed and then silently dropped.
+  const health = [d.medical_conditions, d.allergies, d.medication, d.adjustments, d.medical_notes].some((x) => x?.trim());
+  if (health && !d.medical_consent) {
+    return 'You have written health notes. Tick the box under them so the club can keep them, or clear them.';
+  }
   if (!d.privacy_consent) return 'Please tick to agree to the privacy notice.';
   if (opts.conductUrl && !d.conduct_accepted) return "Please tick to agree to the club's code of conduct.";
   return null;

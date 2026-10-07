@@ -211,8 +211,8 @@ export function MemberDetailsForm({
 
       <Text style={styles.section}>Health (optional)</Text>
       <Text style={styles.hint}>
-        Anything a first aider should know. Only the people running a session can see it, and only to
-        help in an emergency.
+        Anything a first aider should know. Only the people running {dependant ? 'their' : 'your'} sessions and the club's senior
+        admins can see it, and only to help in an emergency.
       </Text>
       {([['medical_conditions', 'Medical conditions', 'e.g. asthma, diabetes, heart condition'],
          ['allergies', 'Allergies', 'e.g. nuts, bee stings'],

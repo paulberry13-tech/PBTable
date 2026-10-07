@@ -111,7 +111,7 @@ export function membershipStateLabel(m: MyMembership | null): {
   }
   if (m.status === 'active' || m.status === 'trialing') {
     return m.cancel_at_period_end
-      ? { key: 'cancelling', label: 'Ends at the end of the year' }
+      ? { key: 'cancelling', label: 'Not renewing' }
       : { key: 'active', label: 'Member' };
   }
   return { key: 'lapsed', label: 'Lapsed' };
