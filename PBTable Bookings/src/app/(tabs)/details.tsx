@@ -54,7 +54,7 @@ export default function DetailsScreen() {
         <Text style={styles.h1}>My details</Text>
         <Text style={styles.body}>
           Your emergency contact and anything a first aider should know. The people running a
-          session can see these if something happens. Nobody else at the club can.
+          session can see these if something happens, and so can the club's senior admins. Nobody else can.
         </Text>
         <HelpLink guide="details" label="Help with your details" />
       </Card>
