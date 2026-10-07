@@ -8,8 +8,8 @@
 // (logged) and a printable member record. Nothing here is visible to other members.
 
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { HelpLink } from '@/components/HelpLink';
@@ -31,6 +31,13 @@ export default function DetailsScreen() {
   const params = useLocalSearchParams<{ open?: string; back?: string }>();
   const backToMembership = params.back === 'membership';
   const [reload, setReload] = useState(0);
+  // Fresh every time the page is shown, not only the first: coming back from My details (or the
+  // other way) must show what was just saved (Paul, 2026-10-07).
+  const shownBefore = useRef(false);
+  useFocusEffect(React.useCallback(() => {
+    if (shownBefore.current) setReload((n) => n + 1);
+    shownBefore.current = true;
+  }, []));
   const { data: people, loading } = useAsyncData<Person[] | null>(() => getMyPeople(), [currentUser?.id, reload]);
   const [info, setInfo] = useState<ClubJoinInfo | null>(null);
   useEffect(() => { clubJoinInfo().then(setInfo).catch(() => {}); }, []);

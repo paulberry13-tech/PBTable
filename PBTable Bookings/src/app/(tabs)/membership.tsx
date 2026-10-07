@@ -13,7 +13,7 @@
 // club, because a refund is the club's money and the club's decision.
 
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -45,6 +45,13 @@ export default function MembershipScreen() {
   const { currentUser, refresh, showBanner } = useApp();
   const router = useRouter();
   const [reload, setReload] = useState(0);
+  // Fresh every time the page is shown, not only the first: coming back from My details (or the
+  // other way) must show what was just saved (Paul, 2026-10-07).
+  const shownBefore = useRef(false);
+  useFocusEffect(React.useCallback(() => {
+    if (shownBefore.current) setReload((n) => n + 1);
+    shownBefore.current = true;
+  }, []));
   const { data, loading } = useAsyncData<{ quote: MembershipQuote | null; people: Person[] | null }>(
     async () => {
       const [quote, people] = await Promise.all([getMembershipQuote(), getMyPeople()]);
