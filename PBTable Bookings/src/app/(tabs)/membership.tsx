@@ -260,7 +260,7 @@ function lapsedText(m: Person['membership'], whose: string): string {
     return `${whose} membership ran to ${m.period_to ? formatDateLong(m.period_to) : 'its end date'} and has ended.`;
   }
   if (m.ended_at) return 'The membership was ended by the club.';
-  if (m.status === 'past_due') return "The last payment didn't go through, so the membership has lapsed and member prices have stopped.";
+  if (m.status === 'past_due' || m.status === 'unpaid') return "The last payment didn't go through, so the membership has lapsed and member prices have stopped.";
   return 'The membership has lapsed.';
 }
 
