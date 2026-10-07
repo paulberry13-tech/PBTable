@@ -133,11 +133,13 @@ async function fnMessage(error: unknown, fallback: string): Promise<string> {
 
 /** Start joining: membership-checkout checks the member may join, then hands back Stripe's
  *  own checkout page on the CLUB's account. Card details never reach this app. */
-export async function startMembershipCheckout(planId: string, playerId: string):
+export async function startMembershipCheckout(planId: string, playerId: string, renew = false):
     Promise<{ ok: true; url: string } | { ok: false; error: string; needDetails?: boolean }> {
   const origin = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : '';
+  // renew: someone whose membership has no card behind it saves one now; nothing is charged until
+  // that membership ends (membership-checkout, action 'renew').
   const { data, error } = await supabase.functions.invoke('membership-checkout', {
-    body: { action: 'start', slug: BACKEND.slug, origin, plan_id: planId, player_id: playerId },
+    body: { action: renew ? 'renew' : 'start', slug: BACKEND.slug, origin, plan_id: planId, player_id: playerId },
   });
   if (error) return { ok: false, error: await fnMessage(error, 'Could not start joining. Try again.') };
   const url = (data as { url?: string })?.url;

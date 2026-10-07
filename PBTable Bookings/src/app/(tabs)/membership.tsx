@@ -290,7 +290,49 @@ function PersonCard({ person, types, quote, onChanged, onDetails }: {
             </Text>
           ) : null}
 
-          {m.source === 'stripe' && m.i_pay && (
+          {m.renewable_by_card && (() => {
+            // Next year by card: their membership has no card behind it (paid to the club, imported).
+            // They save a card now; nothing is taken until it ends, then the full price yearly.
+            const own = types.find((t) => t.id === m.plan_id);
+            const planId = own?.id ?? pick;
+            const price = own?.price_pennies ?? types.find((t) => t.id === pick)?.price_pennies ?? null;
+            const first = m.period_to ? formatDateLong(addDay(m.period_to)) : 'the day it ends';
+            return (
+              <View style={styles.renewBox}>
+                <Text style={styles.renewTitle}>Next year by card</Text>
+                <Text style={styles.body}>
+                  Set it up now and nothing is taken until {first}. Then {price != null ? formatMoney(price) : 'the full price'} a year,
+                  automatically, so {person.self ? 'your' : `${person.name.split(' ')[0]}'s`} membership carries straight on.
+                </Text>
+                {!own && types.length > 0 && (
+                  <>
+                    <Text style={styles.meta}>The type it was is no longer sold. Choose one:</Text>
+                    {types.map((t) => (
+                      <Pressable key={t.id} onPress={() => setPick(t.id)} style={[styles.type, pick === t.id && styles.typeOn]}
+                        accessibilityRole="radio" accessibilityState={{ selected: pick === t.id }}>
+                        <Ionicons name={pick === t.id ? 'radio-button-on' : 'radio-button-off'} size={20}
+                          color={pick === t.id ? colors.coral : colors.textMuted} />
+                        <Text style={[styles.typeName, { flex: 1 }]}>{t.name}</Text>
+                        <Text style={styles.typePrice}>{formatMoney(t.price_pennies)}</Text>
+                      </Pressable>
+                    ))}
+                  </>
+                )}
+                <Button title="Set up card renewal" variant="secondary"
+                  onPress={() => run('renew', async () => {
+                    if (!planId) return { ok: false, error: 'Choose a membership type first.' };
+                    const r = await startMembershipCheckout(planId, person.player_id, true);
+                    if (!r.ok) return r;
+                    try { await openOutside(r.url); return { ok: true }; }
+                    catch (e) { return { ok: false, error: (e as Error)?.message ?? 'Could not open the card page.' }; }
+                  })}
+                  loading={busy === 'renew'} disabled={!!busy || !planId} style={{ marginTop: spacing.sm }} />
+                <Text style={styles.small}>You save your card on Stripe's secure page. Nothing is charged today.</Text>
+              </View>
+            );
+          })()}
+
+          {m.source === 'stripe' && m.i_pay && m.has_card !== false && (
             <View style={styles.actions}>
               {state.key !== 'failing' && (
                 <View style={styles.renewRow}>
@@ -440,6 +482,8 @@ const styles = StyleSheet.create({
   typeName: { ...type.body, fontFamily: fonts.bold, color: colors.text },
   typePrice: { fontFamily: fonts.mono, fontSize: 16, color: colors.navy },
   typeThen: { ...type.caption, color: colors.textMuted },
+  renewBox: { marginTop: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, gap: 4 },
+  renewTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.navy },
   pill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
   pillText: { ...type.caption, fontFamily: fonts.bold },
   warn: { flexDirection: 'row', gap: spacing.sm, backgroundColor: colors.downSoft, borderRadius: radius.md,

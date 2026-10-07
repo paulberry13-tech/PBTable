@@ -96,6 +96,11 @@ export type PersonMembership = {
    *  backend before 94f; the card then falls back to the end date alone. */
   period_from?: string | null;
   period_to?: string | null;
+  /** A card subscription stands behind it (94, section 14). False for paid-to-the-club, imported
+   *  or hand-made ones: then "Update card" has nothing to open. */
+  has_card?: boolean;
+  /** It can be renewed by card early: no card behind it, ending within a year. */
+  renewable_by_card?: boolean;
 };
 
 export type Person = {
