@@ -25,6 +25,10 @@ export const supabase = createClient(BACKEND.url, BACKEND.anonKey, {
     storage: Platform.OS === 'web' ? undefined : AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: Platform.OS === 'web',
+    // Never take a session from the address: sign-in is by emailed code only, and a crafted
+    // link with #access_token=… would sign the browser into someone else's account, so a
+    // top-up would land in their wallet (security council, 2026-10-18). Production's /app
+    // bundle was patched to match on the same day.
+    detectSessionInUrl: false,
   },
 });
