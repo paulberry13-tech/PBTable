@@ -1,0 +1,9 @@
+# Old pbtable addresses forward permanently to twoclear (301, 24 Oct 2026), so search engines move them across.
+https://pbtable.com/*  https://twoclear.co.uk/:splat  301!
+http://pbtable.com/*  https://twoclear.co.uk/:splat  301!
+https://www.pbtable.com/*  https://twoclear.co.uk/:splat  301!
+http://www.pbtable.com/*  https://twoclear.co.uk/:splat  301!
+https://pbtable.co.uk/*  https://twoclear.co.uk/:splat  301!
+http://pbtable.co.uk/*  https://twoclear.co.uk/:splat  301!
+https://www.pbtable.co.uk/*  https://twoclear.co.uk/:splat  301!
+http://www.pbtable.co.uk/*  https://twoclear.co.uk/:splat  301!

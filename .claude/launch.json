@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8123"],
       "port": 8123
+    },
+    {
+      "name": "twoclear-site",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8124", "--directory", "C:\\Users\\PaulBerry\\OneDrive - Berry Business Informatics\\Documents\\PBTable\\twoclear-site"],
+      "port": 8124
     }
   ]
 }

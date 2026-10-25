@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Social Sessions — PBTable</title>
+<meta name="description" content="Run welcoming social club nights. PBTable organises the sign-ups and balances friendly teams — mixed abilities welcome, zero ratings pressure." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Barlow+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --navy:#1B2B4B;--navy-deep:#0f1e38;--navy-mid:#243660;
+  --coral:#D94F2B;--coral-light:#ff6844;--amber:#E8A020;
+  --cream:#FAF7F2;--mid:#F0F2F5;--border:#E2E8F0;
+  --green:#16a34a;--green-light:#4ade80;--green-soft:#e7f6ee;--red:#dc2626;
+  --ink:#1B2B4B;--muted:#5a6b86;
+  --radius:18px;--maxw:1180px;
+  --shadow-md:0 18px 45px -20px rgba(15,30,56,.4);
+  --shadow-cell:0 12px 34px -20px rgba(15,30,56,.28);
+  --accent:var(--green);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Barlow',system-ui,sans-serif;font-weight:400;color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.55}
+h1,h2,h3,h4,.display{font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:800;line-height:1.03;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+section{position:relative}
+.mono{font-family:'JetBrains Mono',monospace}
+
+.eyebrow{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.22em;font-size:13px;color:var(--accent);display:inline-flex;align-items:center;gap:9px}
+.eyebrow::before{content:"";width:26px;height:2px;background:currentColor;border-radius:2px;opacity:.7}
+.eyebrow.on-dark{color:var(--green-light)}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-family:'Barlow',sans-serif;font-weight:600;font-size:16px;padding:15px 28px;border-radius:13px;cursor:pointer;border:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background .25s,color .2s;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--coral-light),var(--coral));color:#fff;box-shadow:0 14px 30px -10px rgba(217,79,43,.7),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 22px 42px -12px rgba(217,79,43,.85)}
+.btn-green{background:linear-gradient(135deg,#22c55e,var(--green));color:#fff;box-shadow:0 14px 30px -10px rgba(22,163,74,.6),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-green:hover{transform:translateY(-3px);box-shadow:0 22px 42px -12px rgba(22,163,74,.8)}
+.btn-ghost{background:rgba(255,255,255,.05);color:#fff;border:1.5px solid rgba(255,255,255,.22);backdrop-filter:blur(6px)}
+.btn-ghost:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.1)}
+.btn-dark{background:var(--navy);color:#fff;box-shadow:var(--shadow-md)}
+.btn-dark:hover{transform:translateY(-3px);background:var(--navy-mid)}
+.btn-light{background:#fff;color:var(--coral);box-shadow:0 16px 36px -14px rgba(0,0,0,.4)}
+.btn-light:hover{transform:translateY(-3px)}
+
+/* ---------- NAV ---------- */
+header.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(15,30,56,.72);backdrop-filter:blur(16px) saturate(140%);border-bottom:1px solid rgba(255,255,255,.06);transition:background .3s,border-color .3s,box-shadow .3s}
+header.nav.scrolled{background:rgba(15,30,56,.94);border-bottom:1px solid rgba(22,163,74,.4);box-shadow:0 10px 40px -20px rgba(0,0,0,.7)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px}
+.brand{display:flex;align-items:center;gap:6px}
+.brand img{height:46px;width:auto}
+.brand .wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:25px;color:#fff;letter-spacing:.01em}
+.brand .wordmark b{color:var(--coral);font-weight:800}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a.link{color:#cdd6e6;font-weight:500;font-size:15.5px;position:relative;transition:color .2s}
+.nav-links a.link::after{content:"";position:absolute;left:0;right:100%;bottom:-6px;height:2px;background:var(--green);transition:right .3s;border-radius:2px}
+.nav-links a.link:hover{color:#fff}
+.nav-links a.link:hover::after,.nav-links a.link.active::after{right:0}
+.nav-links a.link.active{color:#fff}
+.hamburger{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:8px}
+.hamburger span{width:24px;height:2.5px;background:#fff;border-radius:2px;transition:.3s}
+
+/* ---------- SUBHERO ---------- */
+.subhero{background:radial-gradient(120% 130% at 15% 0%,var(--navy-mid),var(--navy-deep) 60%);color:#fff;padding:150px 0 84px;overflow:hidden}
+.subhero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.subhero h1{font-size:clamp(42px,5.4vw,72px);color:#fff;margin:16px 0 16px;letter-spacing:-.018em;line-height:.98}
+.subhero h1 .hl{color:var(--green-light)}
+.subhero .lede{font-size:18px;color:#b7c2d6;max-width:520px;font-weight:300;margin-bottom:14px}
+.subhero .lede b{color:#e6ecf6;font-weight:600}
+.subhero .ctas{display:flex;gap:14px;flex-wrap:wrap;margin-top:26px}
+.crumb{font-size:13px;color:#8da0bd}
+.crumb a:hover{color:#fff}
+
+/* ---------- section shells ---------- */
+.sec{padding:90px 0}
+.sec.mid{background:var(--mid)}
+.sec-head{max-width:680px;margin:0 auto 54px;text-align:center}
+.sec-head h2{font-size:clamp(30px,4vw,46px);color:var(--navy);margin:14px 0 12px}
+.sec-head p{color:var(--muted);font-size:17px}
+
+/* ---------- flow ---------- */
+.step{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center;margin-bottom:74px}
+.step:last-child{margin-bottom:0}
+.step.flip .copy{order:2}
+.step-n{display:inline-flex;align-items:center;gap:11px;font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:13px;color:var(--accent)}
+.step-n .num{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
+.step h3{font-size:30px;color:var(--navy);margin:16px 0 12px}
+.step p{color:var(--muted);font-size:16.5px;max-width:440px}
+.step .note{margin-top:14px;font-size:14px;color:var(--navy);background:var(--green-soft);border-left:3px solid var(--accent);padding:11px 15px;border-radius:0 10px 10px 0;font-weight:500}
+
+/* ---------- app UI mockups ---------- */
+.mock{background:var(--mid);border:1px solid var(--border);border-radius:22px;padding:22px;box-shadow:var(--shadow-cell)}
+.mock-bar{display:flex;align-items:center;gap:7px;padding:0 4px 14px}
+.mock-bar i{width:11px;height:11px;border-radius:50%;background:#cbd5e1;display:block}
+.mock-bar span{margin-left:8px;font-size:12px;color:var(--muted);font-weight:600}
+.ui-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;color:var(--ink)}
+.ui-card + .ui-card{margin-top:12px}
+.ui-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ui-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--navy);font-size:19px}
+.ui-lab{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.09em;font-size:10.5px;color:var(--muted);margin-bottom:5px;display:block}
+.ui-in{border:1.5px solid var(--border);border-radius:9px;padding:9px 12px;font-size:14px;color:var(--ink);background:#fff;font-weight:500}
+.ui-field{margin-bottom:12px}
+.ui-grid{display:grid;gap:10px}
+.ui-3{grid-template-columns:1.5fr 1fr 1fr}
+.ui-2{grid-template-columns:1fr 1.3fr}
+.ui-chips{display:flex;gap:7px;flex-wrap:wrap}
+.ui-chip{border:1.5px solid var(--border);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.ui-chip.sel{background:var(--navy);border-color:var(--navy);color:#fff}
+.ui-tog{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 13px;border:1px solid var(--border);border-radius:11px;background:#fff;margin-top:10px}
+.ui-tog .t{font-weight:700;font-size:13.5px;color:var(--ink)}
+.ui-tog .h{font-size:11.5px;color:var(--muted);font-weight:400;margin-top:2px}
+.sw{width:44px;height:26px;border-radius:999px;background:#cbd5e1;position:relative;flex:none;transition:.2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.sw.on{background:var(--coral)}
+.sw.on.green{background:var(--green)}
+.sw.on::after{left:21px}
+.ui-btn{margin-top:14px;background:linear-gradient(135deg,var(--coral-light),var(--coral));color:#fff;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:14.5px}
+.ui-btn.navy{background:var(--navy)}
+.ui-note{margin-top:12px;font-size:12.5px;color:var(--muted);text-align:center;font-weight:500}
+
+.badge{display:inline-flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:11px;padding:5px 11px;border-radius:999px}
+.badge.graded{background:var(--coral);color:#fff}
+.badge.social{background:var(--green);color:#fff}
+.badge.amber{background:#fdf0da;color:#96610a}
+.badge.grey{background:var(--mid);color:var(--muted)}
+
+.roster-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.roster-row:last-child{border-bottom:none}
+.roster-row .nm{font-size:14px;font-weight:500}
+.roster-row .tag{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em}
+
+/* slips (navy) */
+.slips{background:linear-gradient(165deg,var(--navy),var(--navy-deep));border-radius:14px;padding:20px}
+.slips h4{color:#fff;font-size:19px}
+.slips .desc{color:rgba(255,255,255,.72);font-size:13px;margin-top:4px;font-weight:400;line-height:1.45}
+.slip{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 13px;margin-top:11px}
+.slip .st{display:flex;justify-content:space-between;align-items:center}
+.slip .ct{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.08em;font-size:10.5px;color:var(--green-light)}
+.slip .teams{display:flex;align-items:center;gap:12px;margin-top:7px}
+.slip .team{flex:1;font-size:13.5px;font-weight:600;color:#fff}
+.slip .team.r{text-align:right}
+.slip .vs{font-size:9.5px;font-weight:800;color:rgba(255,255,255,.5)}
+
+/* results + optional scores */
+.res{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.res:last-child{border-bottom:none}
+.res .t{flex:1;font-size:13.5px;font-weight:500;color:var(--ink)}
+.res .t.r{text-align:right}
+.res .t.win{color:var(--green);font-weight:700}
+.res .sc2{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13.5px;color:var(--navy);background:var(--mid);border-radius:7px;padding:3px 9px;white-space:nowrap}
+.sc{display:flex;align-items:center;gap:12px;padding:6px 0}
+.sc .t{flex:1;font-size:13.5px;font-weight:500;color:var(--ink)}
+.sc .box{width:46px;height:38px;border:1.5px solid var(--border);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:var(--navy);background:#fff}
+
+/* ---------- feature grid ---------- */
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.fcell{background:#fff;border:1px solid var(--border);border-radius:16px;padding:26px;box-shadow:var(--shadow-cell)}
+.fcell .ic{width:46px;height:46px;border-radius:12px;background:var(--green);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.fcell .ic svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fcell h4{font-size:19px;color:var(--navy);margin-bottom:8px}
+.fcell p{color:var(--muted);font-size:14.5px}
+
+/* ---------- crosslink ---------- */
+.xlink{background:linear-gradient(150deg,var(--navy),var(--navy-deep));border-radius:22px;padding:44px;display:flex;align-items:center;justify-content:space-between;gap:26px;flex-wrap:wrap}
+.xlink .eyebrow{color:var(--coral-light)}
+.xlink h3{color:#fff;font-size:30px;margin:10px 0 6px}
+.xlink p{color:#b7c2d6;font-size:15.5px;max-width:460px;font-weight:300}
+
+/* ---------- cta banner ---------- */
+.cta-banner{background:linear-gradient(135deg,var(--coral),#b83c1c);text-align:center;padding:80px 0}
+.cta-banner h2{color:#fff;font-size:clamp(30px,4vw,46px);margin-bottom:14px}
+.cta-banner p{color:rgba(255,255,255,.9);font-size:17px;margin-bottom:28px;font-weight:300}
+.cta-banner .ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+/* ---------- footer ---------- */
+footer.site{background:var(--navy-deep);padding:70px 0 34px;color:#fff}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:42px}
+.foot-brand .brand{margin-bottom:16px}
+.foot-brand img{height:40px}
+.foot-brand p{color:#8da0bd;font-size:15px;font-weight:300;max-width:300px}
+.foot-brand .strap{color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;margin-top:12px}
+.foot-col h4{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:#fff;margin-bottom:16px}
+.foot-col a{display:block;color:#8da0bd;font-size:15px;padding:6px 0;transition:color .2s}
+.foot-col a:hover{color:var(--coral-light)}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.07);padding-top:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.foot-bottom .cpy{color:#6f82a3;font-size:13.5px}
+.foot-bottom .cpy a{color:#9fb0cc}
+.foot-bottom .nex{color:#6f82a3;font-size:13.5px}
+.foot-bottom .nex b{color:#aeb9cf;font-weight:600}
+
+@media(max-width:900px){
+  .subhero .grid{grid-template-columns:1fr;gap:44px}
+  .subhero{padding:120px 0 64px}
+  .step{grid-template-columns:1fr;gap:26px;margin-bottom:56px}
+  .step.flip .copy{order:0}
+  .fgrid{grid-template-columns:1fr 1fr}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .nav-links{position:fixed;top:74px;left:0;right:0;flex-direction:column;background:rgba(15,30,56,.98);backdrop-filter:blur(16px);padding:22px;gap:18px;transform:translateY(-140%);transition:transform .35s;border-bottom:1px solid rgba(22,163,74,.3)}
+  .nav-links.show{transform:translateY(0)}
+  .nav-links a.link{font-size:17px}
+  .hamburger{display:flex}
+}
+@media(max-width:560px){
+  .fgrid{grid-template-columns:1fr}
+  .foot-grid{grid-template-columns:1fr;gap:30px}
+  .xlink{padding:30px}
+  .ui-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html">
+      <img src="pbtable-logo.png" alt="PBTable logo" />
+      <span class="wordmark">PB<b>Table</b></span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a class="link" href="index.html" onclick="closeMenu()">Home</a>
+      <a class="link" href="graded-sessions.html" onclick="closeMenu()">Graded</a>
+      <a class="link active" href="social-sessions.html" onclick="closeMenu()">Social</a>
+      <a class="link" href="bookings.html" onclick="closeMenu()">Bookings</a>
+      <a class="link" href="index.html#pricing" onclick="closeMenu()">Pricing</a>
+      <a class="link" href="index.html#contact" onclick="closeMenu()">Contact</a>
+      <a class="btn btn-primary" href="index.html#order" onclick="closeMenu()" style="padding:11px 22px;font-size:15px">Order Now</a>
+    </nav>
+    <button class="hamburger" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="subhero" id="top">
+  <div class="wrap grid">
+    <div>
+      <div class="crumb"><a href="index.html">Home</a> · Social Sessions</div>
+      <div class="eyebrow on-dark" style="margin-top:12px"><span class="badge social">Social</span> Relaxed, welcoming play</div>
+      <h1>Social nights, <span class="hl">sorted</span></h1>
+      <p class="lede">PBTable runs the organising so you can run the club. <b>Simple sign-ups, balanced friendly teams,</b> and a live board of who's playing.</p>
+      <p class="lede">Mixed abilities welcome — and if the mood turns competitive, <b>record scores and share the results.</b> It's all just for fun; nothing here touches your club ratings.</p>
+      <div class="ctas">
+        <a class="btn btn-green" href="#flow">See how it works</a>
+        <a class="btn btn-ghost" href="https://demo.pbtable.com" target="_blank" rel="noopener">See live demo →</a>
+      </div>
+    </div>
+    <div class="mock">
+      <div class="mock-bar"><i></i><i></i><i></i><span>Club board · Friday Social</span></div>
+      <div class="ui-card">
+        <div class="ui-head">
+          <div class="ui-title">Tonight's results</div>
+          <span class="badge social">Social</span>
+        </div>
+        <div class="res"><span class="t win">Priya &amp; Tom</span><span class="sc2">11–7</span><span class="t r">Dan &amp; Aisha</span></div>
+        <div class="res"><span class="t">Grace &amp; Leo</span><span class="sc2">9–11</span><span class="t r win">Nina &amp; Omar</span></div>
+        <div class="res"><span class="t win">Sam &amp; Beth</span><span class="sc2">11–6</span><span class="t r">Kofi &amp; Ruth</span></div>
+        <div class="ui-btn navy">Share results →</div>
+        <div class="ui-note">Just for fun — never affects RDR ratings</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FLOW ============ -->
+<section class="sec" id="flow">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow" style="justify-content:center">How a social night runs</div>
+      <h2>Organised in minutes, relaxed all evening</h2>
+      <p>Same simple tools as a graded night — scoring optional, club ratings untouched.</p>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="step">
+      <div class="copy">
+        <div class="step-n"><span class="num">1</span> Create the session</div>
+        <h3>Set up a social night</h3>
+        <p>Name it, pick your courts, set a price if you charge one. Leave <b>Graded</b> off so ratings stay untouched — then choose whether to <b>record scores</b> for a bit of friendly competition.</p>
+        <div class="note">Recording scores is entirely optional and your call every night. Either way, nothing here feeds the RDR rating.</div>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Admin · Create session</span></div>
+        <div class="ui-card">
+          <div class="ui-head"><div class="ui-title">New session</div><span class="badge social">Social</span></div>
+          <div class="ui-field"><span class="ui-lab">Title</span><div class="ui-in">Friday Social Night</div></div>
+          <div class="ui-grid ui-3">
+            <div class="ui-field" style="margin:0"><span class="ui-lab">Date</span><div class="ui-in">Fri 10 Jul</div></div>
+            <div class="ui-field" style="margin:0"><span class="ui-lab">Start</span><div class="ui-in">18:30</div></div>
+            <div class="ui-field" style="margin:0"><span class="ui-lab">End</span><div class="ui-in">21:00</div></div>
+          </div>
+          <div class="ui-grid ui-2" style="margin-top:12px">
+            <div class="ui-field" style="margin:0"><span class="ui-lab">Courts</span><div class="ui-in">4</div></div>
+            <div class="ui-field" style="margin:0"><span class="ui-lab">Price (£)</span><div class="ui-in">5</div></div>
+          </div>
+          <div class="ui-tog"><div><div class="t">Graded — affects RDR</div><div class="h">Off — this night won't move ratings</div></div><span class="sw"></span></div>
+          <div class="ui-tog"><div><div class="t">Record &amp; share scores</div><div class="h">Optional — track results, just for fun</div></div><span class="sw on green"></span></div>
+          <div class="ui-btn">Create session</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step flip">
+      <div class="copy">
+        <div class="step-n"><span class="num">2</span> Everyone books in</div>
+        <h3>Open to all, easy to join</h3>
+        <p>Members grab a spot from a link — beginners and regulars side by side. When it's full the waitlist opens, so nobody's turned away and drop-outs fill themselves.</p>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Admin · Friday Social Night</span></div>
+        <div class="ui-card">
+          <div class="ui-head">
+            <div class="ui-title">Who's playing</div>
+            <div style="display:flex;gap:6px"><span class="badge social">Social</span><span class="badge amber">16/16 in</span></div>
+          </div>
+          <div class="roster-row"><span class="nm">Priya S.</span><span class="tag">In</span></div>
+          <div class="roster-row"><span class="nm">Tom H. · new</span><span class="tag">In</span></div>
+          <div class="roster-row"><span class="nm">Aisha K.</span><span class="tag">In</span></div>
+          <div class="roster-row"><span class="nm">Dan M.</span><span class="tag">In</span></div>
+          <div class="roster-row"><span class="nm">Grace O. · new</span><span class="tag">In</span></div>
+          <div class="roster-row"><span class="nm">Leo P.</span><span class="tag">In</span></div>
+        </div>
+        <div class="ui-card" style="display:flex;align-items:center;justify-content:space-between">
+          <span class="ui-lab" style="margin:0">Waitlist</span>
+          <span class="badge grey">3 waiting</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step">
+      <div class="copy">
+        <div class="step-n"><span class="num">3</span> Balance the teams</div>
+        <h3>Fair games, friendly vibe</h3>
+        <p>PBTable still builds balanced court slips, so a first-timer isn't stuck against your two strongest players. Great games all round — just without a scoreboard.</p>
+        <div class="note">Balanced teams keep it fun for everyone — the quiet secret to members coming back.</div>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Admin · Court slips</span></div>
+        <div class="slips">
+          <h4>Balanced court slips</h4>
+          <div class="desc">Mixed, fair teams so every game's a good game — no repeated partners.</div>
+          <div class="slip">
+            <div class="st"><span class="ct">ROUND 1 · COURT 1</span></div>
+            <div class="teams"><span class="team">Priya &amp; Tom</span><span class="vs">VS</span><span class="team r">Aisha &amp; Dan</span></div>
+          </div>
+          <div class="slip">
+            <div class="st"><span class="ct">ROUND 1 · COURT 2</span></div>
+            <div class="teams"><span class="team">Grace &amp; Leo</span><span class="vs">VS</span><span class="team r">Nina &amp; Omar</span></div>
+          </div>
+          <div class="slip">
+            <div class="st"><span class="ct">ROUND 1 · COURT 3</span></div>
+            <div class="teams"><span class="team">Sam &amp; Beth</span><span class="vs">VS</span><span class="team r">Kofi &amp; Ruth</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step flip">
+      <div class="copy">
+        <div class="step-n"><span class="num">4</span> Play it your way</div>
+        <h3>Keep it casual — or score it and share</h3>
+        <p>Some clubs just play and rotate. Others tap in the scores and share the night's results and winners with the whole club. Both work beautifully — and neither moves anyone's RDR rating.</p>
+        <div class="note">Recorded results are perfect for a friendly night-winner or a running social ladder — all kept separate from your club ratings.</div>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Admin · Record scores (optional)</span></div>
+        <div class="ui-card">
+          <div class="ui-head"><div class="ui-title">Court 1 · Round 1</div><span class="badge social">Social</span></div>
+          <div class="sc"><span class="t">Priya &amp; Tom</span><span class="box">11</span></div>
+          <div class="sc"><span class="t">Dan &amp; Aisha</span><span class="box">7</span></div>
+          <div class="ui-btn navy">Save &amp; share results</div>
+          <div class="ui-note">Recorded for fun — never moves RDR ratings</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHY SOCIAL ============ -->
+<section class="sec mid">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow" style="justify-content:center">Why run social</div>
+      <h2>The nights that grow a club</h2>
+      <p>Social sessions are how new members find their feet — and how the regulars keep coming back.</p>
+    </div>
+    <div class="fgrid">
+      <div class="fcell">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <h4>Welcoming to all levels</h4>
+        <p>Beginners and regulars play the same night, with balanced teams so nobody feels out of their depth.</p>
+      </div>
+      <div class="fcell">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0zM9 12l2 2 4-4"/></svg></div>
+        <h4>Balanced, friendly games</h4>
+        <p>The same team-balancing that powers graded nights, so every court is a good game — minus the stakes.</p>
+      </div>
+      <div class="fcell">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg></div>
+        <h4>Record &amp; share results</h4>
+        <p>Tap in scores and share the night's winners with the club — or keep it purely casual. Entirely your call.</p>
+      </div>
+      <div class="fcell">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <h4>Simple sign-ups &amp; waitlist</h4>
+        <p>Members book from a link and the waitlist manages itself — no messages, no clipboard, no chasing.</p>
+      </div>
+      <div class="fcell">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/></svg></div>
+        <h4>One membership covers it</h4>
+        <p>Social and graded run from the same club account. Switch a night from casual to competitive with one toggle.</p>
+      </div>
+      <div class="fcell">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+        <h4>Never touches ratings</h4>
+        <p>Record scores or don't — either way, social nights never move anyone's RDR. Low-stakes by design.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CROSSLINK ============ -->
+<section class="sec">
+  <div class="wrap">
+    <div class="xlink">
+      <div>
+        <div class="eyebrow"><span class="badge graded">Graded</span> Ready to compete?</div>
+        <h3>Want to make it count?</h3>
+        <p>Turn on graded play and every result feeds a live RDR rating and your club leaderboard.</p>
+      </div>
+      <a class="btn btn-primary" href="graded-sessions.html">Explore Graded Sessions →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="cta-banner">
+  <div class="wrap">
+    <h2>Run a social night your members love</h2>
+    <p>Set up your club on PBTable today — founder pricing while it lasts.</p>
+    <div class="ctas">
+      <a class="btn btn-light" href="index.html#order">Order now →</a>
+      <a class="btn btn-ghost" href="https://demo.pbtable.com" target="_blank" rel="noopener">See live demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <img src="pbtable-logo.png" alt="PBTable logo" />
+          <span class="wordmark" style="font-size:23px">PB<b>Table</b></span>
+        </a>
+        <p>Live league ratings and leaderboards for UK pickleball clubs.</p>
+        <p class="strap">Ratings your players trust — and your club owns.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="graded-sessions.html">Graded sessions</a>
+        <a href="social-sessions.html">Social sessions</a>
+        <a href="bookings.html">Bookings</a>
+        <a href="index.html#pricing">Pricing</a>
+        <a href="https://demo.pbtable.com" target="_blank" rel="noopener">Live demo</a>
+      </div>
+      <div class="foot-col">
+        <h4>Get in touch</h4>
+        <a href="index.html#order">Order now</a>
+        <a href="mailto:paul@pbtable.co.uk">paul@pbtable.co.uk</a>
+        <a href="https://pbtable.com">pbtable.com</a>
+        <a href="https://pbtable.co.uk">pbtable.co.uk</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div class="cpy">© <span id="yr">2026</span> PBTable · <a href="https://pbtable.com">pbtable.com</a> · <a href="https://pbtable.co.uk">pbtable.co.uk</a></div>
+      <div class="nex">Powered by <b>Nexlane</b></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 30));
+function toggleMenu(){ document.getElementById('navLinks').classList.toggle('show'); }
+function closeMenu(){ document.getElementById('navLinks').classList.remove('show'); }
+document.getElementById('yr').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

@@ -1,9 +1,9 @@
-import { usePathname, useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BACKEND } from '@/services/backend';
+import { PROJECT } from '@/services/backend';
+import { CLUB_PAGE_LABELS, ClubPage, openClubPage } from '@/services/clubSite';
 import * as data from '@/services/data';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, spacing } from '@/theme';
@@ -12,31 +12,39 @@ const LOGO = require('../../assets/images/pbtable-logo.png');
 
 
 /**
- * Brand header: the PBTable logo + wordmark, a web-only "Admin" link out to the club-site
- * admin area (the single admin surface — the in-app admin was removed), and a top nav row
- * for the Leaderboard and Players views (the core booking actions — Sessions, My Bookings,
- * Wallet — stay in the bottom tab bar).
+ * Brand header: the club's logo + name, a web-only "Admin" link out to the club-site
+ * admin area (the single admin surface — the in-app admin was removed), and a nav row
+ * linking out to the club's public Leaderboard and Social pages. The core booking
+ * actions — Sessions, My Bookings, Wallet — stay in the bottom tab bar.
  */
 /** Browse views promoted out of the bottom tab bar to the top of every screen.
- *  Empty since the Leaderboard and Players tabs were removed. Kept as an empty
- *  list WITH its map intact: deleting the map outright changed the rendered tree
- *  relative to the static pre-render and introduced a hydration mismatch
- *  (React #418) on every screen. */
-const NAV: { label: string; path: '/bookings' | '/wallet' }[] = [];
+ *
+ *  These are NOT app screens — they open the club's own website, which is where the
+ *  leaderboard and the Social page live and where ratings are actually computed. See
+ *  services/clubSite.ts for why the app links out instead of rebuilding them.
+ *
+ *  On native they open in an in-app browser, so a member never loses the app. */
+const NAV: { label: string; page: ClubPage }[] = [
+  { label: CLUB_PAGE_LABELS.leaderboard, page: 'leaderboard' },
+  { label: CLUB_PAGE_LABELS.social, page: 'social' },
+];
 
 export function Header() {
-  const { sportProfile, setSport } = useApp();
+  const { sportProfile, setSport, dataVersion } = useApp();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const pathname = usePathname();
   // The club's own identity. Null until it loads and null if it cannot be read, in
   // which case the PBTable mark below is what shows — the header is never empty.
+  //
+  // Re-read on dataVersion, not just on mount: on native the club can change
+  // underneath the app when signing in adopts the member's own club, and a header
+  // still showing the picked club's name would be the most visible way to get that
+  // wrong. getClubBranding memoises, so a bump with no club change costs nothing.
   const [club, setClub] = React.useState<{ name: string | null; logoUrl: string | null } | null>(null);
   React.useEffect(() => {
     let alive = true;
     data.getClubBranding().then((b) => { if (alive) setClub(b); }).catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, [dataVersion]);
 
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + spacing.sm }]}>
@@ -48,7 +56,7 @@ export function Header() {
           // and that label is gone, so on a real club a tap would silently re-word
           // the whole app ("Session" -> "Fixture", "RDR" -> "Club rating") with
           // nothing to explain it and no visible way back. Inert off demo.
-          onPress={BACKEND.isDemo
+          onPress={PROJECT.isDemo
             ? () => setSport(sportProfile.sport === 'pickleball' ? 'tennis' : 'pickleball')
             : undefined}
           accessibilityLabel={club?.name || 'PBTable'}
@@ -106,20 +114,17 @@ export function Header() {
             <Text style={[styles.navText, styles.backText]}>‹ Club site</Text>
           </Pressable>
         ) : null}
-        {NAV.map((item) => {
-          const active = pathname === item.path;
-          return (
-            <Pressable
-              key={item.path}
-              onPress={() => router.push(item.path)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              style={({ pressed }) => [styles.navBtn, active && styles.navBtnActive, pressed && { opacity: 0.8 }]}
-            >
-              <Text style={[styles.navText, active && styles.navTextActive]}>{item.label}</Text>
-            </Pressable>
-          );
-        })}
+        {NAV.map((item) => (
+          <Pressable
+            key={item.page}
+            onPress={() => openClubPage(item.page)}
+            accessibilityRole="link"
+            accessibilityLabel={`${item.label} on the club website`}
+            style={({ pressed }) => [styles.navBtn, pressed && { opacity: 0.8 }]}
+          >
+            <Text style={styles.navText}>{item.label}</Text>
+          </Pressable>
+        ))}
       </View>
     </View>
   );

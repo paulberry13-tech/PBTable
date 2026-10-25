@@ -13,14 +13,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui';
 import * as auth from '@/services/auth';
-import { BACKEND } from '@/services/backend';
+import { getClubSlug } from '@/services/backend';
 import * as data from '@/services/data';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, radius, spacing, type } from '@/theme';
 
 const PBTABLE_LOGO = require('../../assets/images/pbtable-logo.png');
 
-/** Passwordless sign-in on the live backend: enter your club email, we email a
+/** Passwordless sign-in on the live backend: enter your email, we email a
  *  6-digit code, you type it in. No password to set or remember. Invite-only —
  *  only members the club has added can sign in. */
 /** onCancel is supplied only when the sign-in was raised on demand (someone tapped
@@ -64,7 +64,12 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
   // fixes. Cancelled on unmount so a slow reply cannot set state on a dead component.
   useEffect(() => {
     let live = true;
-    auth.clubSignupInfo(BACKEND.slug)
+    // getClubSlug(), not BACKEND.slug: on web the hostname has answered, but a
+    // native build has no hostname and the club comes from the picker. No club yet
+    // means there is nothing to join, which is the same answer as "no".
+    const slug = getClubSlug();
+    if (!slug) { setSignupOpen(false); return; }
+    auth.clubSignupInfo(slug)
       .then((info) => { if (live) setSignupOpen(!!info?.self_signup); })
       .catch(() => { if (live) setSignupOpen(false); });
     return () => { live = false; };
@@ -72,7 +77,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
 
   const requestCode = async () => {
     if (!email.trim()) {
-      setError('Enter your club email first.');
+      setError('Enter your email first.');
       return;
     }
     setBusy(true);
@@ -165,7 +170,9 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
     if (fullName.trim().length < 2) { setError('Please give your full name.'); return; }
     setBusy(true); setError(null);
     try {
-      await auth.joinClub(BACKEND.slug, fullName);
+      const slug = getClubSlug();
+      if (!slug) throw new Error('No club selected.');
+      await auth.joinClub(slug, fullName);
       await refreshUser();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not complete your sign-up.');
@@ -276,7 +283,7 @@ export function SignIn({ onCancel }: { onCancel?: () => void } = {}) {
             <>
               <Text style={type.h1}>Sign in</Text>
               <Text style={[type.caption, { marginTop: 2, marginBottom: spacing.md }]}>
-                Enter your club email and we'll send you a one-time code. No password needed.
+                Enter your email and we'll send you a one-time code. No password needed.
               </Text>
 
               <Text style={styles.label}>Email</Text>

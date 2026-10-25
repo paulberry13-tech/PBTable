@@ -5,7 +5,7 @@
 // different members book. This puts a floating control on the demo app that
 // signs you straight in as any of the dummy members, with no OTP round-trip.
 //
-// SAFETY: rendered only when BACKEND.isDemo — a club subdomain resolves to the
+// SAFETY: rendered only when PROJECT.isDemo — a club subdomain resolves to the
 // production backend, where isDemo is false and this never mounts. The people
 // list comes from the demo_people() RPC, which is itself gated to the club whose
 // slug is 'demo' (migration 33), so even on a demo-configured build pointed at
@@ -21,7 +21,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View
 
 import { formatMoney } from '@/lib/money';
 import { initialsOf } from '@/lib/format';
-import { BACKEND } from '@/services/backend';
+import { PROJECT } from '@/services/backend';
 import { supabase } from '@/services/supabaseClient';
 import { useApp } from '@/store/AppContext';
 import { colors, fonts, radius, shadow, spacing, type } from '@/theme';
@@ -84,7 +84,7 @@ export function DemoPersonSwitcher() {
     [currentUser?.name]
   );
 
-  if (!BACKEND.isDemo || !DEMO_PW_MAIN) return null;
+  if (!PROJECT.isDemo || !DEMO_PW_MAIN) return null;
 
   return (
     <>

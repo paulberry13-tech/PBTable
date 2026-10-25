@@ -21,3 +21,17 @@ secrets.*
 
 # Local credentials — never tracked. Contains the demo account password.
 PBTable Bookings/.env
+
+# Backup safety
+*.csv
+*.xlsx
+*.docx
+.netlify/
+supabase/.temp/
+.claude/settings.local.json
+.env
+.env.*
+Clubs/
+legal/*.pdf
+County Leagues/Gloucester/
+Twoclear Padel/

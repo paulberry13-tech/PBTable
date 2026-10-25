@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pickleball Club Booking Savings Calculator — twoclear</title>
+<meta name="description" content="See what your pickleball club saves on booking card fees and admin time by switching to twoclear. Free interactive calculator." />
+<link rel="canonical" href="https://twoclear.co.uk/savings-calculator.html" />
+<meta name="robots" content="index,follow,max-image-preview:large" />
+<meta name="theme-color" content="#101828" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://twoclear.co.uk/savings-calculator.html" />
+<meta property="og:title" content="Pickleball Club Booking Savings Calculator — twoclear" />
+<meta property="og:description" content="See what your pickleball club saves on booking card fees and admin time with twoclear." />
+<meta property="og:image" content="https://twoclear.co.uk/twoclear-og.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://twoclear.co.uk/twoclear-og.png" />
+<script>/* when embedded with ?theme=light, lock to light so it matches the host page */if(location.search.indexOf('theme=light')>-1)document.documentElement.setAttribute('data-theme','light');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@700;800&family=JetBrains+Mono:wght@500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" /><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@700;800&family=JetBrains+Mono:wght@500;700&display=swap" /></noscript><style>@font-face{font-family:'Barlow Fallback';src:local('Arial');size-adjust:94.53%;ascent-override:105.78%;descent-override:21.16%;line-gap-override:0%}@font-face{font-family:'Barlow Condensed Fallback';src:local('Arial');size-adjust:82.48%;ascent-override:121.25%;descent-override:24.25%;line-gap-override:0%}</style>
+<style>
+  :root{
+    --navy:#101828; --ink:#101828;
+    --coral:#f97316; --coral-dark:#B23E1C;
+    --green:#0FA968; --green-bright:#10B981; --green-soft:rgba(16,185,129,.10);
+    --bg:#EEF1F6; --card:#FFFFFF; --panel:#F6F8FB;
+    --line:#E1E7F0; --line-strong:#CBD5E4;
+    --text:#16233B; --muted:#5D6B85; --faint:#8A97AD;
+    --shadow:0 1px 2px rgba(16,32,64,.04), 0 12px 34px -12px rgba(16,32,64,.22);
+    --radius:20px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --navy:#0E1626; --ink:#E7ECF5;
+      --coral:#fb923c; --coral-dark:#FF9169;
+      --green:#2FD08A; --green-bright:#34D399; --green-soft:rgba(52,211,153,.12);
+      --bg:#0B1220; --card:#141E32; --panel:#0F1929;
+      --line:#26324A; --line-strong:#33425F;
+      --text:#E7ECF5; --muted:#9DAAC2; --faint:#6C7A96;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 18px 44px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="light"]{
+    --navy:#101828; --ink:#101828; --coral:#f97316; --coral-dark:#C2410C;
+    --green:#0FA968; --green-bright:#10B981; --green-soft:rgba(16,185,129,.10);
+    --bg:#EEF1F6; --card:#FFFFFF; --panel:#F6F8FB; --line:#E1E7F0; --line-strong:#CBD5E4;
+    --text:#16233B; --muted:#5D6B85; --faint:#8A97AD;
+    --shadow:0 1px 2px rgba(16,32,64,.04), 0 12px 34px -12px rgba(16,32,64,.22);
+  }
+  :root[data-theme="dark"]{
+    --navy:#0E1626; --ink:#E7ECF5; --coral:#fb923c; --coral-dark:#FF9169;
+    --green:#2FD08A; --green-bright:#34D399; --green-soft:rgba(52,211,153,.12);
+    --bg:#0B1220; --card:#141E32; --panel:#0F1929; --line:#26324A; --line-strong:#33425F;
+    --text:#E7ECF5; --muted:#9DAAC2; --faint:#6C7A96;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 18px 44px -14px rgba(0,0,0,.6);
+  }
+  html,body{margin:0;padding:0}
+  *{box-sizing:border-box}
+  .pbt-wrap{
+    font-family:'Barlow','Barlow Fallback',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text); background:var(--bg); min-height:auto;
+    padding:clamp(16px,4vw,44px); line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .num{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace}
+  .pbt-hero h1,.savings-big{font-family:'Barlow Condensed','Barlow Condensed Fallback','Barlow','Barlow Fallback',sans-serif}
+  .pbt{max-width:1060px;margin:0 auto}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  .pbt-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+  .pbt-brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;font-size:19px;color:var(--ink)}
+  .pbt-brand .pbt-logo{width:38px;height:auto;flex:none;display:block}.pbt-brand .tc-lockup{height:30px;width:auto;display:block}.pbt-brand .tc-lockup.on-dark{display:none}@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pbt-brand .tc-lockup.on-light{display:none}:root:not([data-theme="light"]) .pbt-brand .tc-lockup.on-dark{display:block}}:root[data-theme="dark"] .pbt-brand .tc-lockup.on-light{display:none}:root[data-theme="dark"] .pbt-brand .tc-lockup.on-dark{display:block}
+  .pbt-eyebrow{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--coral-dark)}
+  .pbt-hero{margin:2px 0 26px}
+  .pbt-hero h1{font-size:clamp(26px,4.4vw,42px);line-height:1.05;letter-spacing:-.025em;margin:8px 0 10px;color:var(--ink);text-wrap:balance;font-weight:850}
+  .pbt-hero p{font-size:clamp(15px,1.6vw,17px);color:var(--muted);max-width:60ch;margin:0}
+  .pbt-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:20px}
+  @media (max-width:820px){.pbt-grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .panel-pad{padding:clamp(18px,2.4vw,26px)}
+  .panel-title{font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin:0 0 4px}
+  .panel-sub{font-size:13px;color:var(--muted);margin:0 0 18px}
+  .field{margin:0 0 20px}
+  .field:last-child{margin-bottom:0}
+  .field-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px}
+  .field-label{font-size:14px;font-weight:650;color:var(--text)}
+  .field-val{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.01em;white-space:nowrap}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:99px;background:var(--line-strong);outline:none;margin:6px 0;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;background:var(--coral);border:3px solid var(--card);box-shadow:0 2px 6px rgba(16,32,64,.28);cursor:pointer;transition:transform .12s ease}
+  input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.12)}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--coral);border:3px solid var(--card);box-shadow:0 2px 6px rgba(16,32,64,.28);cursor:pointer}
+  input[type=range]:focus-visible{outline:2px solid var(--coral-dark);outline-offset:4px}
+  .field-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:2px}
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+  .toggle:focus-visible{outline:2px solid var(--coral-dark);outline-offset:2px}
+  .toggle .tl{font-size:14px;font-weight:700;color:var(--text)}
+  .toggle .tl small{display:block;font-size:12px;font-weight:500;color:var(--faint);margin-top:2px}
+  .tsw{width:46px;height:27px;border-radius:99px;background:var(--line-strong);position:relative;transition:background .16s;flex:none}
+  .tsw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .16s}
+  .toggle.on .tsw{background:var(--coral)}
+  .toggle.on .tsw::after{transform:translateX(19px)}
+  .reveal{margin-top:20px;display:grid;gap:20px}
+  .seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;width:100%}
+  .seg button{flex:1;border:0;background:transparent;color:var(--muted);font-weight:750;font-size:13.5px;padding:9px 8px;border-radius:9px;cursor:pointer;font-family:inherit;transition:all .14s ease;line-height:1.2}
+  .seg button .p2{display:block;font-size:11px;font-weight:600;color:var(--faint);margin-top:2px}
+  .seg button[aria-pressed="true"]{background:var(--navy);color:#fff;box-shadow:0 2px 8px -1px rgba(16,32,64,.3)}
+  .seg button[aria-pressed="true"] .p2{color:rgba(255,255,255,.72)}
+  .result{background:var(--navy);color:#fff;border:none;overflow:hidden;position:relative}
+  .result .court{position:absolute;inset:0;opacity:.5;pointer-events:none}
+  .result .rp{position:relative;z-index:1}
+  .result .panel-title{color:rgba(255,255,255,.55)}
+  .savings-eyebrow{font-size:12px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--green-bright);margin:0 0 6px}
+  .savings-big{font-size:clamp(44px,8vw,64px);font-weight:850;letter-spacing:-.035em;line-height:.95;color:#fff;margin:0}
+  .savings-big .cur{font-size:.5em;font-weight:700;vertical-align:.28em;margin-right:.06em;color:var(--green-bright)}
+  .savings-big .per{font-size:.34em;font-weight:700;letter-spacing:0;color:rgba(255,255,255,.5);margin-left:.15em}
+  .savings-per{font-size:14px;color:rgba(255,255,255,.62);margin:8px 0 0}
+  .savings-per b{color:#fff;font-weight:750}
+  .feebar{margin-top:22px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px}
+  .feebar .fbt{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);margin:0 0 13px}
+  .fbrow{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .fbrow:last-of-type{margin-bottom:0}
+  .fblabel{font-size:12px;font-weight:700;color:rgba(255,255,255,.72);width:74px;flex:none}
+  .fbtrack{flex:1;height:28px;background:rgba(255,255,255,.06);border-radius:8px;overflow:hidden}
+  .fbfill{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding:0 10px;font-size:12.5px;font-weight:800;color:#fff;transition:width .4s cubic-bezier(.4,0,.2,1);min-width:40px;white-space:nowrap}
+  .fbfill.spond{background:var(--coral)}
+  .fbfill.pbt{background:var(--green)}
+  .fbnote{font-size:12.5px;color:rgba(255,255,255,.64);margin:13px 0 0;line-height:1.5}
+  .fbnote b{color:#fff}
+  .plus{margin-top:16px;display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.04);border-radius:14px;padding:14px 15px}
+  .plus .pic{width:26px;height:26px;border-radius:8px;background:var(--coral);color:#fff;font-weight:900;font-size:17px;display:grid;place-items:center;flex:none;line-height:1}
+  .plus .pt{font-size:13.5px;color:rgba(255,255,255,.85);line-height:1.45}
+  .plus .pt b{color:#fff}
+  .plus .pt small{display:block;color:rgba(255,255,255,.5);font-size:11.5px;margin-top:2px}
+  .planpick{margin-top:14px}
+  .planpick .pplabel{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin:0 0 8px}
+  .planpick .seg{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
+  .planpick .seg button{color:rgba(255,255,255,.72)}
+  .planpick .seg button .p2{color:rgba(255,255,255,.42)}
+  .planpick .seg button[aria-pressed="true"]{background:var(--coral);color:#fff}
+  .planpick .seg button[aria-pressed="true"] .p2{color:rgba(255,255,255,.8)}
+  .net{margin-top:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px 16px}
+  .netrow{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:rgba(255,255,255,.82);padding:5px 0}
+  .netrow .v{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .netrow.total{border-top:1px solid rgba(255,255,255,.14);margin-top:5px;padding-top:11px;font-size:15px;color:#fff;font-weight:700}
+  .netrow.total .v{color:var(--green-bright);font-size:21px}
+  .netyr{font-size:12.5px;color:rgba(255,255,255,.6);text-align:center;margin-top:10px}
+  .netyr b{color:#fff}
+  .cta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px;width:100%;background:var(--coral);color:#fff;font-weight:800;font-size:15px;border:none;border-radius:13px;padding:15px 20px;text-decoration:none;cursor:pointer;transition:transform .12s ease,background .12s ease;font-family:inherit}
+  .cta:hover{background:var(--coral-dark);transform:translateY(-1px)}
+  .assump{margin-top:20px;border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+  .assump summary{cursor:pointer;list-style:none;padding:15px 18px;font-size:13.5px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:space-between}
+  .assump summary::-webkit-details-marker{display:none}
+  .assump summary .chev{color:var(--faint);transition:transform .2s ease}
+  .assump[open] summary .chev{transform:rotate(180deg)}
+  .assump .body{padding:0 18px 16px;font-size:13px;color:var(--muted);line-height:1.6}
+  .assump .body ul{margin:0;padding-left:18px}
+  .assump .body li{margin:5px 0}
+  .assump .body b{color:var(--text)}
+  .foot{margin-top:16px;font-size:11.5px;color:var(--faint);text-align:center;line-height:1.5}
+  [hidden]{display:none !important}
+  @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="pbt-wrap">
+  <div class="pbt">
+    <div class="pbt-head">
+      <div class="pbt-brand"><img class="tc-lockup on-light" src="/twoclear-compact-light.svg" width="446" height="100" alt="twoclear"><img class="tc-lockup on-dark" src="/twoclear-compact-dark.svg" width="446" height="100" alt=""></div>
+      <div class="pbt-eyebrow">Booking savings calculator</div>
+    </div>
+
+    <div class="pbt-hero">
+      <div class="pbt-eyebrow" style="color:var(--muted)">For Pickleball Clubs</div>
+      <h1>The card fees your club stops losing with twoclear</h1>
+      <p>Same 2.5% + 20p rate as Spond &mdash; but members pre-pay a wallet, so you make far fewer transactions. Drag the sliders to match your club.</p>
+      <p style="font-size:13px;color:var(--faint);margin:12px 0 0;max-width:62ch">Figures compare twoclear with a club currently running its bookings on <b style="color:var(--muted)">Spond</b>.</p>
+    </div>
+
+    <div class="pbt-grid">
+      <div class="card panel-pad">
+        <p class="panel-title">Your club today</p>
+        <p class="panel-sub">Your club as it runs on Spond today &mdash; adjust to match.</p>
+
+        <div class="field">
+          <div class="field-top"><label class="field-label" for="s-sessions">Sessions run per week</label><span class="field-val num" id="v-sessions">4</span></div>
+          <input type="range" id="s-sessions" min="1" max="21" step="1" value="4">
+          <div class="field-scale"><span>1</span><span>21</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top"><label class="field-label" for="s-players">Players per session</label><span class="field-val num" id="v-players">16</span></div>
+          <input type="range" id="s-players" min="4" max="40" step="1" value="16">
+          <div class="field-scale"><span>4</span><span>40</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top"><label class="field-label" for="s-fee">Booking fee per player</label><span class="field-val num" id="v-fee">&pound;6</span></div>
+          <input type="range" id="s-fee" min="2" max="15" step="0.5" value="6">
+          <div class="field-scale"><span>&pound;2</span><span>&pound;15</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-top"><label class="field-label" for="s-topup">Sessions a member pre-pays at once</label><span class="field-val num" id="v-topup">5</span></div>
+          <input type="range" id="s-topup" min="1" max="20" step="1" value="5">
+          <div class="field-scale"><span>1</span><span>20 &middot; wallet top-up</span></div>
+        </div>
+
+        <div class="field" style="margin-bottom:0">
+          <div class="toggle" id="admin-toggle" role="switch" aria-checked="false" tabindex="0" aria-label="Include admin time saved">
+            <div class="tl">Include admin time saved<small>Needs a twoclear plan &mdash; nets the subscription off</small></div>
+            <div class="tsw"></div>
+          </div>
+          <div class="reveal" id="admin-fields" hidden>
+            <div class="field" style="margin:0">
+              <div class="field-top"><label class="field-label" for="s-admin">Admin time per session, now</label><span class="field-val num" id="v-admin">30 min</span></div>
+              <input type="range" id="s-admin" min="0" max="90" step="5" value="30">
+              <div class="field-scale"><span>0</span><span>90 min</span></div>
+            </div>
+            <div class="field" style="margin:0">
+              <div class="field-top"><label class="field-label" for="s-rate">Organiser&rsquo;s time is worth</label><span class="field-val num" id="v-rate">&pound;15/hr</span></div>
+              <input type="range" id="s-rate" min="0" max="40" step="1" value="15">
+              <div class="field-scale"><span>&pound;0</span><span>&pound;40/hr</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card result panel-pad">
+        <svg class="court" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g fill="none" stroke="#ffffff" stroke-width="1.4" opacity="0.06">
+            <rect x="40" y="30" width="320" height="240"/>
+            <line x1="200" y1="30" x2="200" y2="270"/>
+            <line x1="40" y1="110" x2="360" y2="110"/>
+            <line x1="40" y1="190" x2="360" y2="190"/>
+            <line x1="120" y1="110" x2="120" y2="190"/>
+            <line x1="280" y1="110" x2="280" y2="190"/>
+          </g>
+        </svg>
+        <div class="rp">
+          <p class="panel-title">With twoclear</p>
+          <p class="savings-eyebrow">Saved on card fees</p>
+          <p class="savings-big num"><span class="cur">&pound;</span><span id="r-fee-mo">44</span><span class="per">/mo</span></p>
+          <p class="savings-per">that&rsquo;s <b class="num" id="r-fee-yr">&pound;528</b> a year kept in the club &mdash; just on card transactions</p>
+
+          <div class="feebar">
+            <p class="fbt">Card processing each month</p>
+            <div class="fbrow"><span class="fblabel">On Spond</span><div class="fbtrack"><div class="fbfill spond" style="width:100%"><span id="r-spond-fee">&pound;97</span></div></div></div>
+            <div class="fbrow"><span class="fblabel">On twoclear</span><div class="fbtrack"><div class="fbfill pbt" id="r-pbt-bar" style="width:55%"><span id="r-pbt-fee">&pound;53</span></div></div></div>
+            <p class="fbnote">Both charge <b>2.5% + 20p</b> per transaction. Members pre-pay a wallet covering several sessions, so twoclear takes <b id="r-txn-ratio">5&times;</b> fewer card payments &mdash; you keep the 20p on each one removed.</p>
+          </div>
+
+          <div id="result-admin" hidden>
+            <div class="plus">
+              <div class="pic">+</div>
+              <div class="pt"><b>About <span class="num" id="r-admin-hrs">7.4</span> hrs of booking admin back a month</b><small>twoclear also runs court line-ups, RDR ratings &amp; the waitlist &mdash; Spond doesn&rsquo;t.</small></div>
+            </div>
+
+            <div class="planpick">
+              <p class="pplabel">Your twoclear plan</p>
+              <div class="seg" role="group" aria-label="Choose plan">
+                <button type="button" data-plan="19" aria-pressed="true">Founding &pound;19<span class="p2">first 20 clubs</span></button>
+                <button type="button" data-plan="29" aria-pressed="false">Standard &pound;29<span class="p2">per month</span></button>
+              </div>
+            </div>
+
+            <div class="net">
+              <div class="netrow"><span>Card fees saved</span><span class="v" id="n-fees">+&pound;44</span></div>
+              <div class="netrow"><span>Admin time saved</span><span class="v" id="n-admin">+&pound;110</span></div>
+              <div class="netrow"><span>Less your twoclear plan</span><span class="v" id="n-plan">&minus;&pound;19</span></div>
+              <div class="netrow total"><span>Net value</span><span class="v num"><span id="n-net">&pound;135</span>/mo</span></div>
+            </div>
+            <p class="netyr">&asymp; <b class="num" id="n-yr">&pound;1,620</b> a year, after paying for twoclear</p>
+          </div>
+
+          <a class="cta" href="https://twoclear.co.uk" target="_blank" rel="noopener">Start your club on twoclear &rarr;</a>
+        </div>
+      </div>
+    </div>
+
+    <details class="assump">
+      <summary>How we work this out <span class="chev">&#9662;</span></summary>
+      <div class="body">
+        <ul>
+          <li><b>Baseline &mdash; Spond:</b> figures compare twoclear with a club currently running bookings on <b>Spond</b>. Both charge the same <b>2.5% + 20p</b> per card transaction.</li>
+          <li><b>Card fees saved:</b> because the rate is identical, the 2.5% cancels out &mdash; the saving is the fixed <b>20p</b> on every transaction removed. On Spond each booking is a separate card payment; on twoclear members pre-pay a wallet covering several sessions, so there are far fewer transactions. Fewer transactions &times; 20p = the saving.</li>
+          <li><b>Admin time (optional):</b> only counts if you switch it on, because it&rsquo;s realised through a twoclear plan &mdash; so we <b>subtract the subscription</b> to show the true net. twoclear automates court line-ups, RDR ratings and the waitlist, removing about <b>85%</b> of the hands-on booking admin Spond still leaves per session, valued at your organiser&rsquo;s hourly rate.</li>
+          <li><b>Bookings per month</b> = sessions/week &times; 4.33 &times; players/session. Figures are estimates to help you compare, not a quote.</li>
+        </ul>
+      </div>
+    </details>
+
+    <p class="foot">twoclear &mdash; booking, payments, court line-ups, ratings &amp; waitlists for pickleball clubs. &middot; twoclear.co.uk</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var ids=['sessions','players','fee','topup','admin','rate'];
+  var GBP=function(n){return '£'+Math.round(n).toLocaleString('en-GB');};
+  var adminOn=false, plan=19;
+
+  function readFmt(){
+    $('v-sessions').textContent=$('s-sessions').value;
+    $('v-players').textContent=$('s-players').value;
+    $('v-fee').textContent='£'+parseFloat($('s-fee').value).toString().replace(/\.0$/,'');
+    $('v-topup').textContent=$('s-topup').value;
+    $('v-admin').textContent=$('s-admin').value+' min';
+    $('v-rate').textContent='£'+$('s-rate').value+'/hr';
+  }
+
+  var WEEKS=4.33, AUTO=0.85, PCT=0.025, FIXED=0.20;
+
+  function compute(){
+    var sessions=+$('s-sessions').value,
+        players=+$('s-players').value,
+        fee=+$('s-fee').value,
+        topup=Math.max(1,+$('s-topup').value),
+        adminMin=+$('s-admin').value,
+        rate=+$('s-rate').value;
+
+    var bookingsMo=sessions*WEEKS*players;
+    // Both charge PCT + FIXED per transaction. Spond = one transaction per booking;
+    // twoclear = one per wallet top-up (each covers `topup` sessions). Same rate → the
+    // 2.5% cancels and the saving is the fixed 20p on every transaction removed.
+    var topupsMo=bookingsMo/topup;
+    var feeSpond=bookingsMo*(PCT*fee+FIXED);
+    var feePbt=topupsMo*(PCT*fee*topup+FIXED);
+    var feeSaving=Math.max(0,feeSpond-feePbt);
+
+    // Hero: card-fee saving (always)
+    $('r-fee-mo').textContent=Math.round(feeSaving).toLocaleString('en-GB');
+    $('r-fee-yr').textContent=GBP(feeSaving*12);
+    $('r-spond-fee').textContent=GBP(feeSpond);
+    $('r-pbt-fee').textContent=GBP(feePbt);
+    $('r-pbt-bar').style.width=(feeSpond>0 ? Math.max(14, feePbt/feeSpond*100) : 14)+'%';
+    $('r-txn-ratio').textContent=(Math.round(topup*10)/10).toLocaleString('en-GB')+'×';
+
+    // Admin (optional) — realised via a twoclear plan, so net the subscription off
+    if(adminOn){
+      var hoursSaved=sessions*WEEKS*(adminMin/60)*AUTO;
+      var adminValue=hoursSaved*rate;
+      var net=Math.round(feeSaving)+Math.round(adminValue)-plan;
+      $('r-admin-hrs').textContent=(Math.round(hoursSaved*10)/10).toLocaleString('en-GB');
+      $('n-fees').textContent='+'+GBP(feeSaving);
+      $('n-admin').textContent='+'+GBP(adminValue);
+      $('n-plan').textContent='−'+GBP(plan);
+      $('n-net').textContent=GBP(net);
+      $('n-yr').textContent=GBP(net*12);
+    }
+  }
+
+  function update(){ readFmt(); compute(); }
+  ids.forEach(function(k){ $('s-'+k).addEventListener('input',update); });
+
+  function setAdmin(on){
+    adminOn=on;
+    var t=$('admin-toggle');
+    t.classList.toggle('on',on);
+    t.setAttribute('aria-checked', on?'true':'false');
+    $('admin-fields').hidden=!on;
+    $('result-admin').hidden=!on;
+    compute();
+  }
+  $('admin-toggle').addEventListener('click',function(){ setAdmin(!adminOn); });
+  $('admin-toggle').addEventListener('keydown',function(e){
+    if(e.key===' '||e.key==='Enter'){ e.preventDefault(); setAdmin(!adminOn); }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.planpick .seg button'),function(b){
+    b.addEventListener('click',function(){
+      plan=+b.getAttribute('data-plan');
+      Array.prototype.forEach.call(document.querySelectorAll('.planpick .seg button'),function(x){
+        x.setAttribute('aria-pressed', x===b ? 'true':'false');
+      });
+      compute();
+    });
+  });
+
+  update();
+})();
+</script>
+<script>
+/* When embedded in an iframe, report our height so the parent can size us with no inner scrollbar. */
+(function(){
+  if(window.parent===window) return;
+  var last=0;
+  function postH(){
+    var h=document.body.scrollHeight;
+    if(Math.abs(h-last)>2){ last=h; try{ parent.postMessage({pbtCalcHeight:h},'*'); }catch(e){} }
+  }
+  window.addEventListener('load',postH);
+  window.addEventListener('resize',postH);
+  document.addEventListener('input',function(){ setTimeout(postH,30); },true);
+  document.addEventListener('click',function(){ setTimeout(postH,80); },true);
+  setTimeout(postH,120); setTimeout(postH,600);
+})();
+</script>
+</body>
+</html>

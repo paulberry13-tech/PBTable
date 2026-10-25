@@ -10,7 +10,8 @@ import React, {
 
 import { PICKLEBALL, SPORT_PROFILES } from '@/domain/sportProfile';
 import * as auth from '@/services/auth';
-import { DEMO_AUTOLOGIN } from '@/services/config';
+import { reconcileClubToMembership } from '@/services/clubStore';
+import { DEMO_AUTOLOGIN, USE_SUPABASE } from '@/services/config';
 import { Member, SportProfile } from '@/types';
 
 /** In-app banner (stands in for push notifications — out of scope). */
@@ -48,6 +49,22 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 let bannerSeq = 1;
 
+/** Load the signed-in member — and first, make the app's club THEIR club.
+ *
+ *  On native the club is picked before anyone signs in, so it is only ever a
+ *  guess. booking_members is looked up by auth_user_id alone, with no club in the
+ *  query, so a Gloucester member who picked Swindon would otherwise be shown
+ *  Gloucester's sessions under Swindon's name and logo.
+ *
+ *  Runs BEFORE the member is read so that branding, the booking gate and the
+ *  payment path are all already pointing at the right club by the time the user
+ *  appears on screen. Never throws — a failure leaves the picked club standing,
+ *  which is the same state as before signing in. */
+async function loadSignedInMember() {
+  if (USE_SUPABASE) await reconcileClubToMembership();
+  return auth.getCurrentUser();
+}
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<Member | null>(null);
   const [sportProfile, setSportProfile] = useState<SportProfile>(PICKLEBALL);
@@ -61,12 +78,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         if (await auth.hasSession()) {
-          setCurrentUser(await auth.getCurrentUser());
+          setCurrentUser(await loadSignedInMember());
         } else if (DEMO_AUTOLOGIN) {
           // Demo build: silently sign in as the fixed demo member so /app/ opens
           // with no sign-in screen. Falls through to null (→ SignIn) if it fails.
           await auth.demoSignIn();
-          setCurrentUser(await auth.getCurrentUser());
+          setCurrentUser(await loadSignedInMember());
         } else {
           setCurrentUser(null);
         }
@@ -105,7 +122,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // resolves, and can only do so if we let it resolve.
     await auth.verifyOtp(email, code);
     try {
-      setCurrentUser(await auth.getCurrentUser());
+      setCurrentUser(await loadSignedInMember());
     } catch {
       setCurrentUser(null);
     }
@@ -131,7 +148,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // bumps dataVersion via the effect above, so every screen refetches for the
   // new person without needing to know a switch happened.
   const refreshUser = useCallback(async () => {
-    try { setCurrentUser(await auth.getCurrentUser()); }
+    try { setCurrentUser(await loadSignedInMember()); }
     catch { setCurrentUser(null); }
   }, []);
 

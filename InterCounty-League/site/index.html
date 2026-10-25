@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Inter-County Pickleball League — Tables, Fixtures & Results</title>
+<meta name="description" content="League tables, fixtures, results and player performance for the Inter-County Pickleball League — Gloucestershire, Oxfordshire and Wiltshire." />
+<meta name="theme-color" content="#151030" />
+<link rel="icon" href="twoclear-favicon.svg" />
+<link rel="apple-touch-icon" href="twoclear-favicon-180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --base-deep:#151030;
+  --base:#221A44;
+  --base-mid:#2F2461;
+  --teal:#14B8A6;
+  --teal-light:#2DD4BF;
+  --teal-ink:#0D9488;
+  --lilac:#A78BFA;
+  --cream:#FAF9F6;
+  --mid:#F2F1F7;
+  --border:#E4E2EE;
+  --green:#16a34a;
+  --red:#dc2626;
+  --ink:#221A44;
+  --muted:#6A6584;
+  --radius:18px;
+  --shadow-lg:0 30px 70px -25px rgba(21,16,48,.55);
+  --maxw:1080px;
+  --ease-out:cubic-bezier(.22,1,.36,1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Barlow',system-ui,sans-serif;
+  font-weight:400;
+  color:var(--ink);
+  background:var(--base-deep);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+  line-height:1.55;
+}
+h1,h2,h3{font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:800;line-height:1.02;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+section{position:relative}
+
+.eyebrow{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  text-transform:uppercase;letter-spacing:.22em;font-size:13px;
+  color:var(--teal-ink);display:inline-flex;align-items:center;gap:9px;
+}
+.eyebrow.on-dark{color:var(--teal-light)}
+.eyebrow::before{content:"";width:26px;height:2px;background:currentColor;border-radius:2px;opacity:.7}
+
+/* ---------- NAV ---------- */
+header.nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(21,16,48,.8);backdrop-filter:blur(16px) saturate(140%);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:70px;gap:16px}
+.brand{display:flex;align-items:center;gap:9px}
+.brand img{height:40px;width:auto;display:block}
+.brand .wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:24px;color:#fff;letter-spacing:.01em;white-space:nowrap}
+.brand .wordmark b{color:var(--teal-light);font-weight:800}
+.nav-links{display:flex;align-items:center;gap:22px}
+.nav-links a.link{color:#c9c4e0;font-weight:500;font-size:15px;position:relative;transition:color .2s;white-space:nowrap}
+.nav-links a.link::after{content:"";position:absolute;left:0;right:100%;bottom:-6px;height:2px;background:var(--teal-light);transition:right .3s;border-radius:2px}
+.nav-links a.link:hover{color:#fff}
+.nav-links a.link:hover::after{right:0}
+.season-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+  padding:7px 14px;border-radius:100px;font-size:13px;font-weight:600;color:#e9e6f5;white-space:nowrap;
+}
+.season-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--teal-light);box-shadow:0 0 0 0 rgba(45,212,191,.6);animation:pulse 2s infinite}
+@media(max-width:720px){.nav-links{display:none}}
+
+/* ---------- HERO ---------- */
+.hero{
+  position:relative;padding:150px 0 72px;overflow:hidden;
+  background:radial-gradient(1200px 720px at 72% -8%,#4a3a8f 0%,var(--base) 42%,var(--base-deep) 84%);
+}
+.grid-mesh{
+  position:absolute;inset:-50% -10% -10% -10%;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:62px 62px;
+  mask-image:radial-gradient(900px 600px at 70% 10%,#000 0%,transparent 76%);
+  -webkit-mask-image:radial-gradient(900px 600px at 70% 10%,#000 0%,transparent 76%);
+}
+.hero .wrap{position:relative;z-index:2}
+.hero h1{font-size:clamp(44px,6vw,76px);color:#fff;margin:16px 0 14px;letter-spacing:-.015em;line-height:.98}
+.hero h1 .hl{color:var(--teal-light)}
+.hero .strap{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(18px,2.2vw,24px);color:#b9b3d6;letter-spacing:.02em}
+.hero .strap b{color:#fff;font-weight:700}
+
+.fade-up{opacity:0;animation:fadeSlideUp .7s cubic-bezier(.2,.8,.2,1) forwards}
+.d1{animation-delay:.05s}.d2{animation-delay:.18s}.d3{animation-delay:.3s}
+
+/* ---------- TABS ---------- */
+.tabs{display:flex;gap:10px;margin:34px 0 0;flex-wrap:wrap}
+.tab{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;
+  letter-spacing:.05em;text-transform:uppercase;
+  padding:11px 22px;border-radius:100px;cursor:pointer;border:1.5px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.05);color:#d3cfe6;transition:all .2s var(--ease-out);
+}
+.tab:hover{border-color:rgba(255,255,255,.5);color:#fff;transform:translateY(-2px)}
+.tab.active{background:linear-gradient(135deg,var(--teal-light),var(--teal));color:var(--base-deep);border-color:transparent;box-shadow:0 14px 30px -10px rgba(20,184,166,.6)}
+
+/* ---------- CHAMPIONS STRIP (hero) ---------- */
+.champ-strip{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+.champ{
+  display:flex;align-items:center;gap:11px;padding:10px 18px 10px 14px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(243,195,78,.18),rgba(201,154,38,.10));
+  border:1px solid rgba(243,195,78,.42);backdrop-filter:blur(6px);
+}
+.champ .cup{font-size:20px;line-height:1}
+.champ .who{line-height:1.25}
+.champ .lbl{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.14em;font-size:10.5px;color:#f3c34e}
+.champ .nm{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;color:#fff}
+.champ .cty{font-size:11.5px;color:#b9b3d6}
+
+/* ---------- CONTENT SECTIONS ---------- */
+/* alternate the section backgrounds so each block reads as its own thing —
+   cream and mid are close enough that two in a row look like one long page */
+section[class^="section-"]{border-top:1px solid var(--border)}
+.section-table{background:var(--cream);padding:56px 0 64px}
+.section-playoffs{background:var(--cream);padding:56px 0 64px}
+.po-card{margin-bottom:16px}
+.po-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:16px 22px;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,#faf3e2,#fff);
+}
+.po-head .stage{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:20px;color:var(--base);display:flex;align-items:center;gap:9px}
+.po-head .meta{font-size:13px;color:var(--muted)}
+.po-winner{
+  display:flex;align-items:center;gap:9px;padding:12px 22px;background:rgba(243,195,78,.13);
+  border-bottom:1px solid var(--border);font-size:14.5px;color:var(--base);
+}
+.po-winner b{font-family:'Barlow Condensed',sans-serif;font-size:17px;letter-spacing:.01em}
+.po-mini{padding:6px 12px 12px}
+.section-fixtures{background:var(--mid);padding:56px 0 64px}
+.section-players{background:var(--mid);padding:56px 0 64px}
+.section-bookings{background:var(--cream);padding:56px 0 84px}
+.sec-head{margin-bottom:26px}
+.sec-head h2{font-size:clamp(28px,3.6vw,40px);margin-top:10px;color:var(--base)}
+.sec-head .lede{font-size:16px;color:var(--muted);font-weight:300;margin-top:8px;max-width:640px}
+
+.card{
+  background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:0 18px 44px -26px rgba(21,16,48,.3);overflow:hidden;
+}
+.tbl-scroll{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;min-width:640px}
+.tbl thead th{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--muted);text-align:left;padding:15px 16px;border-bottom:2px solid var(--border);font-weight:700;white-space:nowrap}
+.tbl thead th.r,.tbl tbody td.r{text-align:right}
+.tbl thead th.c,.tbl tbody td.c{text-align:center}
+.tbl tbody td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:15px}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl tbody tr{transition:background .2s}
+.tbl tbody tr:hover{background:var(--cream)}
+.tbl tbody tr.top{background:linear-gradient(90deg,rgba(20,184,166,.08),transparent)}
+.tposchip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;background:var(--mid);color:var(--base)}
+.tposchip.m1{background:linear-gradient(135deg,#f3c34e,#d99a1e);color:#3a2a00;border-radius:50%}
+.tposchip.m2{background:linear-gradient(135deg,#dfe6ef,#aab6c8);color:#2a3548;border-radius:50%}
+.tposchip.m3{background:linear-gradient(135deg,#e3a36b,#c47634);color:#3a2200;border-radius:50%}
+.tname{font-weight:600;color:var(--base);white-space:nowrap}
+.tname .county{display:block;font-size:11.5px;color:var(--muted);font-weight:500}
+.tpts{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;color:var(--base)}
+.tdiff.up{color:var(--green);font-weight:700}
+.tdiff.dn{color:var(--red);font-weight:700}
+.tdiff.fl{color:var(--muted)}
+
+.empty{padding:44px 30px;text-align:center;color:var(--muted);font-size:15.5px;font-weight:300}
+.empty b{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:21px;color:var(--base);margin-bottom:6px}
+
+/* ---------- FIXTURES ---------- */
+.session-card{margin-bottom:14px}
+.session-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:16px 22px;
+  background:linear-gradient(180deg,#f1eefa,#fff);
+  list-style:none;cursor:pointer;transition:background .2s;
+}
+.session-head::-webkit-details-marker{display:none}
+.session-head:hover{background:linear-gradient(180deg,#eae5f7,#fff)}
+details[open] > .session-head{border-bottom:1px solid var(--border)}
+.session-head .caret{
+  display:inline-block;width:9px;height:9px;margin-right:11px;flex-shrink:0;
+  border-right:2.5px solid var(--lilac);border-bottom:2.5px solid var(--lilac);
+  transform:rotate(-45deg);transition:transform .2s;
+}
+details[open] > .session-head .caret{transform:rotate(45deg)}
+.session-head .when{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:19px;color:var(--base);letter-spacing:.01em;display:flex;align-items:center}
+.session-head .where{font-size:13.5px;color:var(--muted);font-weight:500;padding-left:20px}
+.session-head .right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.session-head .count{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:var(--muted);letter-spacing:.03em}
+.status-pill{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  font-size:11px;padding:5px 11px;border-radius:100px;white-space:nowrap;
+}
+.status-pill.played{background:rgba(20,184,166,.12);border:1px solid rgba(20,184,166,.38);color:var(--teal-ink)}
+.status-pill.part{background:rgba(232,160,32,.14);border:1px solid rgba(232,160,32,.42);color:#8a6a12}
+.status-pill.upcoming{background:rgba(167,139,250,.14);border:1px solid rgba(167,139,250,.45);color:#6d4fc4}
+.status-pill.playoff{background:rgba(232,160,32,.16);border:1px solid rgba(232,160,32,.5);color:#8a6a12}
+.move{font-size:11px;font-weight:800;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;padding:2px 7px;border-radius:5px;margin-left:7px;white-space:nowrap}
+.move.up{background:rgba(22,163,74,.14);color:#137a3d}
+.move.down{background:rgba(220,38,38,.11);color:#a92222}
+
+/* per-team summary */
+.tsum{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:18px;box-shadow:0 14px 36px -26px rgba(21,16,48,.3)}
+.tsum h3{font-size:22px;margin-bottom:3px}
+.tsum .next{font-size:14px;color:var(--muted);margin-bottom:14px}
+.tsum .next b{color:var(--teal-ink);font-weight:700}
+.tsum .next.pending b{color:#6d4fc4}
+.res{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:6px;white-space:nowrap}
+.res.w{background:rgba(22,163,74,.13);color:#137a3d}
+.res.l{background:rgba(220,38,38,.1);color:#a92222}
+.res.d{background:var(--mid);color:var(--muted)}
+.res.p{background:rgba(167,139,250,.14);color:#6d4fc4}
+/* band that separates a standings/summary block from the meeting scores below it */
+.meetings-head{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  padding:11px 22px;background:var(--mid);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+}
+.meetings-head .t{
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;
+  letter-spacing:.12em;font-size:12.5px;color:var(--base);
+}
+.meetings-head .s{font-size:12px;color:var(--muted)}
+.meeting{border-bottom:1px solid var(--border)}
+.meeting:last-child{border-bottom:none}
+.meeting summary{
+  list-style:none;display:flex;align-items:center;gap:12px;
+  padding:14px 22px;cursor:pointer;transition:background .2s;flex-wrap:wrap;
+}
+.meeting summary::-webkit-details-marker{display:none}
+.meeting summary:hover{background:var(--cream)}
+.meeting-static{display:flex;align-items:center;gap:12px;padding:14px 22px;flex-wrap:wrap}
+.meeting .side{flex:1;font-weight:600;font-size:15px;color:var(--base);min-width:120px}
+.side-county{display:block;font-size:11.5px;font-weight:500;color:var(--muted)}
+.cell-county{display:block;font-size:11.5px;font-weight:500;color:var(--muted)}
+.tsum-county{font-size:13.5px;font-weight:600;color:var(--teal-ink);margin-bottom:8px}
+.meeting .side.away{text-align:right}
+.meeting .side.winner{font-weight:800}
+.meeting .side.winner::after{content:"●";color:var(--teal);font-size:9px;vertical-align:middle;margin-left:7px}
+.meeting .side.away.winner::after{content:""}
+.meeting .side.away.winner::before{content:"●";color:var(--teal);font-size:9px;vertical-align:middle;margin-right:7px}
+.score-chip{
+  font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;
+  background:var(--base);color:#fff;border-radius:9px;padding:5px 13px;white-space:nowrap;flex-shrink:0;
+}
+.score-chip.vs{background:var(--mid);color:var(--muted);font-size:13px;letter-spacing:.08em}
+.meeting .note{font-size:11.5px;color:var(--muted);flex-basis:100%;text-align:center;margin-top:-6px;padding-bottom:8px}
+.games{padding:4px 22px 16px;background:var(--cream);border-top:1px dashed var(--border)}
+.game-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+.game-row:last-child{border-bottom:none}
+.game-row .gtype{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:11px;color:var(--muted);width:88px;flex-shrink:0}
+.game-row .pair{flex:1;color:var(--ink)}
+.game-row .pair.away{text-align:right}
+.game-row .gscore{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;color:var(--base);flex-shrink:0;width:52px;text-align:center}
+.game-row .pair.w{font-weight:700}
+
+/* ---------- PLAYERS ---------- */
+.seg{display:inline-flex;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:4px;gap:4px;margin-bottom:14px}
+.seg-btn{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14.5px;letter-spacing:.06em;text-transform:uppercase;
+  padding:8px 20px;border-radius:9px;border:none;background:none;color:var(--muted);cursor:pointer;transition:all .18s;
+}
+.seg-btn:hover{color:var(--base)}
+.seg-btn.on{background:var(--base);color:#fff}
+.controls{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.controls input,.controls select{
+  font-family:'Barlow',sans-serif;font-size:15px;color:var(--ink);
+  background:#fff;border:1.5px solid var(--border);border-radius:11px;padding:11px 15px;outline:none;
+  transition:border-color .2s;
+}
+.controls input:focus,.controls select:focus{border-color:var(--teal)}
+.controls input{flex:1;min-width:200px}
+.ptbl tbody tr{cursor:pointer}
+.gender-tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rating-chip{
+  display:inline-block;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;
+  background:linear-gradient(135deg,var(--teal-light),var(--teal));color:var(--base-deep);
+  border-radius:8px;padding:3px 10px;
+}
+.rating-chip.none{background:var(--mid);color:var(--muted);font-weight:700;font-size:12px}
+.pdetail-row td{background:var(--cream);padding:0 !important}
+.pdetail{padding:20px 22px;border-top:1px dashed var(--border)}
+.stat-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin-bottom:18px}
+.stile{background:#fff;border:1px solid var(--border);border-radius:13px;padding:13px 15px;text-align:center}
+.stile .v{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:25px;color:var(--base);line-height:1.1}
+.stile .v.up{color:var(--green)}.stile .v.dn{color:var(--red)}
+.stile .k{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:3px;font-family:'Barlow Condensed',sans-serif}
+.pdetail h4{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--base);margin:16px 0 8px}
+.mini-tbl{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.mini-tbl th{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.07em;font-size:11px;color:var(--muted);text-align:left;padding:9px 13px;border-bottom:1.5px solid var(--border);font-weight:700}
+.mini-tbl td{padding:9px 13px;border-bottom:1px solid var(--border);font-size:13.5px}
+.mini-tbl tr:last-child td{border-bottom:none}
+.mini-tbl .r{text-align:right}
+.mini-tbl .c{text-align:center}
+.wl-w{color:var(--green);font-weight:700}
+.wl-l{color:var(--red);font-weight:700}
+.pmuted{color:var(--muted);font-size:13px;padding:10px 2px}
+
+/* ---------- BOOKINGS ---------- */
+.book-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:26px}
+.bcell{position:relative;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:24px;overflow:hidden;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-color .3s}
+.bcell:hover{transform:translateY(-3px);border-color:rgba(20,184,166,.5)}
+.bnum{width:42px;height:42px;border-radius:50%;background:linear-gradient(160deg,var(--base-mid),var(--base-deep));border:2px solid rgba(20,184,166,.55);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:19px;color:#fff;margin-bottom:14px}
+.bcell h3{font-size:20px;color:var(--base);margin-bottom:7px}
+.bcell p{font-size:14px;color:var(--muted)}
+.soon-tag{display:inline-block;margin-top:12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:#6d4fc4;background:rgba(167,139,250,.14);border:1px solid rgba(167,139,250,.4);padding:4px 10px;border-radius:100px}
+.avail-btn{
+  font-family:'Barlow',sans-serif;font-weight:600;font-size:13.5px;
+  padding:9px 16px;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--mid);color:var(--muted);cursor:not-allowed;white-space:nowrap;
+}
+@media(max-width:820px){.book-grid{grid-template-columns:1fr}}
+
+/* ---------- FOOTER ---------- */
+footer{background:var(--base-deep);padding:36px 0;border-top:1px solid rgba(255,255,255,.07)}
+.foot-inner{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.foot-brand img{height:34px;width:auto;display:block;opacity:.92;transition:opacity .2s}
+.foot-brand:hover img{opacity:1}
+.foot-inner .small{font-size:13px;color:#8b85a8;font-weight:300}
+
+.loading{padding:44px;text-align:center;color:var(--muted);font-size:14.5px}
+.err{padding:24px;border-radius:12px;background:#fdf0ee;border:1px solid #f3c9c0;color:#8d2f1b;font-size:14px;margin-bottom:20px}
+
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(45,212,191,.55)}70%{box-shadow:0 0 0 9px rgba(45,212,191,0)}100%{box-shadow:0 0 0 0 rgba(45,212,191,0)}}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+
+@media(max-width:640px){
+  .game-row .gtype{width:64px}
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#"><img src="twoclear-icon-dark.svg" alt="Twoclear" /><span class="wordmark">Inter-County <b>League</b></span></a>
+    <nav class="nav-links">
+      <a class="link" href="#table">Table</a>
+      <a class="link" href="#fixtures">Fixtures</a>
+      <a class="link" href="#playoffs">Playoffs</a>
+      <a class="link" href="#players">Players</a>
+      <a class="link" href="#bookings">Bookings</a>
+      <a class="link" href="admin.html" style="opacity:.75">Admin</a>
+    </nav>
+    <span class="season-badge"><span class="dot"></span><span id="season-name">Loading…</span></span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="grid-mesh"></div>
+  <div class="wrap">
+    <span class="eyebrow on-dark fade-up d1">Pickleball · Inter-County</span>
+    <h1 class="fade-up d2">Tables, fixtures, results<br/>&amp; <span class="hl">player form</span></h1>
+    <p class="strap fade-up d3" id="counties-strap">&nbsp;</p>
+    <div class="tabs fade-up d3" id="division-tabs"></div>
+    <div class="champ-strip fade-up d3" id="champions"></div>
+  </div>
+</section>
+
+<section class="section-table" id="table">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">League table</span>
+      <h2 id="table-title">Standings</h2>
+      <p class="lede">1 point per meeting won · tie-breaks: games won, then points difference</p>
+    </div>
+    <div class="card">
+      <div class="tbl-scroll" id="standings-box"><div class="loading">Loading table…</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section-fixtures" id="fixtures">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Fixtures &amp; results</span>
+      <h2 id="fixtures-title">Sessions</h2>
+      <p class="lede">Sessions are folded up — open one for its meetings, and a meeting for the four games. Filter by team to see only that team's fixtures and results.</p>
+    </div>
+    <div class="controls">
+      <select id="fixture-team"><option value="">All teams</option></select>
+    </div>
+    <div id="team-summary"></div>
+    <div id="fixtures-box"><div class="loading">Loading fixtures…</div></div>
+  </div>
+</section>
+
+<section class="section-playoffs" id="playoffs">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Playoffs</span>
+      <h2>End-of-season finals</h2>
+      <p class="lede">Playoff results are kept separate from the league table — they decide the title, not the ladder. Open a playoff for its meetings and game-by-game detail.</p>
+    </div>
+    <div id="playoffs-box"><div class="loading">Loading playoffs…</div></div>
+  </div>
+</section>
+
+<section class="section-players" id="players">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Players</span>
+      <h2>Individual &amp; pairing performance</h2>
+      <p class="lede"><b>Players</b> lists everyone with their rating and record — tap a player for their form by game type, partners and full game log. <b>Pairings</b> ranks every partnership in the league by how it has actually performed.</p>
+    </div>
+    <div class="seg">
+      <button class="seg-btn on" data-view="players">Players</button>
+      <button class="seg-btn" data-view="pairings">Pairings</button>
+    </div>
+    <div class="controls">
+      <input type="search" id="player-search" placeholder="Search players…" />
+      <select id="county-filter"><option value="">All counties</option></select>
+      <select id="team-filter"><option value="">All teams</option></select>
+    </div>
+    <div class="card">
+      <div class="tbl-scroll" id="players-box"><div class="loading">Loading players…</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section-bookings" id="bookings">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Bookings</span>
+      <h2>Session availability</h2>
+      <p class="lede">How squad selection will work once player logins arrive. The framework is in place — captains and players will take over these steps from the league admin.</p>
+    </div>
+    <div class="book-grid">
+      <div class="bcell">
+        <div class="bnum">1</div>
+        <h3>Mark availability</h3>
+        <p>Players say whether they can make each upcoming session — one tap, from this page.</p>
+        <span class="soon-tag">Coming soon</span>
+      </div>
+      <div class="bcell">
+        <div class="bnum">2</div>
+        <h3>Captain picks the squad</h3>
+        <p>Captains see who's available and pick up to 8 for the session, with gender balance checked as they go.</p>
+        <span class="soon-tag">Coming soon</span>
+      </div>
+      <div class="bcell">
+        <div class="bnum">3</div>
+        <h3>Squad confirmed</h3>
+        <p>Selected players are notified and the squad appears on the session page for everyone to see.</p>
+        <span class="soon-tag">Coming soon</span>
+      </div>
+    </div>
+    <div class="card">
+      <div id="upcoming-box"><div class="loading">Loading upcoming sessions…</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <a class="foot-brand" href="https://twoclear.com"><img src="twoclear-full-dark.svg" alt="Twoclear" /></a>
+    <span class="small">Results are entered by the league admin. Tables update automatically.</span>
+  </div>
+</footer>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = 'https://hhstodmbvuaceswtbkym.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_cGmfFEfm94o7l1BNjTqc5w_Pec22W8B';
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const GAME_LABEL = { 1: "Men's", 2: "Women's", 3: 'Mixed 1', 4: 'Mixed 2' };
+const FORMAT_LABEL = { 1: "Men's doubles", 2: "Women's doubles", 3: 'Mixed doubles', 4: 'Mixed doubles' };
+const fmtDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const fmtTime = (t) => (t ? t.slice(0, 5) : '');
+
+let season, divisions = [], activeDivision = null;
+// Every team in the league, loaded once. Names must NOT be looked up per-division:
+// promotion and relegation move teams out, and their past fixtures would show "TBC".
+let teamMeta = new Map();   // id -> { name, county }
+let settings = { ratings_public: true, player_stats_public: true };
+const teamOf = (id) => teamMeta.get(id) ?? { name: 'TBC', county: '' };
+let allPlayers = [], playerStats = new Map(), pairStats = new Map(), teamNameById = new Map();
+let peopleView = 'players';   // 'players' | 'pairings'
+
+async function boot() {
+  try {
+    const { data: s, error: se } = await db.from('seasons').select('id,name').eq('is_active', true).single();
+    if (se) throw se;
+    season = s;
+    $('season-name').textContent = season.name;
+
+    const [{ data: divs, error: de }, { data: counties, error: ce }, { data: allTeams, error: te }] = await Promise.all([
+      db.from('divisions').select('id,name,sort_order').eq('season_id', season.id).order('sort_order'),
+      db.from('counties').select('name').order('name'),
+      db.from('teams').select('id,name,county:counties(name)'),
+    ]);
+    if (de) throw de;
+    if (ce) throw ce;
+    if (te) throw te;
+    teamMeta = new Map((allTeams ?? []).map((t) => [t.id, { name: t.name, county: t.county?.name ?? '' }]));
+
+    const { data: st } = await db.from('league_settings').select('*').eq('season_id', season.id).maybeSingle();
+    if (st) settings = st;
+    if (!settings.player_stats_public) {
+      $('players').remove();
+      document.querySelector('.nav-links a[href="#players"]')?.remove();
+    }
+    divisions = divs;
+    $('counties-strap').innerHTML = counties.map((c) => `<b>${esc(c.name)}</b>`).join(' · ');
+
+    const tabs = $('division-tabs');
+    tabs.innerHTML = '';
+    for (const d of divisions) {
+      const b = document.createElement('button');
+      b.className = 'tab';
+      b.textContent = d.name;
+      b.onclick = () => selectDivision(d, b);
+      tabs.appendChild(b);
+    }
+    if (divisions.length) selectDivision(divisions[0], tabs.firstChild);
+
+    loadPlayoffs();
+    if (settings.player_stats_public) loadPlayers();
+    loadUpcoming();
+  } catch (err) {
+    console.error(err);
+    $('standings-box').innerHTML = `<div class="err">Couldn't load league data — please try again shortly.</div>`;
+    $('fixtures-box').innerHTML = '';
+  }
+}
+
+async function selectDivision(d, btn) {
+  activeDivision = d;
+  document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  $('table-title').textContent = `${d.name} — Standings`;
+  $('fixtures-title').textContent = `${d.name} — Sessions`;
+  $('standings-box').innerHTML = '<div class="loading">Loading table…</div>';
+  $('fixtures-box').innerHTML = '<div class="loading">Loading fixtures…</div>';
+  await Promise.all([renderStandings(d), renderFixtures(d)]);
+}
+
+/* ---------------- standings ---------------- */
+async function renderStandings(d) {
+  const [{ data: entrants, error: ee }, { data: rows, error: re }, { data: moves }] = await Promise.all([
+    db.from('division_teams').select('position,team:teams(id,name,county:counties(name))').eq('division_id', d.id),
+    db.from('standings').select('*').eq('division_id', d.id),
+    db.from('division_movements').select('team_id,direction,from_division_id,to_division_id,moved_at')
+      .order('moved_at', { ascending: false }),
+  ]);
+  if (d.id !== activeDivision.id) return;
+  if (ee || re) { console.error(ee || re); $('standings-box').innerHTML = `<div class="err">Couldn't load the table.</div>`; return; }
+
+  // Latest movement per team — how they arrived, or where they went.
+  const lastMove = new Map();
+  for (const mv of moves ?? []) if (!lastMove.has(mv.team_id)) lastMove.set(mv.team_id, mv);
+
+  const byTeam = new Map((rows || []).map((r) => [r.team_id, r]));
+
+  // Current members only. A team that has moved on is shown in its new division;
+  // the ↑/↓ badges are what tell the story of who arrived and how.
+  const table = entrants
+    .filter((e) => e.team)
+    .map((e) => {
+      const r = byTeam.get(e.team.id);
+      const mv = lastMove.get(e.team.id);
+      return {
+        id: e.team.id, name: e.team.name, county: e.team.county?.name ?? '', position: e.position,
+        arrived: mv && mv.to_division_id === d.id ? mv.direction : null,
+        played: r?.played ?? 0, won: r?.won ?? 0, drawn: r?.drawn ?? 0, lost: r?.lost ?? 0,
+        gw: Number(r?.games_won ?? 0), gl: Number(r?.games_lost ?? 0),
+        diff: Number(r?.points_diff ?? 0), pts: Number(r?.league_points ?? 0),
+      };
+    })
+    .sort((a, b) => b.pts - a.pts || b.gw - a.gw || b.diff - a.diff || a.name.localeCompare(b.name));
+
+  if (!table.length) {
+    $('standings-box').innerHTML = `<div class="empty"><b>No teams yet</b>This division is ready for new entries.</div>`;
+    return;
+  }
+
+  const medal = (i) => (i < 3 ? ` m${i + 1}` : '');
+  const diffCls = (v) => (v > 0 ? 'up' : v < 0 ? 'dn' : 'fl');
+  const diffTxt = (v) => (v > 0 ? `+${v}` : `${v}`);
+  const fmtPts = (v) => (Number.isInteger(v) ? v : v.toFixed(1));
+
+  $('standings-box').innerHTML = `
+    <table class="tbl">
+      <thead><tr>
+        <th style="width:52px">Pos</th><th>Team</th>
+        <th class="c">P</th><th class="c">W</th><th class="c">D</th><th class="c">L</th>
+        <th class="c">Games</th><th class="c">Diff</th><th class="r">Pts</th>
+      </tr></thead>
+      <tbody>
+        ${table.map((t, i) => `
+          <tr${i === 0 && t.played > 0 ? ' class="top"' : ''}>
+            <td><span class="tposchip${medal(i)}">${i + 1}</span></td>
+            <td><span class="tname">${esc(t.name)}${
+              t.arrived === 'promoted' ? '<span class="move up">↑ promoted in</span>' : ''}${
+              t.arrived === 'relegated' ? '<span class="move down">↓ relegated in</span>' : ''}
+              <span class="county">${esc(t.county)}</span></span></td>
+            <td class="c">${t.played}</td><td class="c">${t.won}</td><td class="c">${t.drawn}</td><td class="c">${t.lost}</td>
+            <td class="c">${t.gw}&ndash;${t.gl}</td>
+            <td class="c tdiff ${diffCls(t.diff)}">${diffTxt(t.diff)}</td>
+            <td class="r tpts">${fmtPts(t.pts)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ---------------- fixtures ----------------
+   Sessions load light (scores only) and stay folded; a meeting's pairings are
+   fetched the first time it's opened, so a 36-meeting session costs nothing
+   until someone actually looks inside it.                                     */
+let fixtureSessions = [], fixtureTeams = [];
+
+const involves = (m, teamId) => m.home_team_id === teamId || m.away_team_id === teamId;
+
+async function renderFixtures(d) {
+  const [{ data: sessions, error: se }, { data: entrants, error: ee }] = await Promise.all([
+    db.from('sessions')
+      .select('id,session_date,start_time,venue,courts,status,session_kind,stage,meetings(id,home_team_id,away_team_id,games(id,slot,home_score,away_score))')
+      .eq('division_id', d.id).eq('session_kind', 'league')  // playoffs have their own section
+      .order('session_date'),
+    db.from('division_teams').select('team:teams(id,name)').eq('division_id', d.id),
+  ]);
+  if (d.id !== activeDivision.id) return;
+  if (se || ee) { console.error(se || ee); $('fixtures-box').innerHTML = `<div class="err">Couldn't load fixtures.</div>`; return; }
+
+  fixtureSessions = sessions ?? [];
+  // Everyone who appears in this division's fixtures, including teams since
+  // promoted or relegated away — otherwise their past meetings lose their name.
+  const ids = new Set((entrants ?? []).map((e) => e.team?.id).filter(Boolean));
+  for (const s of fixtureSessions) for (const m of s.meetings) { ids.add(m.home_team_id); ids.add(m.away_team_id); }
+  fixtureTeams = [...ids].map((id) => ({ id, ...teamOf(id) })).sort((a, b) => a.name.localeCompare(b.name));
+
+  const sel = $('fixture-team');
+  sel.innerHTML = `<option value="">All teams</option>` +
+    fixtureTeams.map((t) => `<option value="${t.id}">${esc(t.name)}${t.county ? ` — ${esc(t.county)}` : ''}</option>`).join('');
+  sel.onchange = paintFixtures;
+  paintFixtures();
+}
+
+// How a meeting stands: won on games, or on points difference when 2–2.
+function outcomeOf(m) {
+  const scored = m.games.filter((g) => g.home_score !== null);
+  const hw = scored.filter((g) => g.home_score > g.away_score).length;
+  const aw = scored.length - hw;
+  const diff = scored.reduce((t, g) => t + (g.home_score - g.away_score), 0);
+  const complete = scored.length === 4;
+  let winner = null, note = '';
+  if (complete) {
+    if (hw !== aw) winner = hw > aw ? 'home' : 'away';
+    else if (diff !== 0) { winner = diff > 0 ? 'home' : 'away'; note = `2–2 on games — won on points difference (${diff > 0 ? '+' : ''}${diff})`; }
+    else { winner = 'draw'; note = 'Dead level — match drawn, ½ point each'; }
+  } else if (scored.length) note = `${scored.length} of 4 games in`;
+  return { scored, hw, aw, diff, complete, winner, note };
+}
+
+function paintFixtures() {
+  const teamId = $('fixture-team').value;
+  const sessions = teamId
+    ? fixtureSessions.filter((s) => s.meetings.some((m) => involves(m, teamId)))
+    : fixtureSessions;
+
+  $('team-summary').innerHTML = teamId ? teamSummaryHtml(teamId) : '';
+
+  if (!sessions.length) {
+    $('fixtures-box').innerHTML = `<div class="card"><div class="empty"><b>Pending</b>${
+      teamId ? 'This team has no sessions scheduled yet.' : 'No sessions scheduled for this division yet.'
+    }</div></div>`;
+    return;
+  }
+
+  $('fixtures-box').innerHTML = sessions.map((s) => sessionCardHtml(s, teamId)).join('');
+  wireMeetings();
+}
+
+function sessionCardHtml(s, teamId) {
+  const all = s.meetings.flatMap((m) => m.games);
+  const done = all.filter((g) => g.home_score !== null).length;
+  const state = done === 0 ? 'upcoming' : done === all.length ? 'played' : 'part';
+  const pill = { upcoming: 'Pending', part: 'Part scored', played: 'Results in' }[state];
+  const shown = teamId ? s.meetings.filter((m) => involves(m, teamId)) : s.meetings;
+  const when = `${fmtDate(s.session_date)}${s.start_time ? ` · ${fmtTime(s.start_time)}` : ''}`;
+
+  return `
+  <details class="card session-card"${teamId ? ' open' : ''}>
+    <summary class="session-head">
+      <div>
+        <div class="when"><span class="caret"></span>${when}</div>
+        <div class="where">${[s.venue ? esc(s.venue) : 'Venue to be confirmed',
+          s.courts ? `${s.courts} court${s.courts === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ')}</div>
+      </div>
+      <div class="right">
+        ${s.session_kind === 'playoff' ? `<span class="status-pill playoff">${esc(s.stage || 'Playoff')}</span>` : ''}
+        <span class="count">${shown.length} ${shown.length === 1 ? 'meeting' : 'meetings'}${
+          state === 'upcoming' ? '' : ` · ${done}/${all.length} games in`}</span>
+        <span class="status-pill ${state}">${pill}</span>
+      </div>
+    </summary>
+    ${shown.length ? `
+      <div class="meetings-head">
+        <span class="t">Meeting results</span>
+        <span class="s">Score shown is games won out of 4 · tap a meeting for the game-by-game detail</span>
+      </div>${shown.map((m) => meetingRowHtml(m)).join('')}`
+      : `<div class="empty">Meetings for this session haven't been drawn up yet.</div>`}
+  </details>`;
+}
+
+function sideHtml(teamId, away) {
+  const t = teamOf(teamId);
+  return `${esc(t.name)}${t.county ? `<span class="side-county">${esc(t.county)}</span>` : ''}`;
+}
+
+function meetingRowHtml(m) {
+  const o = outcomeOf(m);
+  const home = sideHtml(m.home_team_id), away = sideHtml(m.away_team_id);
+
+  if (!o.scored.length) {
+    return `<div class="meeting"><div class="meeting-static">
+      <span class="side">${home}</span><span class="score-chip vs">VS</span><span class="side away">${away}</span>
+    </div></div>`;
+  }
+  return `<details class="meeting" data-mid="${m.id}">
+    <summary>
+      <span class="side${o.winner === 'home' ? ' winner' : ''}">${home}</span>
+      <span class="score-chip">${o.hw}&ndash;${o.aw}</span>
+      <span class="side away${o.winner === 'away' ? ' winner' : ''}">${away}</span>
+      ${o.note ? `<span class="note">${o.note}</span>` : ''}
+    </summary>
+    <div class="games" data-games><div class="pmuted">Loading games…</div></div>
+  </details>`;
+}
+
+function wireMeetings() {
+  document.querySelectorAll('details.meeting[data-mid]:not([data-wired])').forEach((det) => {
+    det.dataset.wired = '1';
+    det.addEventListener('toggle', async () => {
+      if (!det.open || det.dataset.loaded) return;
+      det.dataset.loaded = '1';
+      const box = det.querySelector('[data-games]');
+      const { data, error } = await db.from('games')
+        .select('slot,home_score,away_score,game_players(side,player:players(first_name,last_name))')
+        .eq('meeting_id', det.dataset.mid).order('slot');
+      if (error) { console.error(error); box.innerHTML = `<div class="pmuted">Couldn't load the games.</div>`; return; }
+      box.innerHTML = data.filter((g) => g.home_score !== null).map((g) => {
+        const pair = (side) => g.game_players.filter((p) => p.side === side)
+          .map((p) => `${esc(p.player.first_name)} ${esc(p.player.last_name)}`).join(' & ') || '—';
+        const hWin = g.home_score > g.away_score;
+        return `<div class="game-row">
+          <span class="gtype">${GAME_LABEL[g.slot]}</span>
+          <span class="pair${hWin ? ' w' : ''}">${pair('home')}</span>
+          <span class="gscore">${g.home_score}&ndash;${g.away_score}</span>
+          <span class="pair away${!hWin ? ' w' : ''}">${pair('away')}</span>
+        </div>`;
+      }).join('');
+    });
+  });
+}
+
+function teamSummaryHtml(teamId) {
+  const rows = [];
+  let next = null, won = 0, lost = 0, drawn = 0;
+
+  for (const s of fixtureSessions) {
+    const mine = s.meetings.filter((m) => involves(m, teamId));
+    if (!mine.length) continue;
+    const all = s.meetings.flatMap((m) => m.games);
+    const done = all.filter((g) => g.home_score !== null).length;
+    if (!next && done < all.length) next = s;
+
+    for (const m of mine) {
+      const isHome = m.home_team_id === teamId;
+      const opp = teamOf(isHome ? m.away_team_id : m.home_team_id);
+      const o = outcomeOf(m);
+      let cls = 'p', label = 'Pending';
+      if (o.scored.length) {
+        const my = isHome ? o.hw : o.aw, their = isHome ? o.aw : o.hw;
+        if (!o.complete) label = `${my}–${their} so far`;
+        else if (o.winner === 'draw') { cls = 'd'; label = `Drawn ${my}–${their}`; drawn++; }
+        else if ((o.winner === 'home') === isHome) { cls = 'w'; label = `Won ${my}–${their}`; won++; }
+        else { cls = 'l'; label = `Lost ${my}–${their}`; lost++; }
+      }
+      rows.push({ s, opp, cls, label });
+    }
+  }
+
+  const nextLine = next
+    ? `<div class="next">Next up: <b>${fmtDate(next.session_date)}${next.start_time ? ` · ${fmtTime(next.start_time)}` : ''}</b>${next.venue ? ` at ${esc(next.venue)}` : ''}</div>`
+    : `<div class="next pending">Next up: <b>Pending</b> — nothing awaiting results.</div>`;
+
+  const played = won + lost + drawn;
+  const record = played
+    ? `${played} played · ${won} won · ${lost} lost${drawn ? ` · ${drawn} drawn` : ''}`
+    : 'No completed meetings yet';
+
+  const me = teamOf(teamId);
+  return `
+  <div class="tsum">
+    <h3>${esc(me.name)}</h3>
+    ${me.county ? `<div class="tsum-county">${esc(me.county)}</div>` : ''}
+    ${nextLine}
+    ${rows.length ? `
+    <div class="tbl-scroll"><table class="mini-tbl">
+      <thead><tr><th>Date</th><th>Venue</th><th>Opponent</th><th class="r">Result</th></tr></thead>
+      <tbody>${rows.map((r) => `
+        <tr>
+          <td>${fmtDate(r.s.session_date)}${r.s.start_time ? ` · ${fmtTime(r.s.start_time)}` : ''}</td>
+          <td>${r.s.venue ? esc(r.s.venue) : '—'}</td>
+          <td>${esc(r.opp.name)}${r.opp.county ? `<span class="cell-county">${esc(r.opp.county)}</span>` : ''}</td>
+          <td class="r"><span class="res ${r.cls}">${r.label}</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <div class="pmuted">${record}</div>` : ''}
+  </div>`;
+}
+
+/* ---------------- playoffs ----------------
+   A playoff is a session flagged as one. Its own mini-table decides the title;
+   none of it touches the league standings.                                     */
+
+// Round-robin table for one set of meetings — same rules as the league table.
+function miniTable(meetings) {
+  const rows = new Map();
+  const get = (id) => {
+    if (!rows.has(id)) rows.set(id, { id, won: 0, drawn: 0, lost: 0, gw: 0, gl: 0, diff: 0, pts: 0 });
+    return rows.get(id);
+  };
+  for (const m of meetings) {
+    const o = outcomeOf(m);
+    if (!o.complete) continue;
+    const H = get(m.home_team_id), A = get(m.away_team_id);
+    H.gw += o.hw; H.gl += o.aw; H.diff += o.diff;
+    A.gw += o.aw; A.gl += o.hw; A.diff -= o.diff;
+    if (o.winner === 'home') { H.won++; A.lost++; H.pts += 1; }
+    else if (o.winner === 'away') { A.won++; H.lost++; A.pts += 1; }
+    else { H.drawn++; A.drawn++; H.pts += 0.5; A.pts += 0.5; }
+  }
+  return [...rows.values()].sort((a, b) => b.pts - a.pts || b.gw - a.gw || b.diff - a.diff);
+}
+
+async function loadPlayoffs() {
+  const { data: sessions, error } = await db.from('sessions')
+    .select('id,session_date,start_time,venue,courts,stage,division_id,division:divisions(name,sort_order),meetings(id,home_team_id,away_team_id,games(id,slot,home_score,away_score))')
+    .eq('session_kind', 'playoff').order('session_date');
+  if (error) { console.error(error); $('playoffs-box').innerHTML = `<div class="err">Couldn't load playoffs.</div>`; return; }
+
+  if (!sessions.length) {
+    $('playoffs-box').innerHTML = `<div class="card"><div class="empty"><b>Pending</b>No playoffs scheduled yet — they run at the end of the season.</div></div>`;
+    $('champions').innerHTML = '';
+    return;
+  }
+
+  const champs = [];
+  $('playoffs-box').innerHTML = [...sessions]
+    .sort((a, b) => (a.division?.sort_order ?? 0) - (b.division?.sort_order ?? 0) || (a.session_date < b.session_date ? -1 : 1))
+    .map((s) => {
+      const games = s.meetings.flatMap((m) => m.games);
+      const done = games.filter((g) => g.home_score !== null).length;
+      const complete = games.length > 0 && done === games.length;
+      const table = miniTable(s.meetings);
+      const winner = complete && table.length ? teamOf(table[0].id) : null;
+      if (winner) champs.push({ division: s.division?.name ?? '', sort: s.division?.sort_order ?? 0, stage: s.stage, team: winner });
+
+      const when = `${fmtDate(s.session_date)}${s.start_time ? ` · ${fmtTime(s.start_time)}` : ''}`;
+      const diffCls = (v) => (v > 0 ? 'up' : v < 0 ? 'dn' : 'fl');
+
+      return `
+      <div class="card po-card">
+        <div class="po-head">
+          <div>
+            <div class="stage">🏆 ${esc(s.stage || 'Playoff')}
+              <span class="status-pill playoff">${esc(s.division?.name ?? '')}</span></div>
+            <div class="meta">${when}${s.venue ? ` · ${esc(s.venue)}` : ''}${s.courts ? ` · ${s.courts} courts` : ''}</div>
+          </div>
+          <span class="status-pill ${complete ? 'played' : done ? 'part' : 'upcoming'}">${
+            complete ? 'Complete' : done ? `${done}/${games.length} games in` : 'Pending'}</span>
+        </div>
+        ${winner ? `<div class="po-winner">🥇 <span><b>${esc(winner.name)}</b> ${
+          esc(winner.county)} — champions</span></div>` : ''}
+        ${table.length ? `
+        <div class="meetings-head">
+          <span class="t">${complete ? 'Final standings' : 'Standings so far'}</span>
+          <span class="s">Round-robin among the qualifiers — same tie-breaks as the league</span>
+        </div>
+        <div class="po-mini tbl-scroll"><table class="tbl">
+          <thead><tr><th style="width:52px">Pos</th><th>Team</th>
+            <th class="c">P</th><th class="c">W</th><th class="c">L</th>
+            <th class="c">Games</th><th class="c">Diff</th><th class="r">Pts</th></tr></thead>
+          <tbody>${table.map((r, i) => {
+            const t = teamOf(r.id);
+            return `<tr${i === 0 && complete ? ' class="top"' : ''}>
+              <td><span class="tposchip${i < 3 ? ` m${i + 1}` : ''}">${i + 1}</span></td>
+              <td><span class="tname">${esc(t.name)}<span class="county">${esc(t.county)}</span></span></td>
+              <td class="c">${r.won + r.lost + r.drawn}</td><td class="c">${r.won}</td><td class="c">${r.lost}</td>
+              <td class="c">${r.gw}&ndash;${r.gl}</td>
+              <td class="c tdiff ${diffCls(r.diff)}">${r.diff > 0 ? '+' : ''}${r.diff}</td>
+              <td class="r tpts">${Number.isInteger(r.pts) ? r.pts : r.pts.toFixed(1)}</td></tr>`;
+          }).join('')}</tbody>
+        </table></div>` : ''}
+        ${s.meetings.length ? `
+        <div class="meetings-head">
+          <span class="t">Meeting results</span>
+          <span class="s">Score shown is games won out of 4 · tap a meeting for the game-by-game detail</span>
+        </div>${s.meetings.map((m) => meetingRowHtml(m)).join('')}` : ''}
+      </div>`;
+    }).join('');
+
+  $('champions').innerHTML = champs.sort((a, b) => a.sort - b.sort).map((c) => `
+    <a class="champ" href="#playoffs">
+      <span class="cup">🏆</span>
+      <span class="who">
+        <span class="lbl">${esc(c.division)} champions</span>
+        <span class="nm">${esc(c.team.name)}</span>
+        <span class="cty">${esc(c.team.county)}</span>
+      </span>
+    </a>`).join('');
+
+  wireMeetings();
+}
+
+/* ---------------- players ---------------- */
+async function loadPlayers() {
+  const [
+    { data: players, error: pe },
+    { data: ratings, error: re },
+    { data: teams, error: te },
+    { data: games, error: ge },
+  ] = await Promise.all([
+    db.from('players').select('id,first_name,last_name,gender,county:counties(name),default_team:teams!players_default_team_id_fkey(id,name)').order('last_name'),
+    db.from('player_current_ratings').select('player_id,value,source'),
+    db.from('teams').select('id,name'),
+    db.from('games').select('id,slot,home_score,away_score,meeting:meetings(home_team_id,away_team_id,session:sessions(session_date)),game_players(side,player_id)')
+      .not('home_score', 'is', null),
+  ]);
+  if (pe || re || te || ge) {
+    console.error(pe || re || te || ge);
+    $('players-box').innerHTML = `<div class="err">Couldn't load players.</div>`;
+    return;
+  }
+
+  teamNameById = new Map(teams.map((t) => [t.id, t.name]));
+  const ratingById = new Map(ratings.map((r) => [r.player_id, r]));
+  allPlayers = players.map((p) => ({ ...p, rating: ratingById.get(p.id) }));
+
+  // per-player aggregates from every recorded game
+  playerStats = new Map();
+  const stat = (id) => {
+    if (!playerStats.has(id)) playerStats.set(id, { played: 0, won: 0, diff: 0, byFormat: new Map(), partners: new Map(), log: [] });
+    return playerStats.get(id);
+  };
+  const nameOf = (id) => { const p = players.find((x) => x.id === id); return p ? `${p.first_name} ${p.last_name}` : '—'; };
+
+  for (const g of games) {
+    for (const gp of g.game_players) {
+      const won = gp.side === 'home' ? g.home_score > g.away_score : g.away_score > g.home_score;
+      const diff = gp.side === 'home' ? g.home_score - g.away_score : g.away_score - g.home_score;
+      const partner = g.game_players.find((x) => x.side === gp.side && x.player_id !== gp.player_id);
+      const opps = g.game_players.filter((x) => x.side !== gp.side).map((x) => nameOf(x.player_id));
+      const s = stat(gp.player_id);
+      s.played++; if (won) s.won++; s.diff += diff;
+      const f = s.byFormat.get(FORMAT_LABEL[g.slot]) ?? { played: 0, won: 0 };
+      f.played++; if (won) f.won++;
+      s.byFormat.set(FORMAT_LABEL[g.slot], f);
+      if (partner) {
+        const key = partner.player_id;
+        const pr = s.partners.get(key) ?? { name: nameOf(key), played: 0, won: 0, diff: 0 };
+        pr.played++; if (won) pr.won++; pr.diff += diff;
+        s.partners.set(key, pr);
+      }
+      s.log.push({
+        date: g.meeting?.session?.session_date, format: GAME_LABEL[g.slot],
+        partner: partner ? nameOf(partner.player_id) : '—', opps: opps.join(' & '),
+        score: gp.side === 'home' ? `${g.home_score}–${g.away_score}` : `${g.away_score}–${g.home_score}`, won,
+      });
+    }
+  }
+  playerStats.forEach((s) => s.log.sort((a, b) => (a.date < b.date ? 1 : -1)));
+
+  // Pairings: one row per partnership, from the side that actually played together.
+  pairStats = new Map();
+  for (const g of games) {
+    for (const side of ['home', 'away']) {
+      const pair = g.game_players.filter((x) => x.side === side);
+      if (pair.length !== 2) continue;
+      const key = [pair[0].player_id, pair[1].player_id].sort().join('|');
+      const won = side === 'home' ? g.home_score > g.away_score : g.away_score > g.home_score;
+      const diff = side === 'home' ? g.home_score - g.away_score : g.away_score - g.home_score;
+      const teamId = side === 'home' ? g.meeting?.home_team_id : g.meeting?.away_team_id;
+      if (!pairStats.has(key)) {
+        pairStats.set(key, {
+          ids: [pair[0].player_id, pair[1].player_id], teamId,
+          played: 0, won: 0, diff: 0, formats: new Set(),
+        });
+      }
+      const ps = pairStats.get(key);
+      ps.played++; if (won) ps.won++; ps.diff += diff;
+      ps.formats.add(FORMAT_LABEL[g.slot]);
+    }
+  }
+
+  const countySel = $('county-filter');
+  [...new Set(players.map((p) => p.county?.name).filter(Boolean))].sort().forEach((c) => {
+    countySel.insertAdjacentHTML('beforeend', `<option value="${esc(c)}">${esc(c)}</option>`);
+  });
+  const teamSel = $('team-filter');
+  [...teams].sort((a, b) => a.name.localeCompare(b.name)).forEach((t) => {
+    teamSel.insertAdjacentHTML('beforeend', `<option value="${esc(t.name)}">${esc(t.name)}</option>`);
+  });
+
+  $('player-search').addEventListener('input', paintPeople);
+  countySel.addEventListener('change', paintPeople);
+  teamSel.addEventListener('change', paintPeople);
+  document.querySelectorAll('.seg-btn').forEach((b) => b.addEventListener('click', () => {
+    peopleView = b.dataset.view;
+    document.querySelectorAll('.seg-btn').forEach((x) => x.classList.toggle('on', x === b));
+    $('player-search').placeholder = peopleView === 'players' ? 'Search players…' : 'Search a partner…';
+    paintPeople();
+  }));
+  paintPeople();
+}
+
+function paintPeople() {
+  (peopleView === 'players' ? renderPlayers : renderPairings)();
+}
+
+function renderPairings() {
+  const q = $('player-search').value.trim().toLowerCase();
+  const county = $('county-filter').value;
+  const team = $('team-filter').value;
+  const byId = new Map(allPlayers.map((p) => [p.id, p]));
+
+  const rows = [...pairStats.values()].map((ps) => {
+    const [a, b] = ps.ids.map((id) => byId.get(id));
+    return {
+      a, b, teamName: teamNameById.get(ps.teamId) ?? '—',
+      county: a?.county?.name ?? '',
+      formats: [...ps.formats].join(', '),
+      played: ps.played, won: ps.won, diff: ps.diff,
+      pct: Math.round((ps.won / ps.played) * 100),
+    };
+  }).filter((r) => {
+    if (!r.a || !r.b) return false;
+    if (county && r.county !== county) return false;
+    if (team && r.teamName !== team) return false;
+    if (q) {
+      const names = `${r.a.first_name} ${r.a.last_name} ${r.b.first_name} ${r.b.last_name}`.toLowerCase();
+      if (!names.includes(q)) return false;
+    }
+    return true;
+  }).sort((x, y) => y.played - x.played || y.pct - x.pct || y.diff - x.diff);
+
+  if (!rows.length) {
+    $('players-box').innerHTML = `<div class="empty"><b>No pairings yet</b>Partnerships appear here once results are recorded.</div>`;
+    return;
+  }
+
+  const diffCls = (v) => (v > 0 ? 'up' : v < 0 ? 'dn' : 'fl');
+  $('players-box').innerHTML = `
+    <table class="tbl">
+      <thead><tr>
+        <th>Pairing</th><th>Team</th>
+        <th class="c">Played</th><th class="c">W&ndash;L</th><th class="c">Win rate</th><th class="r">Points diff</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map((r) => `
+          <tr>
+            <td><span class="tname">${esc(r.a.first_name)} ${esc(r.a.last_name)} &amp; ${esc(r.b.first_name)} ${esc(r.b.last_name)}<span class="county">${esc(r.formats)}</span></span></td>
+            <td>${esc(r.teamName)}${r.county ? `<span class="cell-county">${esc(r.county)}</span>` : ''}</td>
+            <td class="c">${r.played}</td>
+            <td class="c"><span class="wl-w">${r.won}</span>&ndash;<span class="wl-l">${r.played - r.won}</span></td>
+            <td class="c">${r.pct}%</td>
+            <td class="r tdiff ${diffCls(r.diff)}">${r.diff > 0 ? '+' : ''}${r.diff}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderPlayers() {
+  const q = $('player-search').value.trim().toLowerCase();
+  const county = $('county-filter').value;
+  const team = $('team-filter').value;
+
+  const rows = allPlayers.filter((p) => {
+    if (county && p.county?.name !== county) return false;
+    if (team && p.default_team?.name !== team) return false;
+    if (q && !`${p.first_name} ${p.last_name}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (!rows.length) {
+    $('players-box').innerHTML = `<div class="empty"><b>No players match</b>Try clearing the search or filters.</div>`;
+    return;
+  }
+
+  const showRatings = settings.ratings_public !== false;
+  $('players-box').innerHTML = `
+    <table class="tbl ptbl">
+      <thead><tr>
+        <th>Player</th><th>County</th><th>Team</th>
+        ${showRatings ? '<th class="c">Rating</th>' : ''}<th class="c">Played</th><th class="c">W&ndash;L</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map((p) => {
+          const s = playerStats.get(p.id);
+          const rating = p.rating ? `<span class="rating-chip">${Number(p.rating.value).toFixed(2)}</span>` : `<span class="rating-chip none">unrated</span>`;
+          return `
+          <tr data-pid="${p.id}">
+            <td><span class="tname">${esc(p.first_name)} ${esc(p.last_name)}<span class="county gender-tag">${esc(p.gender)}</span></span></td>
+            <td>${esc(p.county?.name ?? '')}</td>
+            <td>${esc(p.default_team?.name ?? '—')}</td>
+            ${showRatings ? `<td class="c">${rating}</td>` : ''}
+            <td class="c">${s?.played ?? 0}</td>
+            <td class="c">${s ? `<span class="wl-w">${s.won}</span>&ndash;<span class="wl-l">${s.played - s.won}</span>` : '0–0'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  document.querySelectorAll('.ptbl tr[data-pid]').forEach((tr) => {
+    tr.addEventListener('click', () => togglePlayerDetail(tr));
+  });
+}
+
+function togglePlayerDetail(tr) {
+  const existing = tr.nextElementSibling;
+  if (existing?.classList.contains('pdetail-row')) { existing.remove(); return; }
+  document.querySelectorAll('.pdetail-row').forEach((r) => r.remove());
+
+  const pid = tr.dataset.pid;
+  const p = allPlayers.find((x) => x.id === pid);
+  const s = playerStats.get(pid);
+
+  let inner;
+  if (!s) {
+    inner = `<div class="pmuted">No games recorded yet for ${esc(p.first_name)} ${esc(p.last_name)} — their record will build as results come in.</div>`;
+  } else {
+    const winPct = Math.round((s.won / s.played) * 100);
+    const formats = [...s.byFormat.entries()].map(([f, v]) => `
+      <tr><td>${esc(f)}</td><td class="c">${v.played}</td><td class="c"><span class="wl-w">${v.won}</span>&ndash;<span class="wl-l">${v.played - v.won}</span></td></tr>`).join('');
+    const partners = [...s.partners.values()].sort((a, b) => b.played - a.played).map((pr) => `
+      <tr><td>${esc(pr.name)}</td><td class="c">${pr.played}</td>
+      <td class="c"><span class="wl-w">${pr.won}</span>&ndash;<span class="wl-l">${pr.played - pr.won}</span></td>
+      <td class="r tdiff ${pr.diff > 0 ? 'up' : pr.diff < 0 ? 'dn' : 'fl'}">${pr.diff > 0 ? '+' : ''}${pr.diff}</td></tr>`).join('');
+    const log = s.log.map((g) => `
+      <tr><td>${g.date ? fmtDate(g.date) : '—'}</td><td>${esc(g.format)}</td><td>${esc(g.partner)}</td><td>${esc(g.opps)}</td>
+      <td class="c">${g.score}</td><td class="c">${g.won ? '<span class="wl-w">W</span>' : '<span class="wl-l">L</span>'}</td></tr>`).join('');
+
+    inner = `
+      <div class="stat-tiles">
+        <div class="stile"><div class="v">${s.played}</div><div class="k">Games</div></div>
+        <div class="stile"><div class="v up">${s.won}</div><div class="k">Won</div></div>
+        <div class="stile"><div class="v dn">${s.played - s.won}</div><div class="k">Lost</div></div>
+        <div class="stile"><div class="v">${winPct}%</div><div class="k">Win rate</div></div>
+        <div class="stile"><div class="v ${s.diff > 0 ? 'up' : s.diff < 0 ? 'dn' : ''}">${s.diff > 0 ? '+' : ''}${s.diff}</div><div class="k">Points diff</div></div>
+      </div>
+      <h4>By game type</h4>
+      <table class="mini-tbl"><thead><tr><th>Format</th><th class="c">Played</th><th class="c">W&ndash;L</th></tr></thead><tbody>${formats}</tbody></table>
+      <h4>Pairings</h4>
+      <table class="mini-tbl"><thead><tr><th>Partner</th><th class="c">Played</th><th class="c">W&ndash;L</th><th class="r">Diff</th></tr></thead><tbody>${partners || '<tr><td colspan="4" class="pmuted">No doubles pairings recorded yet.</td></tr>'}</tbody></table>
+      <h4>Game log</h4>
+      <div class="tbl-scroll"><table class="mini-tbl"><thead><tr><th>Date</th><th>Format</th><th>Partner</th><th>Opponents</th><th class="c">Score</th><th class="c">W/L</th></tr></thead><tbody>${log}</tbody></table></div>`;
+  }
+
+  const cols = tr.children.length;
+  tr.insertAdjacentHTML('afterend', `<tr class="pdetail-row"><td colspan="${cols}"><div class="pdetail">${inner}</div></td></tr>`);
+}
+
+/* ---------------- bookings ---------------- */
+async function loadUpcoming() {
+  const { data: sessions, error } = await db.from('sessions')
+    .select('id,session_date,venue,status,division:divisions(name)')
+    .eq('status', 'scheduled').order('session_date');
+  if (error) { console.error(error); $('upcoming-box').innerHTML = `<div class="err">Couldn't load sessions.</div>`; return; }
+  if (!sessions.length) {
+    $('upcoming-box').innerHTML = `<div class="empty"><b>No upcoming sessions</b>When the league schedules the next sessions, availability will open here.</div>`;
+    return;
+  }
+  $('upcoming-box').innerHTML = sessions.map((s) => `
+    <div class="session-head">
+      <div>
+        <div class="when">${fmtDate(s.session_date)} · ${esc(s.division?.name ?? '')}</div>
+        ${s.venue ? `<div class="where">${esc(s.venue)}</div>` : ''}
+      </div>
+      <button class="avail-btn" disabled title="Player logins are coming soon">Mark availability — coming soon</button>
+    </div>`).join('');
+}
+
+boot();
+</script>
+</body>
+</html>

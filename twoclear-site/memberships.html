@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Club Membership Management for Pickleball Clubs — twoclear</title>
+<meta name="description" content="Members join online, buy and renew their club membership on their phone, and pay member prices automatically. Renewals, cash payments, a treasurer's report and member records in one place." />
+<link rel="canonical" href="https://twoclear.co.uk/memberships.html" />
+<meta name="robots" content="index,follow,max-image-preview:large" />
+<meta name="theme-color" content="#101828" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="twoclear" />
+<meta property="og:locale" content="en_GB" />
+<meta property="og:url" content="https://twoclear.co.uk/memberships.html" />
+<meta property="og:title" content="Club Membership Management for Pickleball Clubs — twoclear" />
+<meta property="og:description" content="Members join, pay and renew on their phone. Renewals, cash payments, a treasurer's report and member records, all in one place." />
+<meta property="og:image" content="https://twoclear.co.uk/twoclear-og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Club Membership Management for Pickleball Clubs — twoclear" />
+<meta name="twitter:description" content="Members join, pay and renew on their phone. Renewals, cash payments, a treasurer's report and member records, all in one place." />
+<meta name="twitter:image" content="https://twoclear.co.uk/twoclear-og.png" />
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://twoclear.co.uk/"}, {"@type": "ListItem", "position": 2, "name": "Memberships", "item": "https://twoclear.co.uk/memberships.html"}]}
+</script>
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Does the membership money go to the club?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Card payments go into the club's own Stripe account and straight on to the club's bank. twoclear never holds the money, and card details never reach twoclear."}}, {"@type": "Question", "name": "Can parents buy memberships for their children?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, at clubs that take juniors. A parent or guardian adds the children they look after from My details, keeps their details up to date, and buys each child's membership from the same Membership page. Clubs that don't take juniors switch this off and the app stops offering it."}}, {"@type": "Question", "name": "What if a member pays cash or by bank transfer?", "acceptedAnswer": {"@type": "Answer", "text": "An admin records it: who paid, the membership type, the date it runs to and the amount. The member gets member prices straight away, it appears in the treasurer's report, and the membership ends on its date by itself. The member can add a card later so it renews on its own."}}, {"@type": "Question", "name": "What happens when a card payment fails?", "acceptedAnswer": {"@type": "Answer", "text": "The member sees a message and keeps member prices for 30 days while their bank tries again, and Stripe emails them. Admins see everyone whose card is failing on one tile, with one click to copy their emails for a reminder. If the bank still can't take it, the membership lapses, and if they join again later the old one is stopped for them so nobody pays twice."}}, {"@type": "Question", "name": "Can we bring our existing members across?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Download the spreadsheet template, fill in one row per person, and upload it. You see exactly what will happen before anything is saved: who is new, who is updated and which memberships are recorded. Uploading the same file again updates people rather than adding them twice."}}, {"@type": "Question", "name": "Who can see health notes and emergency contacts?", "acceptedAnswer": {"@type": "Answer", "text": "The people running a session see emergency contacts and health notes for just the players on that session, from the day before to the day after. Full member records are for senior admins only, and every time a record is opened, edited, downloaded or erased it is logged. Health notes are optional and only kept if the member ticks to agree."}}]}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Barlow+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" /><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Barlow+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" /></noscript><style>@font-face{font-family:'Barlow Fallback';src:local('Arial');size-adjust:94.53%;ascent-override:105.78%;descent-override:21.16%;line-gap-override:0%}@font-face{font-family:'Barlow Condensed Fallback';src:local('Arial');size-adjust:82.48%;ascent-override:121.25%;descent-override:24.25%;line-gap-override:0%}</style>
+<style>
+:root{
+  --navy:#101828;--navy-deep:#0a0f1a;--navy-mid:#1e293b;
+  --coral:#f97316;--coral-light:#fb923c;--amber:#E8A020;
+  --cream:#FAF7F2;--mid:#F0F2F5;--border:#E2E8F0;
+  --green:#16a34a;--green-soft:#e7f6ee;--red:#dc2626;
+  --ink:#101828;--muted:#475467;
+  --radius:18px;--maxw:1180px;
+  --shadow-md:0 18px 45px -20px rgba(15,30,56,.4);
+  --shadow-cell:0 12px 34px -20px rgba(15,30,56,.28);
+  --accent:var(--coral);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Barlow','Barlow Fallback',system-ui,sans-serif;font-weight:400;color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.55}
+h1,h2,h3,h4,.display{font-family:'Barlow Condensed','Barlow Condensed Fallback','Barlow','Barlow Fallback',sans-serif;font-weight:800;line-height:1.03;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+section{position:relative}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+
+.eyebrow{font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.22em;font-size:13px;color:var(--accent);display:inline-flex;align-items:center;gap:9px}
+.eyebrow::before{content:"";width:26px;height:2px;background:currentColor;border-radius:2px;opacity:.7}
+.eyebrow.on-dark{color:var(--coral-light)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-family:'Barlow','Barlow Fallback',sans-serif;font-weight:600;font-size:16px;padding:15px 28px;border-radius:13px;cursor:pointer;border:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background .25s,color .2s;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--coral-light),var(--coral));color:#fff;box-shadow:0 14px 30px -10px rgba(217,79,43,.7),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 22px 42px -12px rgba(217,79,43,.85)}
+.btn-ghost{background:rgba(255,255,255,.05);color:#fff;border:1.5px solid rgba(255,255,255,.22);backdrop-filter:blur(6px)}
+.btn-ghost:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.1)}
+.btn-dark{background:var(--navy);color:#fff;box-shadow:var(--shadow-md)}
+.btn-dark:hover{transform:translateY(-3px);background:var(--navy-mid)}
+.btn-light{background:#fff;color:var(--coral);box-shadow:0 16px 36px -14px rgba(0,0,0,.4)}
+.btn-light:hover{transform:translateY(-3px)}
+
+/* NAV */
+header.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(15,30,56,.72);backdrop-filter:blur(16px) saturate(140%);border-bottom:1px solid rgba(255,255,255,.06);transition:background .3s,border-color .3s,box-shadow .3s}
+header.nav.scrolled{background:rgba(15,30,56,.94);border-bottom:1px solid rgba(217,79,43,.4);box-shadow:0 10px 40px -20px rgba(0,0,0,.7)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px}
+.brand{display:flex;align-items:center;gap:6px}
+.brand img{height:46px;width:auto}
+.brand .wordmark{font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:800;font-size:25px;color:#fff;letter-spacing:.01em}
+.brand .wordmark b{color:var(--coral);font-weight:800}
+.nav-links{display:flex;align-items:center;gap:22px}
+.nav-links a.link{color:#cdd6e6;font-weight:500;font-size:15.5px;position:relative;transition:color .2s}
+.nav-links a.link::after{content:"";position:absolute;left:0;right:100%;bottom:-6px;height:2px;background:var(--coral);transition:right .3s;border-radius:2px}
+.nav-links a.link:hover{color:#fff}
+.nav-links a.link:hover::after,.nav-links a.link.active::after{right:0}
+.nav-links a.link.active{color:#fff}
+.hamburger{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:8px}
+.hamburger span{width:24px;height:2.5px;background:#fff;border-radius:2px;transition:.3s}
+
+/* SUBHERO */
+.subhero{background:radial-gradient(120% 130% at 15% 0%,var(--navy-mid),var(--navy-deep) 60%);color:#fff;padding:150px 0 84px;overflow:hidden}
+.subhero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.subhero h1{font-size:clamp(42px,5.4vw,72px);color:#fff;margin:16px 0 16px;letter-spacing:-.018em;line-height:.98}
+.subhero h1 .hl{color:var(--coral-light)}
+.subhero .lede{font-size:18px;color:#b7c2d6;max-width:520px;font-weight:300;margin-bottom:14px}
+.subhero .lede b{color:#e6ecf6;font-weight:600}
+.subhero .ctas{display:flex;gap:14px;flex-wrap:wrap;margin-top:26px}
+.crumb{font-size:13px;color:#8da0bd}
+.crumb a:hover{color:#fff}
+
+/* sections */
+.sec{padding:90px 0}
+.sec.mid{background:var(--mid)}
+.sec-head{max-width:680px;margin:0 auto 52px;text-align:center}
+.sec-head h2{font-size:clamp(32px,4.2vw,50px);color:var(--navy);margin:14px 0 12px;letter-spacing:-.02em}
+.sec-head p{color:var(--muted);font-size:17px}
+
+/* the loop */
+.loop{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.loop-step{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;box-shadow:var(--shadow-cell);position:relative}
+.loop-step .ln{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--coral)}
+.loop-step .lt{font-weight:700;font-size:14px;color:var(--navy);margin-top:6px;line-height:1.2}
+.loop-step .ld{font-size:12px;color:var(--muted);margin-top:4px}
+.loop-note{text-align:center;color:var(--muted);font-size:14.5px;margin-top:22px}
+.loop-note b{color:var(--navy)}
+@media(max-width:900px){.loop{grid-template-columns:repeat(2,1fr)}}
+
+/* alternating feature rows */
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center;margin-bottom:72px}
+.frow:last-child{margin-bottom:0}
+.frow.flip .fcopy{order:2}
+.f-tag{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--coral);font-weight:500}
+.fcopy h3{font-size:30px;color:var(--navy);margin:12px 0 12px;letter-spacing:-.02em}
+.fcopy p{color:var(--muted);font-size:16.5px;max-width:460px}
+.fcopy ul{list-style:none;margin:18px 0 0;display:flex;flex-direction:column;gap:10px}
+.fcopy li{display:flex;gap:11px;align-items:baseline;font-size:15.5px;font-weight:500;color:var(--ink)}
+.fcopy li svg{width:15px;height:15px;flex-shrink:0;stroke:var(--coral);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;transform:translateY(2px)}
+@media(max-width:860px){.frow{grid-template-columns:1fr;gap:28px;margin-bottom:56px}.frow.flip .fcopy{order:0}}
+
+/* app-style mock cards */
+.mock{background:var(--mid);border:1px solid var(--border);border-radius:22px;padding:22px;box-shadow:var(--shadow-cell)}
+.mock-bar{display:flex;align-items:center;gap:7px;padding:0 4px 14px}
+.mock-bar i{width:11px;height:11px;border-radius:50%;background:#cbd5e1;display:block}
+.mock-bar span{margin-left:8px;font-size:12px;color:var(--muted);font-weight:600}
+.ui-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;color:var(--ink)}
+.ui-card + .ui-card{margin-top:12px}
+.ui-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ui-title{font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--navy);font-size:19px}
+.badge{display:inline-flex;align-items:center;gap:5px;font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:11px;padding:5px 11px;border-radius:999px}
+.badge.graded{background:var(--coral);color:#fff}
+.badge.green{background:var(--green);color:#fff}
+.badge.grey{background:var(--mid);color:var(--muted)}
+/* wallet */
+.wal-bal{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:34px;color:var(--navy);letter-spacing:-.01em}
+.wal-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.led{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border);font-size:14px}
+.led:first-of-type{border-top:none}
+.led .ll{font-weight:500}
+.led .lv{font-family:'JetBrains Mono',monospace;font-weight:700}
+.led .lv.up{color:var(--green)}
+.led .lv.dn{color:var(--navy)}
+.ui-btn{margin-top:14px;background:linear-gradient(135deg,var(--coral-light),var(--coral));color:#fff;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:14.5px}
+.ui-note{margin-top:12px;font-size:12.5px;color:var(--muted);text-align:center;font-weight:500}
+.roster-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--border);font-size:14px}
+.roster-row:first-of-type{border-top:none}
+.roster-row .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.roster-row .tag.g{color:var(--green)}
+.roster-row .tag.a{color:var(--muted)}
+/* slips */
+.slips{background:linear-gradient(165deg,var(--navy),var(--navy-deep));border-radius:14px;padding:20px}
+.slips h4{color:#fff;font-size:19px}
+.slips .desc{color:rgba(255,255,255,.72);font-size:13px;margin-top:4px;font-weight:400;line-height:1.45}
+.slip{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 13px;margin-top:11px}
+.slip .st{display:flex;justify-content:space-between;align-items:center}
+.slip .ct{font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:700;letter-spacing:.08em;font-size:10.5px;color:var(--coral-light)}
+.slip .av{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:rgba(255,255,255,.68)}
+.slip .teams{display:flex;align-items:center;gap:12px;margin-top:7px}
+.slip .team{flex:1;font-size:13.5px;font-weight:600;color:#fff}
+.slip .team.r{text-align:right}
+.slip .vs{font-size:9.5px;font-weight:800;color:rgba(255,255,255,.5)}
+
+/* savings calculator embed */
+.calc-frame-wrap{max-width:1100px;margin:0 auto;border-radius:22px;overflow:hidden;box-shadow:var(--shadow-cell);border:1px solid var(--border);background:#EEF1F6}
+#calcFrame{width:100%;border:0;display:block}
+.calc-fallback{text-align:center;margin-top:18px;font-size:14.5px;color:var(--muted)}
+.calc-fallback a{color:var(--coral);font-weight:600}
+
+/* crosslink + cta + footer */
+.xlink{background:linear-gradient(150deg,var(--navy),var(--navy-deep));border-radius:22px;padding:44px;display:flex;align-items:center;justify-content:space-between;gap:26px;flex-wrap:wrap}
+.xlink h3{color:#fff;font-size:30px;margin:10px 0 6px}
+.xlink p{color:#b7c2d6;font-size:15.5px;max-width:480px;font-weight:300}
+.cta-banner{background:linear-gradient(135deg,var(--coral),#c2410c);text-align:center;padding:80px 0}
+.cta-banner h2{color:#fff;font-size:clamp(30px,4vw,46px);margin-bottom:14px}
+.cta-banner p{color:rgba(255,255,255,.9);font-size:17px;margin-bottom:28px;font-weight:300}
+.cta-banner .ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+footer.site{background:var(--navy-deep);padding:70px 0 34px;color:#fff}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:42px}
+.foot-brand .brand{margin-bottom:16px}
+.foot-brand img{height:40px}
+.foot-brand p{color:#8da0bd;font-size:15px;font-weight:300;max-width:300px}
+.foot-brand .strap{color:var(--amber);font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:700;font-size:16px;margin-top:12px}
+.foot-col h4{font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:#fff;margin-bottom:16px}
+.foot-col a{display:block;color:#8da0bd;font-size:15px;padding:6px 0;transition:color .2s}
+.foot-col a:hover{color:var(--coral-light)}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.07);padding-top:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.foot-bottom .cpy{color:#6f82a3;font-size:13.5px}
+.foot-bottom .cpy a{color:#9fb0cc}
+.foot-bottom .nex{color:#6f82a3;font-size:13.5px}
+.foot-bottom .nex b{color:#aeb9cf;font-weight:600}
+
+@media(max-width:900px){
+  .subhero .grid{grid-template-columns:1fr;gap:44px}
+  .subhero{padding:120px 0 64px}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .nav-links{position:fixed;top:74px;left:0;right:0;flex-direction:column;background:rgba(15,30,56,.98);backdrop-filter:blur(16px);padding:22px;gap:18px;transform:translateY(-140%);transition:transform .35s;border-bottom:1px solid rgba(217,79,43,.3)}
+  .nav-links.show{transform:translateY(0)}
+  .nav-links a.link{font-size:17px}
+  .hamburger{display:flex}
+}
+@media(max-width:560px){.foot-grid{grid-template-columns:1fr;gap:30px}.xlink{padding:30px}}
+.brand img.tc-lockup{height:34px;width:auto}.foot-brand .brand img.tc-lockup{height:32px}</style>
+<style>
+/* memberships page */
+.status-tag{display:inline-flex;align-items:center;gap:7px;background:rgba(232,160,32,.16);color:#f3c25a;border:1px solid rgba(232,160,32,.45);border-radius:999px;padding:6px 13px;font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
+.status-tag::before{content:"";width:7px;height:7px;border-radius:50%;background:#f3c25a}
+.status-tag.on-light{background:rgba(232,160,32,.14);color:#9a5b00;border-color:rgba(232,160,32,.5)}
+.status-tag.on-light::before{background:#E8A020}
+.subhero h1{text-wrap:balance}
+.sec-head h2{text-wrap:balance}
+.who{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1060px;margin:0 auto}
+.who a{display:block;background:#fff;border:1px solid var(--border);border-radius:16px;padding:22px 22px 20px;box-shadow:var(--shadow-cell);transition:transform .2s,box-shadow .2s}
+.who a:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+.who .wt{font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:800;font-size:22px;color:var(--navy)}
+.who .wd{color:var(--muted);font-size:14.5px;margin-top:6px}
+.who .wgo{color:var(--coral);font-weight:700;font-size:14px;margin-top:12px;display:inline-block}
+@media(max-width:820px){.who{grid-template-columns:1fr}}
+.group-head{max-width:680px;margin:0 auto 46px;text-align:center}
+.group-head h2{font-size:clamp(32px,4.2vw,50px);color:var(--navy);margin:0 0 12px;letter-spacing:-.02em;text-wrap:balance}
+.group-head p{color:var(--muted);font-size:17px}
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.tile{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 10px;text-align:center}
+.tile .tn{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;color:var(--navy)}
+.tile .tl{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.2}
+.tile.warn .tn{color:#b45309}
+.tile.bad .tn{color:var(--red)}
+.tile.good .tn{color:var(--green)}
+@media(max-width:560px){.tiles{grid-template-columns:repeat(3,1fr)}}
+.ui-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:14px}
+.ui-row:first-of-type{border-top:none}
+.ui-row .k{color:var(--muted)}
+.ui-row .v{font-weight:600;text-align:right}
+.ui-row .v.mono{font-weight:700}
+.ui-bar{height:8px;border-radius:999px;background:var(--mid);margin:10px 0 6px;overflow:hidden}
+.ui-bar i{display:block;height:100%;width:72%;background:linear-gradient(90deg,var(--coral-light),var(--coral));border-radius:999px}
+.ui-sub{font-size:12.5px;color:var(--muted)}
+.ui-btn.quiet{background:var(--mid);color:var(--navy);box-shadow:none}
+.ui-field{border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--navy);margin-top:8px;background:#fff}
+.ui-field small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:2px}
+.ui-check{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;color:var(--ink);margin-top:10px}
+.ui-check i{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border);flex-shrink:0;margin-top:2px;background:#fff}
+.ui-check i.on{background:var(--coral);border-color:var(--coral)}
+.log{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);padding:7px 0;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:10px}
+.log:first-of-type{border-top:none}
+.log b{color:var(--navy);font-weight:600}
+.safety{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.safety{grid-template-columns:repeat(3,1fr)}
+.safety .card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px 24px;box-shadow:var(--shadow-cell)}
+.safety .ic{width:44px;height:44px;border-radius:12px;background:var(--navy);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.safety .ic svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.safety h3{font-size:21px;color:var(--navy);margin-bottom:8px;line-height:1.12}
+.safety p{font-size:14.5px;color:var(--muted);line-height:1.5}
+@media(max-width:900px){.safety{grid-template-columns:1fr}}
+.gdpr-note{max-width:760px;margin:30px auto 0;text-align:center;color:var(--muted);font-size:14.5px}
+.faq-list{max-width:780px;margin:0 auto}
+.faq-item{background:#fff;border:1px solid var(--border);border-radius:14px;margin-bottom:12px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.faq-item.open{border-color:rgba(217,79,43,.4);box-shadow:var(--shadow-md)}
+.faq-q{width:100%;background:none;border:none;text-align:left;padding:18px 20px;font-family:'Barlow Condensed','Barlow Condensed Fallback',sans-serif;font-weight:700;font-size:19px;color:var(--navy);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px}
+.faq-q .ico{width:26px;height:26px;border-radius:50%;background:var(--mid);color:var(--coral);display:inline-flex;align-items:center;justify-content:center;font-size:18px;font-family:'Barlow',sans-serif;flex-shrink:0;transition:transform .25s,background .2s,color .2s}
+.faq-item.open .faq-q .ico{transform:rotate(45deg);background:var(--coral);color:#fff}
+.faq-a{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+.faq-item.open .faq-a{grid-template-rows:1fr}
+.faq-a-inner{overflow:hidden;padding:0 20px;color:var(--muted);font-size:15.5px;line-height:1.6}
+.faq-item.open .faq-a-inner{padding-bottom:20px}
+@media(prefers-reduced-motion:reduce){.faq-a{transition:none}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html">
+      <img class="tc-lockup" src="/twoclear-compact-dark.svg" width="446" height="100" alt="twoclear" />
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a class="link" href="index.html" onclick="closeMenu()">Home</a>
+      <a class="link" href="graded-sessions.html" onclick="closeMenu()">Graded</a>
+      <a class="link" href="social-sessions.html" onclick="closeMenu()">Social</a>
+      <a class="link" href="bookings.html" onclick="closeMenu()">Bookings</a>
+      <a class="link active" href="memberships.html" onclick="closeMenu()">Memberships</a>
+      <a class="link" href="blog/" onclick="closeMenu()">Blog</a>
+      <a class="link" href="index.html#pricing" onclick="closeMenu()">Pricing</a>
+      <a class="link" href="contact.html" onclick="closeMenu()">Contact</a>
+      <a class="btn btn-primary" href="contact.html" onclick="closeMenu()" style="padding:11px 22px;font-size:15px">Start free trial</a>
+    </nav>
+    <button class="hamburger" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="subhero" id="top">
+  <div class="wrap grid">
+    <div>
+      <div class="crumb"><a href="index.html">Home</a> · Memberships</div>
+      <div style="margin-top:14px"><span class="status-tag">New</span></div>
+      <h1>Club memberships, <span class="hl">without the paper forms</span></h1>
+      <p class="lede">Members join, pay and renew on their phone, and <b>member prices apply themselves</b> on every session. No chasing renewals in January, no cash tin, no spreadsheet of who has paid.</p>
+      <div class="ctas">
+        <a class="btn btn-primary" href="contact.html">Start your free trial</a>
+        <a class="btn btn-ghost" href="#for-admins">What the club gets ↓</a>
+      </div>
+    </div>
+    <div class="mock">
+      <div class="mock-bar"><i></i><i></i><i></i><span>Member · Membership</span></div>
+      <div class="ui-card">
+        <div class="ui-head"><div class="ui-title">Your membership</div><span class="badge green">Active</span></div>
+        <div class="ui-row"><span class="k">Type</span><span class="v">Adult · £40.00 a year</span></div>
+        <div class="ui-row"><span class="k">Runs</span><span class="v">1 Jan to 31 Dec</span></div>
+        <div class="ui-bar"><i></i></div>
+        <div class="ui-sub">263 days in · renews by card on 1 January</div>
+        <div class="ui-btn quiet">Update card or see receipts</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-head"><div class="ui-title">Someone you look after</div></div>
+        <div class="ui-row"><span class="v">Sam Okafor (12)</span><span class="k">Junior · £20.00 a year</span></div>
+        <div class="ui-btn">Join now · pay on Stripe</div>
+        <div class="ui-note">Member prices on every session, from today.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOR MEMBERS -->
+<section class="sec mid" id="for-members">
+  <div class="wrap">
+    <div class="frow" style="margin-bottom:0">
+      <div class="fcopy">
+        <span class="f-tag">For members</span>
+        <h3>Everything on their phone. No app store, no passwords.</h3>
+        <p>A new player joins from the club's link with their email and a one-time code, then fills in a short "About you" form: contact details, an emergency contact, the agreements, and optional health notes for first aiders.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Buy a membership</b> on Stripe's secure page; member prices then apply on every session, automatically</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Parents</b> add the children they look after and buy their memberships too (clubs can switch this off)</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Renews by itself</b> each year with a Stripe receipt; turn it off, change card or see receipts in one tap</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Their own details</b>, kept up to date by the person they belong to</span></li>
+        </ul>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Member · Join the club</span></div>
+        <div class="ui-card">
+          <div class="ui-head"><div class="ui-title">About you</div><span class="badge grey">Step 2 of 2</span></div>
+          <div class="ui-field"><small>Emergency contact</small>Priya Nair (sister) · 07700 900456</div>
+          <div class="ui-check"><i class="on"></i><span>I agree to the club's privacy notice</span></div>
+          <div class="ui-check"><i class="on"></i><span>I agree to the club's code of conduct</span></div>
+          <div class="ui-check"><i></i><span>Photos of me may be used by the club</span></div>
+          <div class="ui-btn">Join the club</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOR ADMINS -->
+<section class="sec" id="for-admins">
+  <div class="wrap">
+    <div class="frow flip" style="margin-bottom:0">
+      <div class="fcopy">
+        <span class="f-tag">For admins and treasurers</span>
+        <h3>Set the types once. The year end runs itself.</h3>
+        <p>Each membership type has a yearly price and who it is for. Joining part-way through the year is priced the way you choose, everyone renews on 1 January, and a price change never touches people already on a type.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Cash or bank transfer?</b> Record it in a few taps; it counts straight away</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b>The renewal round on five tiles:</b> Active, Card failing, Cancelling, Paid to club, Lapsed, with one-click copy emails</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Failed cards</b> keep member prices for 30 days while the bank retries; duplicate payments are refunded automatically</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b>Treasurer's report</b> for any period as a spreadsheet, and a preview-first import of your existing members</span></li>
+        </ul>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Admin · Memberships · 14 November</span></div>
+        <div class="tiles">
+          <div class="tile good"><div class="tn">61</div><div class="tl">Active</div></div>
+          <div class="tile bad"><div class="tn">2</div><div class="tl">Card failing</div></div>
+          <div class="tile warn"><div class="tn">3</div><div class="tl">Cancelling</div></div>
+          <div class="tile warn"><div class="tn">9</div><div class="tl">Paid to club, no card yet</div></div>
+          <div class="tile"><div class="tn">4</div><div class="tl">Lapsed</div></div>
+        </div>
+        <div class="ui-card" style="margin-top:12px">
+          <div class="ui-head"><div class="ui-title">This year so far</div><span class="badge grey">1 Jan to 14 Nov</span></div>
+          <div class="ui-row"><span class="k">Paid by card</span><span class="v mono">£2,360.00</span></div>
+          <div class="ui-row"><span class="k">Paid to the club</span><span class="v mono">£410.00</span></div>
+          <div class="ui-row"><span class="v">Total after refunds</span><span class="v mono">£2,730.00</span></div>
+          <div class="ui-btn quiet">Download (CSV)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SAFETY -->
+<section class="sec mid" id="safety">
+  <div class="wrap">
+    <div class="group-head">
+      <h2>Looking after members' details</h2>
+      <p>twoclear helps clubs look after member data and supports their data-protection duties. The club stays in charge of its members' information.</p>
+    </div>
+    <div class="safety">
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <h3>The right details, for the right people</h3>
+        <p>The people running a session see emergency contacts and health notes for just that night's players, from the day before to the day after. Full records are for senior admins only, and an optional switch asks everyone who books, visitors included, for an emergency contact.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></div>
+        <h3>Logged, and erased on request</h3>
+        <p>Every time a record is opened, edited, downloaded or erased, it is logged. The consent history can't be edited. Senior admins can erase a person's details when asked; their results and payment records stay so the accounts still add up.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+        <h3>The club's money, the club's account</h3>
+        <p>Card payments go into the club's own Stripe account and straight to the club's bank. Card details never reach twoclear.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec" id="faq">
+  <div class="wrap">
+    <div class="sec-head" style="margin-bottom:36px">
+      <h2>Questions clubs ask</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Does the membership money go to the club?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes. Card payments go into the club's own Stripe account and straight on to the club's bank. twoclear never holds the money, and card details never reach twoclear.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Can parents buy memberships for their children?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes, at clubs that take juniors. A parent or guardian adds the children they look after from My details, keeps their details up to date, and buys each child's membership from the same Membership page. Clubs that don't take juniors switch this off and the app stops offering it.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">What if a member pays cash or by bank transfer?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">An admin records it: who paid, the membership type, the date it runs to and the amount. The member gets member prices straight away, it appears in the treasurer's report, and the membership ends on its date by itself. The member can add a card later so it renews on its own.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">What happens when a card payment fails?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">The member sees a message and keeps member prices for 30 days while their bank tries again, and Stripe emails them. Admins see everyone whose card is failing on one tile, with one click to copy their emails for a reminder. If the bank still can't take it, the membership lapses, and if they join again later the old one is stopped for them so nobody pays twice.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Can we bring our existing members across?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">Yes. Download the spreadsheet template, fill in one row per person, and upload it. You see exactly what will happen before anything is saved: who is new, who is updated and which memberships are recorded. Uploading the same file again updates people rather than adding them twice.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">Who can see health notes and emergency contacts?<span class="ico">+</span></button>
+        <div class="faq-a"><div class="faq-a-inner">The people running a session see emergency contacts and health notes for just the players on that session, from the day before to the day after. Full member records are for senior admins only, and every time a record is opened, edited, downloaded or erased it is logged. Health notes are optional and only kept if the member ticks to agree.</div></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- CTA -->
+<section class="cta-banner">
+  <div class="wrap">
+    <h2>Run next year's renewals without the chasing</h2>
+    <p>Memberships are included on the Club + Membership plan. Every plan starts with a 30-day free trial.</p>
+    <div class="ctas">
+      <a class="btn btn-light" href="contact.html">Start your free trial →</a>
+      <a class="btn btn-ghost" href="index.html#pricing">See pricing</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <img class="tc-lockup" src="/twoclear-compact-dark.svg" width="446" height="100" alt="twoclear" />
+        </a>
+        <p>Bookings, memberships, court line-ups and a live club rating for pickleball clubs.</p>
+        <p class="strap">Ratings your players trust, and your club owns.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="graded-sessions.html">Graded sessions</a>
+        <a href="social-sessions.html">Social sessions</a>
+        <a href="bookings.html">Bookings</a>
+        <a href="memberships.html">Memberships</a>
+        <a href="blog/">Blog</a>
+        <a href="index.html#pricing">Pricing</a>
+        <a href="https://demo.twoclear.co.uk" target="_blank" rel="noopener">Live demo</a>
+      </div>
+      <div class="foot-col">
+        <h4>Get in touch</h4>
+        <a href="contact.html">Contact us</a>
+        <a href="contact.html">Start free trial</a>
+        <a href="mailto:hello@twoclear.co.uk">hello@twoclear.co.uk</a>
+        <a href="https://twoclear.co.uk">twoclear.co.uk</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div class="cpy">© <span id="yr">2026</span> twoclear · <a href="https://twoclear.co.uk">twoclear.co.uk</a></div>
+      <div class="nex">Powered by <b>Nexlane</b></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 30));
+function toggleMenu(){ document.getElementById('navLinks').classList.toggle('show'); }
+function closeMenu(){ document.getElementById('navLinks').classList.remove('show'); }
+document.getElementById('yr').textContent = new Date().getFullYear();
+function toggleFaq(btn){ btn.closest('.faq-item').classList.toggle('open'); }
+</script>
+</body>
+</html>

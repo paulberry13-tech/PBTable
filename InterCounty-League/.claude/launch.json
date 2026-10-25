@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "gpl",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/Users/PaulBerry/OneDrive - Berry Business Informatics/Documents/PBTable/County Leagues/Gloucester", "run", "dev"],
+      "port": 5174
+    },
+    {
+      "name": "league-site",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "http-server", "site", "-p", "8177", "-c-1"],
+      "port": 8177
+    }
+  ]
+}

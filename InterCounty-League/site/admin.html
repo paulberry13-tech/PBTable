@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — Inter-County Pickleball League</title>
+<meta name="robots" content="noindex,nofollow" />
+<meta name="theme-color" content="#151030" />
+<link rel="icon" href="twoclear-favicon.svg" />
+<link rel="apple-touch-icon" href="twoclear-favicon-180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --base-deep:#151030; --base:#221A44; --base-mid:#2F2461;
+  --teal:#14B8A6; --teal-light:#2DD4BF; --teal-ink:#0D9488;
+  --lilac:#A78BFA;
+  --cream:#FAF9F6; --mid:#F2F1F7; --border:#E4E2EE;
+  --green:#16a34a; --red:#dc2626;
+  --ink:#221A44; --muted:#6A6584;
+  --radius:16px; --maxw:1080px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Barlow',system-ui,sans-serif;color:var(--ink);background:var(--mid);-webkit-font-smoothing:antialiased;line-height:1.5}
+h1,h2,h3,h4{font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:800;letter-spacing:-.01em;color:var(--base)}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+
+header.bar{position:sticky;top:0;z-index:50;background:var(--base-deep);border-bottom:1px solid rgba(255,255,255,.08)}
+.bar-inner{display:flex;align-items:center;justify-content:space-between;height:60px;gap:14px}
+.bar .brand{display:flex;align-items:center;gap:9px}
+.bar .brand img{height:34px;width:auto;display:block}
+.bar .wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:21px;color:#fff;white-space:nowrap}
+.bar .wordmark b{color:var(--teal-light)}
+.bar .admin-tag{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--base-deep);background:linear-gradient(135deg,var(--teal-light),var(--teal));padding:3px 9px;border-radius:6px;margin-left:8px;vertical-align:middle}
+.bar .who{font-size:13px;color:#b9b3d6;display:flex;align-items:center;gap:12px}
+.bar .who a{color:var(--teal-light);font-weight:600;cursor:pointer}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:'Barlow',sans-serif;font-weight:600;font-size:15px;
+  padding:11px 20px;border-radius:11px;cursor:pointer;border:none;
+  transition:transform .15s,box-shadow .2s,opacity .2s;
+}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,var(--teal-light),var(--teal));color:var(--base-deep);box-shadow:0 10px 22px -10px rgba(20,184,166,.65)}
+.btn-primary:not(:disabled):hover{transform:translateY(-2px)}
+.btn-dark{background:var(--base);color:#fff}
+.btn-dark:not(:disabled):hover{transform:translateY(-2px)}
+.btn-ghost{background:#fff;color:var(--base);border:1.5px solid var(--border)}
+.btn-sm{padding:7px 14px;font-size:13.5px;border-radius:9px}
+
+main{padding:30px 0 80px}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 14px 36px -24px rgba(21,16,48,.28);overflow:hidden}
+.card + .card{margin-top:18px}
+.card-pad{padding:22px}
+.sec-title{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:26px 0 14px}
+.sec-title h2{font-size:26px}
+.sec-title .sub{font-size:13.5px;color:var(--muted)}
+
+label.f{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 5px}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.45}
+.hint b{color:var(--ink);font-weight:600}
+.setting{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s}
+.setting:hover{border-color:var(--teal);background:var(--cream)}
+.setting input{margin-top:3px;width:17px;height:17px;flex-shrink:0;accent-color:var(--teal)}
+.setting span{font-size:14.5px;color:var(--ink)}
+.setting b{font-weight:600;display:block}
+.setting em{display:block;font-style:normal;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45}
+/* every text-ish control gets the same box — time and number included, or they
+   fall back to raw browser chrome and look nothing like their neighbours */
+input[type=text],input[type=email],input[type=password],input[type=date],
+input[type=time],input[type=number],select{
+  font-family:'Barlow',sans-serif;font-size:15px;color:var(--ink);width:100%;height:44px;
+  background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;outline:none;
+  transition:border-color .15s;
+}
+input:focus,select:focus{border-color:var(--teal)}
+.frow{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end}
+.frow > div{flex:1;min-width:180px}
+.frow > div.w-sm{flex:0 0 140px;min-width:140px}
+.frow > div.w-md{flex:0 0 190px;min-width:190px}
+
+.msg{padding:12px 16px;border-radius:11px;font-size:14px;margin:12px 0}
+.msg.err{background:#fdf0ee;border:1px solid #f3c9c0;color:#8d2f1b}
+.msg.ok{background:#eefaf5;border:1px solid #bfe8da;color:#0d6b52}
+.hidden{display:none !important}
+
+/* login */
+.login-box{max-width:420px;margin:70px auto 0}
+.login-box h1{font-size:30px;margin-bottom:4px}
+.login-box .lede{color:var(--muted);font-size:14.5px;margin-bottom:20px}
+
+/* sessions list */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--muted);text-align:left;padding:13px 16px;border-bottom:2px solid var(--border);font-weight:700}
+.tbl td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:14.5px}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr{cursor:pointer;transition:background .15s}
+.tbl tbody tr:hover{background:var(--cream)}
+.pill{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;padding:4px 10px;border-radius:100px}
+.pill.completed{background:rgba(20,184,166,.13);border:1px solid rgba(20,184,166,.4);color:var(--teal-ink)}
+.pill.scheduled{background:rgba(167,139,250,.14);border:1px solid rgba(167,139,250,.45);color:#6d4fc4}
+.pill.playoff{background:rgba(232,160,32,.16);border:1px solid rgba(232,160,32,.45);color:#8a6a12}
+.prog{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;color:var(--base)}
+
+/* wizard squads */
+.team-pick{display:flex;flex-wrap:wrap;gap:9px}
+.team-chip{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.03em;
+  padding:8px 15px;border-radius:100px;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--muted);
+  transition:all .15s;user-select:none;
+}
+.team-chip.on{background:var(--base);border-color:var(--base);color:#fff}
+.squads{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:16px}
+.squad{border:1px solid var(--border);border-radius:13px;overflow:hidden;background:#fff}
+.squad-head{padding:10px 14px;background:var(--cream);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.squad-head .tn{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;color:var(--base)}
+.squad-head .cnt{font-size:11.5px;font-weight:700;color:var(--muted)}
+.squad-head .cnt.bad{color:var(--red)}
+.squad-list{max-height:230px;overflow-y:auto;padding:6px 8px}
+.squad-list label{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:8px;font-size:13.5px;cursor:pointer}
+.squad-list label:hover{background:var(--cream)}
+.squad-list .g{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-left:auto}
+
+/* score entry */
+.session-summary{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.session-summary .big{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:22px;color:var(--base)}
+.session-summary .sub{font-size:13.5px;color:var(--muted)}
+.progress-wrap{display:flex;align-items:center;gap:12px}
+.progress-bar{width:170px;height:9px;background:var(--mid);border-radius:100px;overflow:hidden}
+.progress-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal-light),var(--teal));border-radius:100px;transition:width .3s}
+.meeting-block{border-top:1px solid var(--border)}
+.meeting-block:first-child{border-top:none}
+.meeting-head{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--cream);flex-wrap:wrap}
+.meeting-head .vs{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:17px;color:var(--base)}
+.meeting-head .mscore{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:14px;background:var(--base);color:#fff;border-radius:8px;padding:3px 11px}
+.meeting-head .mnote{font-size:12px;color:var(--muted)}
+.grow{display:grid;grid-template-columns:86px 1fr 1fr 118px 1fr 1fr 84px;gap:8px;align-items:center;padding:9px 20px;border-top:1px dashed var(--border)}
+.grow .gt{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.grow select{padding:7px 9px;font-size:13.5px;border-radius:8px}
+.grow .score-pair{display:flex;align-items:center;gap:5px;justify-content:center}
+.grow input.score{width:46px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:16px;padding:7px 4px;border-radius:8px}
+.grow .dash{color:var(--muted);font-weight:700}
+.grow .stat{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.savedot{width:9px;height:9px;border-radius:50%;background:var(--border)}
+.savedot.saved{background:var(--green)}
+.savedot.dirty{background:#e8a020}
+.savedot.err{background:var(--red)}
+.rowmsg{grid-column:1 / -1;font-size:12.5px;color:var(--red);padding:0 2px 4px}
+.kbd-hint{font-size:12.5px;color:var(--muted);padding:12px 20px;border-top:1px solid var(--border);background:var(--cream)}
+.kbd-hint b{font-family:'Barlow Condensed',sans-serif;letter-spacing:.03em}
+kbd{font-family:inherit;font-size:11px;background:#fff;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 6px}
+
+@media(max-width:900px){
+  .grow{grid-template-columns:70px 1fr 1fr;grid-auto-rows:auto}
+  .grow .score-pair{grid-column:2 / span 2;justify-content:flex-start}
+  .grow .stat{grid-column:1 / -1}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap bar-inner">
+    <span class="brand"><img src="twoclear-icon-dark.svg" alt="Twoclear" /><span class="wordmark">Inter-County <b>League</b><span class="admin-tag">Admin</span></span></span>
+    <span class="who"><span class="hidden" id="who"><span id="who-email"></span> <a id="signout">Sign out</a> · </span><a href="index.html">← Public site</a></span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ================= LOGIN ================= -->
+  <div id="view-login" class="login-box card card-pad">
+    <h1>League admin</h1>
+    <p class="lede">Sign in with your league admin account. Writes are blocked for everyone else.</p>
+    <div class="frow" style="flex-direction:column">
+      <div><label class="f">Email</label><input type="email" id="login-email" value="paul@pbtable.co.uk" autocomplete="username" /></div>
+      <div><label class="f">Password</label><input type="password" id="login-password" autocomplete="current-password" /></div>
+    </div>
+    <button class="btn btn-primary" id="login-btn" style="width:100%">Sign in</button>
+    <div id="login-msg"></div>
+  </div>
+
+  <!-- ================= SESSIONS LIST ================= -->
+  <div id="view-sessions" class="hidden">
+    <div class="sec-title">
+      <h2>Sessions</h2>
+      <span style="display:flex;gap:10px">
+        <button class="btn btn-ghost" id="settings-btn">⚙ League settings</button>
+        <button class="btn btn-primary" id="new-session-btn">＋ New session</button>
+      </span>
+    </div>
+    <div class="card"><div id="sessions-box" class="card-pad">Loading…</div></div>
+  </div>
+
+  <!-- ================= NEW SESSION WIZARD ================= -->
+  <div id="view-wizard" class="hidden">
+    <div class="sec-title">
+      <h2>New session</h2>
+      <button class="btn btn-ghost btn-sm" data-nav="sessions">← Back to sessions</button>
+    </div>
+    <div class="card card-pad">
+      <div class="frow">
+        <div class="w-md">
+          <label class="f">Session type</label>
+          <select id="wz-kind">
+            <option value="league">League session</option>
+            <option value="playoff">Playoff / finals</option>
+          </select>
+        </div>
+        <div class="w-md"><label class="f">Division</label><select id="wz-division"></select></div>
+        <div id="wz-stage-wrap" class="hidden"><label class="f">Stage name</label><input type="text" id="wz-stage" placeholder="e.g. Championship Finals" /></div>
+      </div>
+      <div class="frow">
+        <div class="w-md"><label class="f">Date</label><input type="date" id="wz-date" /></div>
+        <div class="w-sm"><label class="f">Start time</label><input type="time" id="wz-time" /></div>
+        <div><label class="f">Venue</label><input type="text" id="wz-venue" placeholder="e.g. Swindon Link Centre" /></div>
+        <div class="w-sm"><label class="f">Courts booked</label><input type="number" id="wz-courts" min="1" max="20" placeholder="e.g. 4" /></div>
+      </div>
+      <p class="hint" style="margin:-6px 0 18px">
+        <b>Courts booked</b> = how many courts you have at the venue for this session. It is used only to
+        work out how long the day will run — it does not affect selection, results or the league table.
+        Leave it blank if the booking isn't confirmed yet.
+      </p>
+      <p class="hint" id="wz-kind-hint" style="margin:-6px 0 18px">
+        A <b>league session</b> counts toward the division table and can trigger promotion and relegation.
+      </p>
+      <label class="f" id="wz-teams-label">Teams in this session (usually 4 — every pair plays a meeting)</label>
+      <div class="team-pick" id="wz-teams"></div>
+      <div id="wz-meeting-count" class="msg ok hidden"></div>
+      <div id="wz-squads-wrap" class="hidden">
+        <label class="f" style="margin-top:18px" id="wz-squads-label">Squads (their usual players are pre-ticked; scores can only name squad members)</label>
+        <div class="squads" id="wz-squads"></div>
+      </div>
+      <div id="wz-msg"></div>
+      <div style="margin-top:20px;display:flex;gap:12px">
+        <button class="btn btn-primary" id="wz-create">Create session &amp; open score entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= LEAGUE SETTINGS ================= -->
+  <div id="view-settings" class="hidden">
+    <div class="sec-title">
+      <h2>League settings</h2>
+      <button class="btn btn-ghost btn-sm" data-nav="sessions">← Back to sessions</button>
+    </div>
+    <div class="card card-pad">
+      <p class="hint" style="margin-bottom:22px">
+        These apply to the active season. Everything else — the match format, the 2–2 points-difference
+        rule, the tie-breaks — is fixed, because changing it would mean changing the data model rather
+        than a setting.
+      </p>
+
+      <h3 style="font-size:19px;margin-bottom:4px">Ratings</h3>
+      <p class="hint" style="margin-bottom:12px">
+        Whether a <b>county adopts</b> the league figure as its carried-forward rating stays a
+        per-county choice — it is not set here.
+      </p>
+      <label class="setting">
+        <input type="checkbox" id="set-ratings-enabled" />
+        <span><b>Compute league ratings from results</b>
+        <em>The ratings engine isn't built yet — this records the league's intent and will govern it when it lands.</em></span>
+      </label>
+      <label class="setting">
+        <input type="checkbox" id="set-ratings-public" />
+        <span><b>Show ratings on the public site</b>
+        <em>Hides the Rating column from the Players table when off. A league can compute ratings without publishing them.</em></span>
+      </label>
+
+      <h3 style="font-size:19px;margin:26px 0 12px">Public site</h3>
+      <label class="setting">
+        <input type="checkbox" id="set-stats-public" />
+        <span><b>Show the Players &amp; Pairings section</b>
+        <em>Individual win rates and partnership records are visible to everyone when on.</em></span>
+      </label>
+
+      <h3 style="font-size:19px;margin:26px 0 12px">Competition</h3>
+      <div class="frow">
+        <div class="w-md">
+          <label class="f">Promotion &amp; relegation</label>
+          <select id="set-promotion">
+            <option value="per_session">After every session</option>
+            <option value="off">Off — divisions stay fixed</option>
+          </select>
+        </div>
+        <div class="w-sm">
+          <label class="f">Max squad size</label>
+          <input type="number" id="set-squad" min="4" max="16" />
+        </div>
+      </div>
+      <p class="hint">
+        <b>After every session</b> is your current rule: the session's top team goes up a division and
+        the bottom team goes down. Switching it <b>off</b> hides the promotion card from score entry —
+        movements already applied are not undone. End-of-season movement is a separate build.
+        <b>Max squad size</b> is enforced by the database, not just the form.
+      </p>
+
+      <div id="settings-msg"></div>
+      <div style="margin-top:20px"><button class="btn btn-primary" id="settings-save">Save settings</button></div>
+    </div>
+  </div>
+
+  <!-- ================= SCORE ENTRY ================= -->
+  <div id="view-scores" class="hidden">
+    <div class="sec-title">
+      <h2 id="sc-title">Score entry</h2>
+      <button class="btn btn-ghost btn-sm" data-nav="sessions">← Back to sessions</button>
+    </div>
+    <div class="card card-pad session-summary">
+      <div>
+        <div class="big" id="sc-session-name"></div>
+        <div class="sub" id="sc-session-sub"></div>
+        <a id="sc-edit-toggle" style="font-size:13px;font-weight:600;color:var(--teal-ink);cursor:pointer">✎ Edit date / venue</a>
+        <div id="sc-edit-form" class="hidden" style="margin-top:12px">
+          <div class="frow" style="margin-bottom:0">
+            <div class="w-md"><label class="f">Date</label><input type="date" id="sc-edit-date" /></div>
+            <div class="w-sm"><label class="f">Start time</label><input type="time" id="sc-edit-time" /></div>
+            <div class="w-md"><label class="f">Venue</label><input type="text" id="sc-edit-venue" /></div>
+            <div class="w-sm"><label class="f">Courts booked</label><input type="number" id="sc-edit-courts" min="1" max="20" placeholder="e.g. 4" /></div>
+            <button class="btn btn-primary" id="sc-edit-save">Save</button>
+            <button class="btn btn-ghost" id="sc-edit-cancel">Cancel</button>
+          </div>
+          <p class="hint" style="margin-top:8px">
+            <b>Courts booked</b> is how many courts you have at the venue for this session — it only
+            drives the running-time estimate, never the results.
+          </p>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-bar"><i id="sc-progress-fill" style="width:0"></i></div>
+        <span class="prog" id="sc-progress-text">0 / 0</span>
+        <button class="btn btn-primary btn-sm" id="sc-saveall">Save all entered</button>
+        <button class="btn btn-dark btn-sm" id="sc-complete-btn">Mark completed</button>
+      </div>
+    </div>
+    <div class="card hidden" id="sc-pr-card">
+      <div class="card-pad">
+        <h3 style="font-size:20px;margin-bottom:4px">Promotion &amp; relegation</h3>
+        <p class="hint" style="margin-bottom:14px">
+          Worked out from this session only: the team finishing top goes up a division, the team
+          finishing bottom goes down. Nothing moves until you apply it, and it can be applied only once
+          per session — if you correct a score afterwards, tell me and the move can be undone.
+        </p>
+        <div id="sc-pr-body"></div>
+      </div>
+    </div>
+    <div class="card" id="sc-meetings"></div>
+  </div>
+
+</main>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const db = createClient(
+  'https://hhstodmbvuaceswtbkym.supabase.co',
+  'sb_publishable_cGmfFEfm94o7l1BNjTqc5w_Pec22W8B'
+);
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uuid = () => crypto.randomUUID();
+const fmtDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const fmtTime = (t) => (t ? t.slice(0, 5) : '');
+const GAME_DEFS = [
+  { slot: 1, type: 'mens_doubles',   label: "Men's" },
+  { slot: 2, type: 'womens_doubles', label: "Women's" },
+  { slot: 3, type: 'mixed_doubles',  label: 'Mixed 1' },
+  { slot: 4, type: 'mixed_doubles',  label: 'Mixed 2' },
+];
+
+let season, divisions = [], teams = [], players = [], settings = {};
+let currentSession = null;   // score-entry state
+let gameIndex = new Map();   // game id → { m, g } for the open session
+
+/* ================= navigation ================= */
+const VIEWS = ['login', 'sessions', 'wizard', 'scores', 'settings'];
+function show(view) {
+  VIEWS.forEach((v) => $(`view-${v}`).classList.toggle('hidden', v !== view));
+}
+document.querySelectorAll('[data-nav="sessions"]').forEach((b) => b.onclick = () => { show('sessions'); loadSessions(); });
+
+/* ================= auth ================= */
+$('login-btn').onclick = signIn;
+$('login-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') signIn(); });
+$('signout').onclick = async () => { await db.auth.signOut(); location.reload(); };
+
+async function signIn() {
+  $('login-msg').innerHTML = '';
+  $('login-btn').disabled = true;
+  const { error } = await db.auth.signInWithPassword({
+    email: $('login-email').value.trim(),
+    password: $('login-password').value,
+  });
+  $('login-btn').disabled = false;
+  if (error) { $('login-msg').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  await afterAuth();
+}
+
+async function afterAuth() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) { show('login'); return; }
+  const { data: isAdmin, error } = await db.rpc('is_league_admin');
+  if (error || !isAdmin) {
+    await db.auth.signOut();
+    $('login-msg').innerHTML = `<div class="msg err">This account isn't a league admin.</div>`;
+    show('login');
+    return;
+  }
+  $('who').classList.remove('hidden');
+  $('who-email').textContent = user.email;
+  await loadRefData();
+  show('sessions');
+  loadSessions();
+}
+
+/* ================= reference data ================= */
+async function loadRefData() {
+  const [s, d, t, p] = await Promise.all([
+    db.from('seasons').select('id,name').eq('is_active', true).single(),
+    db.from('divisions').select('id,name,sort_order').order('sort_order'),
+    db.from('teams').select('id,name,county_id,county:counties(name)'),
+    db.from('players').select('id,first_name,last_name,gender,county_id,default_team_id').order('last_name'),
+  ]);
+  season = s.data;
+  divisions = (d.data ?? []);
+  teams = t.data ?? [];
+  players = p.data ?? [];
+
+  const { data: st } = await db.from('league_settings').select('*').eq('season_id', season.id).maybeSingle();
+  settings = st ?? { ratings_enabled: false, ratings_public: true, player_stats_public: true,
+                     promotion_mode: 'per_session', max_squad_size: 8 };
+}
+
+/* ================= league settings ================= */
+$('settings-btn').onclick = () => { fillSettings(); show('settings'); };
+
+function fillSettings() {
+  $('set-ratings-enabled').checked = !!settings.ratings_enabled;
+  $('set-ratings-public').checked = !!settings.ratings_public;
+  $('set-stats-public').checked = !!settings.player_stats_public;
+  $('set-promotion').value = settings.promotion_mode ?? 'per_session';
+  $('set-squad').value = settings.max_squad_size ?? 8;
+  $('settings-msg').innerHTML = '';
+}
+
+$('settings-save').onclick = async () => {
+  const squad = Number($('set-squad').value);
+  if (!Number.isInteger(squad) || squad < 4 || squad > 16) {
+    $('settings-msg').innerHTML = `<div class="msg err">Max squad size must be a whole number between 4 and 16.</div>`;
+    return;
+  }
+  const patch = {
+    season_id: season.id,
+    ratings_enabled: $('set-ratings-enabled').checked,
+    ratings_public: $('set-ratings-public').checked,
+    player_stats_public: $('set-stats-public').checked,
+    promotion_mode: $('set-promotion').value,
+    max_squad_size: squad,
+    updated_at: new Date().toISOString(),
+  };
+  $('settings-save').disabled = true;
+  const { error } = await db.from('league_settings').upsert(patch, { onConflict: 'season_id' });
+  $('settings-save').disabled = false;
+  if (error) { $('settings-msg').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  settings = { ...settings, ...patch };
+  $('settings-msg').innerHTML = `<div class="msg ok">Saved. The public site picks these up on its next load.</div>`;
+};
+const teamById = (id) => teams.find((t) => t.id === id);
+const playerName = (p) => p ? `${p.first_name} ${p.last_name}` : '—';
+
+/* ================= sessions list ================= */
+$('new-session-btn').onclick = () => { openWizard(); show('wizard'); };
+
+async function loadSessions() {
+  $('sessions-box').innerHTML = 'Loading…';
+  const { data: sessions, error } = await db.from('sessions')
+    .select('id,session_date,start_time,venue,status,session_kind,stage,division:divisions(name),meetings(games(id,home_score))')
+    .order('session_date', { ascending: false });
+  if (error) { $('sessions-box').innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+  if (!sessions.length) { $('sessions-box').innerHTML = `No sessions yet — create the first one.`; return; }
+  $('sessions-box').innerHTML = `
+    <table class="tbl"><thead><tr><th>Date</th><th>Division</th><th>Venue</th><th>Scores in</th><th>Status</th></tr></thead>
+    <tbody>${sessions.map((s) => {
+      const games = s.meetings.flatMap((m) => m.games);
+      const done = games.filter((g) => g.home_score !== null).length;
+      return `<tr data-sid="${s.id}">
+        <td><b>${fmtDate(s.session_date)}</b>${s.start_time ? ` <span style="color:var(--muted)">${fmtTime(s.start_time)}</span>` : ''}</td>
+        <td>${esc(s.division?.name ?? '')}${s.session_kind === 'playoff'
+          ? ` <span class="pill playoff">${esc(s.stage || 'Playoff')}</span>` : ''}</td>
+        <td>${esc(s.venue ?? '')}</td>
+        <td class="prog">${done} / ${games.length}</td>
+        <td><span class="pill ${s.status}">${s.status}</span></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+  document.querySelectorAll('#sessions-box tr[data-sid]').forEach((tr) => {
+    tr.onclick = () => openScores(tr.dataset.sid);
+  });
+}
+
+/* ================= wizard ================= */
+function openWizard() {
+  $('wz-division').innerHTML = divisions.map((d) => `<option value="${d.id}">${esc(d.name)}</option>`).join('');
+  $('wz-date').value = '';
+  $('wz-venue').value = '';
+  $('wz-msg').innerHTML = '';
+  $('wz-courts').value = '';
+  $('wz-kind').value = 'league';
+  $('wz-stage').value = '';
+  applyKind();
+  $('wz-division').onchange = renderWizardTeams;
+  $('wz-courts').oninput = renderWizardSquads;
+  $('wz-kind').onchange = applyKind;
+}
+
+function applyKind() {
+  const playoff = $('wz-kind').value === 'playoff';
+  $('wz-stage-wrap').classList.toggle('hidden', !playoff);
+  $('wz-kind-hint').innerHTML = playoff
+    ? `A <b>playoff</b> is scored exactly like a league session — same four games a meeting — but it never
+       counts toward a division table and never triggers promotion or relegation. Draw teams from anywhere
+       in the season; the division above just records who hosts it.`
+    : `A <b>league session</b> counts toward the division table and can trigger promotion and relegation
+       once every score is in.`;
+  $('wz-teams-label').textContent = playoff
+    ? 'Teams in this playoff — any team in the season (every pair plays a meeting)'
+    : 'Teams in this session (usually 4 — every pair plays a meeting)';
+  renderWizardTeams();
+}
+
+async function renderWizardTeams() {
+  const playoff = $('wz-kind').value === 'playoff';
+  const q = db.from('division_teams').select('team_id,division_id,position');
+  const { data: entrants } = playoff ? await q : await q.eq('division_id', $('wz-division').value);
+
+  const divOrder = new Map(divisions.map((d) => [d.id, d.sort_order]));
+  const divTeams = (entrants ?? [])
+    .map((e) => ({ ...teamById(e.team_id), divisionId: e.division_id, position: e.position }))
+    .filter((t) => t.id)
+    .sort((a, b) => (divOrder.get(a.divisionId) ?? 0) - (divOrder.get(b.divisionId) ?? 0)
+      || (a.position ?? 99) - (b.position ?? 99) || a.name.localeCompare(b.name));
+
+  $('wz-teams').innerHTML = divTeams.length
+    ? divTeams.map((t) => `<span class="team-chip" data-tid="${t.id}">${esc(t.name)}
+        <span style="opacity:.6;font-size:11px">${esc(t.county?.name ?? '')}${
+          playoff ? ` · ${esc(divName(t.divisionId))}` : ''}</span></span>`).join('')
+    : `<span class="sub" style="color:var(--muted)">No teams in this division yet.</span>`;
+  $('wz-squads-wrap').classList.add('hidden');
+  $('wz-meeting-count').classList.add('hidden');
+  document.querySelectorAll('.team-chip').forEach((chip) => {
+    chip.onclick = () => { chip.classList.toggle('on'); renderWizardSquads(); };
+  });
+}
+
+function pickedTeamIds() {
+  return [...document.querySelectorAll('.team-chip.on')].map((c) => c.dataset.tid);
+}
+
+// A meeting is 4 games but only 2 can run at once (each player plays 2 of the 4),
+// and at most floor(teams/2) meetings run concurrently — so courts beyond
+// 2 * floor(teams/2) buy nothing. ~20 minutes a game.
+const MINS_PER_GAME = 20;
+function sessionShape(teamCount, courts) {
+  const meetings = (teamCount * (teamCount - 1)) / 2;
+  const games = meetings * 4;
+  const usable = 2 * Math.floor(teamCount / 2);
+  const inUse = Math.min(courts || usable, usable);
+  const mins = Math.ceil(games / inUse) * MINS_PER_GAME;
+  return { meetings, games, usable, inUse, mins };
+}
+const fmtDuration = (mins) => `${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ''}`;
+
+function renderWizardSquads() {
+  const picked = pickedTeamIds();
+  const mc = $('wz-meeting-count');
+  if (picked.length >= 2) {
+    const courts = Number($('wz-courts').value) || 0;
+    const sh = sessionShape(picked.length, courts);
+    const head = `<b>This session will be</b> ${picked.length} teams · ${sh.meetings} meetings · ${sh.games} games`;
+    let sub;
+    if (courts) {
+      sub = `Roughly <b>${fmtDuration(sh.mins)}</b> of play on ${sh.inUse} court${sh.inUse === 1 ? '' : 's'}, at ~${MINS_PER_GAME} minutes a game.`;
+      if (courts > sh.usable) sub += ` You entered ${courts} courts, but with ${picked.length} teams only ${sh.usable} can be in use at once.`;
+      if (sh.mins > 360) sub += ` That is a very long day — consider fewer teams, or more courts.`;
+    } else {
+      sub = `Fill in <b>Courts booked</b> above to estimate the running time — ${sh.usable} courts would take about ${fmtDuration(sh.mins)}.`;
+    }
+    mc.innerHTML = `${head}<br/>${sub}`;
+    mc.className = `msg ${courts && sh.mins > 360 ? 'err' : 'ok'}`;
+    mc.classList.remove('hidden');
+  } else mc.classList.add('hidden');
+
+  const wrap = $('wz-squads-wrap');
+  if (!picked.length) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  $('wz-squads-label').textContent =
+    `Squads — 4 to ${settings.max_squad_size ?? 8} per team (their usual players are pre-ticked; scores can only name squad members)`;
+  $('wz-squads').innerHTML = picked.map((tid) => {
+    const team = teamById(tid);
+    const county = players.filter((p) => p.county_id === team.county_id);
+    return `
+      <div class="squad" data-tid="${tid}">
+        <div class="squad-head"><span class="tn">${esc(team.name)}</span><span class="cnt" data-cnt>0 picked</span></div>
+        <div class="squad-list">
+          ${county.map((p) => `
+            <label><input type="checkbox" value="${p.id}" ${p.default_team_id === tid ? 'checked' : ''} />
+            ${esc(playerName(p))}<span class="g">${p.gender[0]}</span></label>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+  document.querySelectorAll('#wz-squads input').forEach((cb) => cb.onchange = updateSquadCounts);
+  updateSquadCounts();
+}
+
+function updateSquadCounts() {
+  document.querySelectorAll('.squad').forEach((sq) => {
+    const cap = settings.max_squad_size ?? 8;
+    const n = sq.querySelectorAll('input:checked').length;
+    const el = sq.querySelector('[data-cnt]');
+    el.textContent = `${n} picked${n > cap ? ` — max ${cap}!` : ''}`;
+    el.classList.toggle('bad', n > cap || n < 4);
+  });
+}
+
+$('wz-create').onclick = async () => {
+  const divId = $('wz-division').value;
+  const date = $('wz-date').value;
+  const time = $('wz-time').value;
+  const venue = $('wz-venue').value.trim();
+  const courts = Number($('wz-courts').value) || null;
+  const picked = pickedTeamIds();
+  const msg = (html) => $('wz-msg').innerHTML = html;
+
+  if (!date) return msg(`<div class="msg err">Pick a date.</div>`);
+  if (picked.length < 2) return msg(`<div class="msg err">Pick at least 2 teams.</div>`);
+  const squads = picked.map((tid) => ({
+    tid,
+    playerIds: [...document.querySelectorAll(`.squad[data-tid="${tid}"] input:checked`)].map((c) => c.value),
+  }));
+  for (const s of squads) {
+    const cap = settings.max_squad_size ?? 8;
+    if (s.playerIds.length > cap) return msg(`<div class="msg err">${esc(teamById(s.tid).name)} has more than ${cap} players.</div>`);
+    if (s.playerIds.length < 4) return msg(`<div class="msg err">${esc(teamById(s.tid).name)} needs at least 4 players (2 men, 2 women) to fill the four games.</div>`);
+  }
+
+  $('wz-create').disabled = true;
+  msg('');
+  try {
+    const sessionId = uuid();
+    let r = await db.from('sessions').insert({
+      id: sessionId, division_id: divId, session_date: date, start_time: time || null,
+      venue: venue || null, courts,
+      session_kind: $('wz-kind').value,
+      stage: $('wz-kind').value === 'playoff' ? ($('wz-stage').value.trim() || 'Playoff') : null,
+    });
+    if (r.error) throw r.error;
+    r = await db.from('session_teams').insert(picked.map((tid) => ({ session_id: sessionId, team_id: tid })));
+    if (r.error) throw r.error;
+    r = await db.from('squad_players').insert(squads.flatMap((s) =>
+      s.playerIds.map((pid) => ({ session_id: sessionId, team_id: s.tid, player_id: pid }))));
+    if (r.error) throw r.error;
+
+    const meetingRows = [], gameRows = [];
+    for (let i = 0; i < picked.length; i++) for (let j = i + 1; j < picked.length; j++) {
+      const mid = uuid();
+      meetingRows.push({ id: mid, session_id: sessionId, home_team_id: picked[i], away_team_id: picked[j] });
+      for (const g of GAME_DEFS) gameRows.push({ id: uuid(), meeting_id: mid, slot: g.slot, game_type: g.type });
+    }
+    r = await db.from('meetings').insert(meetingRows);
+    if (r.error) throw r.error;
+    r = await db.from('games').insert(gameRows);
+    if (r.error) throw r.error;
+
+    openScores(sessionId);
+  } catch (e) {
+    console.error(e);
+    msg(`<div class="msg err">${esc(e.message ?? e)}</div>`);
+  } finally {
+    $('wz-create').disabled = false;
+  }
+};
+
+/* ================= score entry ================= */
+async function openScores(sessionId) {
+  show('scores');
+  $('sc-meetings').innerHTML = '<div class="card-pad">Loading…</div>';
+  const [{ data: s, error }, { data: squadRows }] = await Promise.all([
+    db.from('sessions')
+      .select('id,session_date,start_time,venue,courts,status,session_kind,stage,division_id,division:divisions(name),meetings(id,home_team_id,away_team_id,games(id,slot,game_type,home_score,away_score,game_players(player_id,side)))')
+      .eq('id', sessionId).single(),
+    db.from('squad_players').select('team_id,player_id').eq('session_id', sessionId),
+  ]);
+  if (error) { $('sc-meetings').innerHTML = `<div class="card-pad msg err">${esc(error.message)}</div>`; return; }
+
+  const squadByTeam = new Map();
+  for (const row of squadRows ?? []) {
+    if (!squadByTeam.has(row.team_id)) squadByTeam.set(row.team_id, []);
+    squadByTeam.get(row.team_id).push(players.find((p) => p.id === row.player_id));
+  }
+  squadByTeam.forEach((list) => list.sort((a, b) => a.last_name.localeCompare(b.last_name)));
+
+  currentSession = { ...s, squadByTeam };
+  $('sc-session-name').textContent =
+    `${s.session_kind === 'playoff' ? (s.stage || 'Playoff') + ' · ' : ''}${s.division?.name ?? ''} — ${fmtDate(s.session_date)}`;
+  $('sc-session-sub').textContent = sessionSubLine(currentSession);
+  $('sc-complete-btn').onclick = markCompleted;
+  $('sc-saveall').onclick = saveAllEntered;
+  wireSessionEdit();
+
+  renderMeetings();
+}
+
+function squadFor(teamId, slot) {
+  const squad = currentSession.squadByTeam.get(teamId) ?? [];
+  if (slot === 1) return squad.filter((p) => p.gender !== 'female');
+  if (slot === 2) return squad.filter((p) => p.gender !== 'male');
+  return squad;
+}
+
+function defaultPair(teamId, slot) {
+  const squad = currentSession.squadByTeam.get(teamId) ?? [];
+  const males = squad.filter((p) => p.gender === 'male');
+  const females = squad.filter((p) => p.gender === 'female');
+  if (slot === 1) return [males[0], males[1]];
+  if (slot === 2) return [females[0], females[1]];
+  if (slot === 3) return [males[0], females[0]];
+  return [males[1], females[1]];
+}
+
+function renderMeetings() {
+  const box = $('sc-meetings');
+  box.innerHTML = currentSession.meetings.map((m) => {
+    const home = teamById(m.home_team_id), away = teamById(m.away_team_id);
+    const games = [...m.games].sort((a, b) => a.slot - b.slot);
+    return `
+    <div class="meeting-block" data-mid="${m.id}">
+      <div class="meeting-head">
+        <span class="vs">${esc(home.name)} <span style="color:var(--muted)">v</span> ${esc(away.name)}</span>
+        <span style="font-size:12px;color:var(--muted)">${esc(home.county?.name ?? '')} v ${esc(away.county?.name ?? '')}</span>
+        <span class="mscore" data-mscore></span><span class="mnote" data-mnote></span>
+      </div>
+      ${games.map((g) => gameRowHtml(m, g)).join('')}
+    </div>`;
+  }).join('') + `
+    <div class="kbd-hint"><b>Fast entry:</b> pairings are pre-filled from the squads — only change them when someone different played.
+    Type the home score, <kbd>Enter</kbd>, away score, <kbd>Enter</kbd> — the game saves straight to the database and the cursor jumps to the next one.
+    Dots: <span style="color:var(--green)">●</span> saved &nbsp;<span style="color:#e8a020">●</span> entered but not saved — <b>Save all entered</b> (top right) flushes every amber row at once.</div>`;
+
+  gameIndex = new Map();
+  currentSession.meetings.forEach((m) => [...m.games].sort((a, b) => a.slot - b.slot).forEach((g) => {
+    gameIndex.set(g.id, { m, g });
+    wireGameRow(m, g);
+  }));
+  updateProgress();
+  currentSession.meetings.forEach(updateMeetingHead);
+}
+
+async function saveAllEntered() {
+  const btn = $('sc-saveall');
+  btn.disabled = true;
+  let saved = 0, failed = 0;
+  for (const row of document.querySelectorAll('.grow')) {
+    if (row.querySelector('[data-dot]').className !== 'savedot dirty') continue;
+    const hs = row.querySelector('[data-role=hs]').value.trim();
+    const as = row.querySelector('[data-role=as]').value.trim();
+    if (hs === '' && as === '') continue; // pairing tweaked but no scores yet — not ready to save
+    const { m, g } = gameIndex.get(row.dataset.gid);
+    (await saveGame(m, g, row)) ? saved++ : failed++;
+  }
+  btn.disabled = false;
+  btn.textContent = failed ? `Saved ${saved} — ${failed} need attention` : (saved ? `Saved ${saved} ✓` : 'Nothing to save');
+  setTimeout(() => { btn.textContent = 'Save all entered'; }, 2600);
+}
+
+window.addEventListener('beforeunload', (e) => {
+  if (document.querySelector('.savedot.dirty')) e.preventDefault();
+});
+
+function gameRowHtml(m, g) {
+  const def = GAME_DEFS.find((d) => d.slot === g.slot);
+  const saved = g.home_score !== null;
+  const sel = (side, teamId, idx) => {
+    const pool = squadFor(teamId, g.slot);
+    const existing = g.game_players.filter((x) => x.side === side).map((x) => x.player_id);
+    const chosen = existing[idx] ?? defaultPair(teamId, g.slot)[idx]?.id;
+    return `<select data-role="${side}${idx}">${pool.map((p) =>
+      `<option value="${p.id}" ${p.id === chosen ? 'selected' : ''}>${esc(playerName(p))}</option>`).join('')}</select>`;
+  };
+  return `
+    <div class="grow" data-gid="${g.id}">
+      <span class="gt">${def.label}</span>
+      ${sel('home', m.home_team_id, 0)}${sel('home', m.home_team_id, 1)}
+      <span class="score-pair">
+        <input class="score" data-role="hs" inputmode="numeric" value="${saved ? g.home_score : ''}" />
+        <span class="dash">–</span>
+        <input class="score" data-role="as" inputmode="numeric" value="${saved ? g.away_score : ''}" />
+      </span>
+      ${sel('away', m.away_team_id, 0)}${sel('away', m.away_team_id, 1)}
+      <span class="stat"><span class="savedot ${saved ? 'saved' : ''}" data-dot></span><button class="btn btn-ghost btn-sm" data-save>Save</button></span>
+    </div>`;
+}
+
+function wireGameRow(m, g) {
+  const row = document.querySelector(`.grow[data-gid="${g.id}"]`);
+  const hs = row.querySelector('[data-role=hs]'), as = row.querySelector('[data-role=as]');
+  const dot = row.querySelector('[data-dot]');
+  const markDirty = () => { dot.className = 'savedot dirty'; };
+  row.querySelectorAll('select,input').forEach((el) => el.addEventListener('input', markDirty));
+  [hs, as].forEach((el) => el.addEventListener('focus', () => el.select()));
+  hs.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); as.focus(); } });
+  as.addEventListener('keydown', async (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const ok = await saveGame(m, g, row);
+    if (ok) focusNextRow(row);
+  });
+  row.querySelector('[data-save]').onclick = () => saveGame(m, g, row);
+}
+
+function focusNextRow(row) {
+  const rows = [...document.querySelectorAll('.grow')];
+  const idx = rows.indexOf(row);
+  for (let i = idx + 1; i < rows.length; i++) {
+    const next = rows[i].querySelector('[data-role=hs]');
+    if (next && rows[i].querySelector('[data-dot]').className !== 'savedot saved') { next.focus(); return; }
+  }
+  const next = rows[idx + 1]?.querySelector('[data-role=hs]');
+  if (next) next.focus();
+}
+
+async function saveGame(m, g, row) {
+  const err = (t) => { showRowError(row, t); return false; };
+  clearRowError(row);
+  const dot = row.querySelector('[data-dot]');
+  const val = (role) => row.querySelector(`[data-role=${role}]`).value;
+  const hsv = val('hs').trim(), asv = val('as').trim();
+  if (hsv === '' || asv === '') return err('Enter both scores.');
+  const hsn = Number(hsv), asn = Number(asv);
+  if (!Number.isInteger(hsn) || !Number.isInteger(asn) || hsn < 0 || asn < 0) return err('Scores must be whole numbers.');
+  if (hsn === asn) return err('Pickleball games can\'t be drawn — one side must win.');
+  const pids = ['home0', 'home1', 'away0', 'away1'].map(val);
+  if (new Set(pids).size !== 4) return err('The same player is selected twice.');
+  const side = (i) => (i < 2 ? 'home' : 'away');
+  if (g.game_type === 'mixed_doubles') {
+    for (const pair of [[0, 1], [2, 3]]) {
+      const gs = pair.map((i) => players.find((p) => p.id === pids[i])?.gender);
+      if (gs[0] === gs[1] && (gs[0] === 'male' || gs[0] === 'female'))
+        return err('A mixed pair needs one man and one woman.');
+    }
+  }
+
+  dot.className = 'savedot dirty';
+  let r = await db.from('game_players').delete().eq('game_id', g.id);
+  if (r.error) return err(r.error.message);
+  r = await db.from('game_players').insert(pids.map((pid, i) => ({ game_id: g.id, player_id: pid, side: side(i) })));
+  if (r.error) return err(r.error.message);
+  r = await db.from('games').update({ home_score: hsn, away_score: asn }).eq('id', g.id);
+  if (r.error) return err(r.error.message);
+
+  g.home_score = hsn; g.away_score = asn;
+  g.game_players = pids.map((pid, i) => ({ player_id: pid, side: side(i) }));
+  dot.className = 'savedot saved';
+  updateProgress();
+  updateMeetingHead(m);
+  return true;
+}
+
+function showRowError(row, text) {
+  clearRowError(row);
+  row.querySelector('[data-dot]').className = 'savedot err';
+  row.insertAdjacentHTML('beforeend', `<span class="rowmsg">${esc(text)}</span>`);
+}
+function clearRowError(row) { row.querySelector('.rowmsg')?.remove(); }
+
+function updateMeetingHead(m) {
+  const block = document.querySelector(`.meeting-block[data-mid="${m.id}"]`);
+  const scored = m.games.filter((g) => g.home_score !== null);
+  const hw = scored.filter((g) => g.home_score > g.away_score).length;
+  const aw = scored.length - hw;
+  const diff = scored.reduce((t, g) => t + (g.home_score - g.away_score), 0);
+  block.querySelector('[data-mscore]').textContent = scored.length ? `${hw}–${aw}` : '—';
+  let note = '';
+  if (scored.length === 4) {
+    if (hw === aw) note = diff === 0 ? 'Dead level — drawn, ½ point each' : `2–2 — decided on points difference (${diff > 0 ? '+' : ''}${diff})`;
+  } else if (scored.length) note = `${scored.length} of 4 games in`;
+  block.querySelector('[data-mnote]').textContent = note;
+}
+
+function updateProgress() {
+  const all = currentSession.meetings.flatMap((m) => m.games);
+  const done = all.filter((g) => g.home_score !== null).length;
+  $('sc-progress-text').textContent = `${done} / ${all.length}`;
+  $('sc-progress-fill').style.width = all.length ? `${(done / all.length) * 100}%` : '0';
+  $('sc-complete-btn').disabled = done < all.length || currentSession.status === 'completed';
+  if (currentSession.status === 'completed') $('sc-complete-btn').textContent = 'Completed ✓';
+  if (all.length && done === all.length) renderPRPanel();
+  else $('sc-pr-card').classList.add('hidden');
+}
+
+function sessionSubLine(s) {
+  const teamCount = s.squadByTeam?.size ?? 0;
+  const bits = [fmtTime(s.start_time), s.venue].filter(Boolean);
+  if (s.courts) {
+    let c = `${s.courts} court${s.courts === 1 ? '' : 's'}`;
+    if (teamCount >= 2) c += ` · about ${fmtDuration(sessionShape(teamCount, s.courts).mins)}`;
+    bits.push(c);
+  }
+  return bits.join(' · ');
+}
+
+function wireSessionEdit() {
+  const form = $('sc-edit-form'), toggle = $('sc-edit-toggle');
+  toggle.onclick = () => {
+    $('sc-edit-date').value = currentSession.session_date;
+    $('sc-edit-time').value = (currentSession.start_time ?? '').slice(0, 5);
+    $('sc-edit-venue').value = currentSession.venue ?? '';
+    $('sc-edit-courts').value = currentSession.courts ?? '';
+    form.classList.remove('hidden');
+    toggle.classList.add('hidden');
+  };
+  $('sc-edit-cancel').onclick = () => {
+    form.classList.add('hidden');
+    toggle.classList.remove('hidden');
+  };
+  $('sc-edit-save').onclick = async () => {
+    const date = $('sc-edit-date').value;
+    const time = $('sc-edit-time').value;
+    const venue = $('sc-edit-venue').value.trim();
+    const courts = Number($('sc-edit-courts').value) || null;
+    if (!date) return;
+    $('sc-edit-save').disabled = true;
+    const { error } = await db.from('sessions')
+      .update({ session_date: date, start_time: time || null, venue: venue || null, courts })
+      .eq('id', currentSession.id);
+    $('sc-edit-save').disabled = false;
+    if (error) { alert(error.message); return; }
+    currentSession.session_date = date;
+    currentSession.start_time = time || null;
+    currentSession.venue = venue || null;
+    currentSession.courts = courts;
+    $('sc-session-name').textContent = `${currentSession.division?.name ?? ''} — ${fmtDate(date)}`;
+    $('sc-session-sub').textContent = sessionSubLine(currentSession);
+    form.classList.add('hidden');
+    toggle.classList.remove('hidden');
+  };
+}
+
+/* ===== promotion & relegation =====================================
+   Paul's rule: after a league session the team finishing top goes up a
+   division and the team finishing bottom goes down. The top division has
+   nowhere up, the bottom division nowhere down. A promoted team enters its
+   new division at position 4, a relegated team at position 1 — display
+   order for admins only, nothing reads it.                              */
+const PROMOTED_ENTERS_AT = 4;
+const RELEGATED_ENTERS_AT = 1;
+
+// This session's finishing order — same rules as the league table, but from
+// this session's meetings alone.
+function sessionFinishingOrder() {
+  const rows = new Map();
+  const get = (id) => {
+    if (!rows.has(id)) rows.set(id, { teamId: id, won: 0, drawn: 0, lost: 0, gw: 0, gl: 0, diff: 0, pts: 0 });
+    return rows.get(id);
+  };
+  for (const m of currentSession.meetings) {
+    const scored = m.games.filter((g) => g.home_score !== null);
+    if (scored.length !== 4) continue;
+    const hw = scored.filter((g) => g.home_score > g.away_score).length;
+    const aw = 4 - hw;
+    const diff = scored.reduce((t, g) => t + (g.home_score - g.away_score), 0);
+    const winner = hw > aw ? 'home' : aw > hw ? 'away' : diff > 0 ? 'home' : diff < 0 ? 'away' : 'draw';
+    const H = get(m.home_team_id), A = get(m.away_team_id);
+    H.gw += hw; H.gl += aw; H.diff += diff;
+    A.gw += aw; A.gl += hw; A.diff -= diff;
+    if (winner === 'home') { H.won++; A.lost++; H.pts += 1; }
+    else if (winner === 'away') { A.won++; H.lost++; A.pts += 1; }
+    else { H.drawn++; A.drawn++; H.pts += 0.5; A.pts += 0.5; }
+  }
+  return [...rows.values()].sort((a, b) => b.pts - a.pts || b.gw - a.gw || b.diff - a.diff);
+}
+
+function computeMoves(order) {
+  if (order.length < 2) return [];
+  const ladder = [...divisions].sort((a, b) => a.sort_order - b.sort_order);
+  const idx = ladder.findIndex((d) => d.id === currentSession.division_id);
+  if (idx === -1) return [];
+  const up = ladder[idx - 1] ?? null, down = ladder[idx + 1] ?? null;
+  const moves = [];
+  if (up) moves.push({ teamId: order[0].teamId, direction: 'promoted',
+    fromDivisionId: currentSession.division_id, toDivisionId: up.id, enterAt: PROMOTED_ENTERS_AT });
+  if (down) moves.push({ teamId: order[order.length - 1].teamId, direction: 'relegated',
+    fromDivisionId: currentSession.division_id, toDivisionId: down.id, enterAt: RELEGATED_ENTERS_AT });
+  return moves;
+}
+
+const divName = (id) => divisions.find((d) => d.id === id)?.name ?? '—';
+
+async function renderPRPanel() {
+  const card = $('sc-pr-card'), body = $('sc-pr-body');
+  const all = currentSession.meetings.flatMap((m) => m.games);
+  const done = all.filter((g) => g.home_score !== null).length;
+  if (settings.promotion_mode === 'off' || currentSession.session_kind !== 'league'
+      || !all.length || done < all.length) {
+    card.classList.add('hidden');
+    return;
+  }
+  card.classList.remove('hidden');
+
+  const { data: applied, error } = await db.from('division_movements')
+    .select('team_id,direction,to_division_id').eq('after_session_id', currentSession.id);
+  if (error) { body.innerHTML = `<div class="msg err">${esc(error.message)}</div>`; return; }
+
+  const order = sessionFinishingOrder();
+  const orderHtml = `
+    <table class="tbl" style="margin-bottom:16px"><thead><tr>
+      <th style="width:44px">Pos</th><th>Team</th><th>Won</th><th>Games</th><th>Diff</th>
+    </tr></thead><tbody>
+      ${order.map((r, i) => `<tr><td><b>${i + 1}</b></td><td>${esc(teamById(r.teamId)?.name ?? '')}</td>
+        <td>${r.won}</td><td>${r.gw}–${r.gl}</td><td>${r.diff > 0 ? '+' : ''}${r.diff}</td></tr>`).join('')}
+    </tbody></table>`;
+
+  if (applied.length) {
+    body.innerHTML = orderHtml + `<div class="msg ok"><b>Applied.</b> ${
+      applied.map((a) => `${esc(teamById(a.team_id)?.name ?? '')} ${a.direction} to ${esc(divName(a.to_division_id))}`).join(' · ')
+    }</div>`;
+    return;
+  }
+
+  const moves = computeMoves(order);
+  if (!moves.length) {
+    body.innerHTML = orderHtml + `<div class="msg ok">No movement from this session — there is no division above or below to move to.</div>`;
+    return;
+  }
+  body.innerHTML = orderHtml + `
+    <div class="msg ok">${moves.map((mv) => `
+      <div><b>${esc(teamById(mv.teamId)?.name ?? '')}</b> ${mv.direction === 'promoted' ? '↑ promoted to' : '↓ relegated to'}
+      <b>${esc(divName(mv.toDivisionId))}</b>, entering at position ${mv.enterAt}.</div>`).join('')}
+    </div>
+    <button class="btn btn-primary" id="sc-pr-apply" style="margin-top:14px">Apply promotion &amp; relegation</button>
+    <span id="sc-pr-msg"></span>`;
+  $('sc-pr-apply').onclick = () => applyMoves(moves);
+}
+
+async function applyMoves(moves) {
+  const btn = $('sc-pr-apply');
+  btn.disabled = true;
+  try {
+    const touched = new Set();
+    for (const mv of moves) {
+      touched.add(mv.fromDivisionId); touched.add(mv.toDivisionId);
+      let r = await db.from('division_teams')
+        .update({ division_id: mv.toDivisionId, position: mv.enterAt })
+        .eq('division_id', mv.fromDivisionId).eq('team_id', mv.teamId);
+      if (r.error) throw r.error;
+      r = await db.from('division_movements').insert({
+        season_id: season.id, team_id: mv.teamId,
+        from_division_id: mv.fromDivisionId, to_division_id: mv.toDivisionId,
+        after_session_id: currentSession.id, direction: mv.direction,
+      });
+      if (r.error) throw r.error;
+    }
+    // Close the gaps and the ties: incomers keep the slot they were given.
+    const incomers = new Set(moves.map((m) => m.teamId));
+    for (const divId of touched) {
+      const { data: rows, error } = await db.from('division_teams')
+        .select('team_id,position').eq('division_id', divId);
+      if (error) throw error;
+      rows.sort((a, b) => (a.position ?? 99) - (b.position ?? 99)
+        || (incomers.has(a.team_id) ? 0 : 1) - (incomers.has(b.team_id) ? 0 : 1));
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i].position === i + 1) continue;
+        const r = await db.from('division_teams').update({ position: i + 1 })
+          .eq('division_id', divId).eq('team_id', rows[i].team_id);
+        if (r.error) throw r.error;
+      }
+    }
+    await renderPRPanel();
+  } catch (e) {
+    console.error(e);
+    $('sc-pr-msg').innerHTML = `<div class="msg err">${esc(e.message ?? e)}</div>`;
+    btn.disabled = false;
+  }
+}
+
+async function markCompleted() {
+  const { error } = await db.from('sessions').update({ status: 'completed' }).eq('id', currentSession.id);
+  if (error) { alert(error.message); return; }
+  currentSession.status = 'completed';
+  updateProgress();
+}
+
+/* ================= boot ================= */
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) await afterAuth();
+  else show('login');
+})();
+</script>
+</body>
+</html>

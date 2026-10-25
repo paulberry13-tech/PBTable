@@ -19,10 +19,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BannerHost } from '@/components/BannerHost';
 import { BookingNotOpen } from '@/components/BookingNotOpen';
+import { ClubPicker } from '@/components/ClubPicker';
 import { DemoPersonSwitcher } from '@/components/DemoPersonSwitcher';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SignIn } from '@/components/SignIn';
-import { bookingEnabledForThisHost } from '@/services/clubGate';
+import { CLUB_IS_FROM_HOSTNAME } from '@/services/backend';
+import { bookingEnabledForThisClub } from '@/services/clubGate';
+import { clearStoredClub, loadStoredClub } from '@/services/clubStore';
 import { USE_SUPABASE } from '@/services/config';
 import { AppProvider, useApp } from '@/store/AppContext';
 import { colors, fonts } from '@/theme';
@@ -61,27 +64,79 @@ export default function RootLayout() {
     Inter_800ExtraBold,
   });
 
+  // WHICH CLUB. On web the hostname has already answered (backend.ts) and this
+  // resolves immediately. On native it is read from storage, and when nothing is
+  // stored the picker runs before anything else — every query below needs a club.
+  // See docs/DECISION-01-CLUB-RESOLUTION.md.
+  const [clubReady, setClubReady] = React.useState(CLUB_IS_FROM_HOSTNAME);
+  const [needsPicker, setNeedsPicker] = React.useState(false);
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    if (CLUB_IS_FROM_HOSTNAME) return;
+    let alive = true;
+    loadStoredClub().then((club) => {
+      if (!alive) return;
+      if (club) setClubReady(true);
+      else setNeedsPicker(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Hold the splash until there is something real to show — the app, or the
+    // picker — rather than handing over to a blank navy screen.
+    if ((fontsLoaded || fontError) && (clubReady || needsPicker)) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, clubReady, needsPicker]);
 
   // Booking is switched on per club by the operator. The bundle is committed to
   // every club site, so this is what stops a club that has not launched booking
   // from serving it to anyone who types /app. null = still asking.
   const [booking, setBooking] = React.useState<{ on: boolean; clubName?: string } | null>(null);
   useEffect(() => {
+    if (!clubReady) return;   // nothing to ask about until a club is settled
     let alive = true;
-    bookingEnabledForThisHost().then((r) => alive && setBooking(r));
+    setBooking(null);
+    bookingEnabledForThisClub().then((r) => alive && setBooking(r));
     return () => {
       alive = false;
     };
+  }, [clubReady]);
+
+  // Send a native member back to the picker: the only way out of a club that has
+  // since switched booking off, or one picked by mistake. On web the URL is the
+  // club, so there is nothing to change.
+  const changeClub = React.useCallback(() => {
+    clearStoredClub().then(() => {
+      setClubReady(false);
+      setBooking(null);
+      setNeedsPicker(true);
+    });
   }, []);
 
   if (!fontsLoaded && !fontError) return null;
+  if (needsPicker) {
+    return (
+      <ClubPicker
+        onPicked={() => {
+          setNeedsPicker(false);
+          setClubReady(true);
+        }}
+      />
+    );
+  }
+  if (!clubReady) return <View style={{ flex: 1, backgroundColor: colors.navy }} />;
   if (booking === null) return <View style={{ flex: 1, backgroundColor: colors.navy }} />;
-  if (!booking.on) return <BookingNotOpen clubName={booking.clubName} />;
+  if (!booking.on) {
+    return (
+      <BookingNotOpen
+        clubName={booking.clubName}
+        onChangeClub={CLUB_IS_FROM_HOSTNAME ? undefined : changeClub}
+      />
+    );
+  }
 
   return (
     <AppProvider>
@@ -124,21 +179,22 @@ const PRIVATE_ROUTES = ['/bookings', '/wallet'];
 function AuthGate() {
   const { authLoading, currentUser, signInPrompted, dismissSignIn } = useApp();
   const pathname = usePathname();
-  const gateRouter = useRouter();
+  const router = useRouter();
   const needsIdentity = PRIVATE_ROUTES.some((r) => pathname.startsWith(r)) || signInPrompted;
   if (!USE_SUPABASE || currentUser || !needsIdentity) return null;
 
   // There must ALWAYS be a way out of this screen.
   //
-  // It renders as a full-screen overlay covering the tab bar, so when it is raised by
-  // NAVIGATING to My Bookings or Wallet — rather than by tapping Book — passing
-  // `undefined` left the member with no cancel control AND no tabs: a dead end with
-  // nothing to press. Survivable on the web, which has a back button and a URL bar.
-  // A phone has neither. Reported on Gloucester, 2026-09-02.
+  // It renders as a full-screen overlay, which covers the tab bar — so when it is
+  // raised by NAVIGATING to My Bookings or Wallet (rather than by tapping Book),
+  // an undefined onCancel left the member with no cancel control and no tabs: a
+  // dead end with nothing to press. Survivable on the web, where the browser has
+  // a back button and a URL bar. A phone has neither, and this is exactly what a
+  // member hits the first time they explore the app without signing in.
   //
-  // Raised on demand -> dismiss and stay put. Raised by the route -> back to the tab
-  // that is public.
-  const cancel = signInPrompted ? dismissSignIn : () => gateRouter.replace('/');
+  // Raised on demand -> dismiss and stay put. Raised by the route -> go back to
+  // the tab that is public.
+  const cancel = signInPrompted ? dismissSignIn : () => router.replace('/');
 
   return (
     <View style={StyleSheet.absoluteFill}>

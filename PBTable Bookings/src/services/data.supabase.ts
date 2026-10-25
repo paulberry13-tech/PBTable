@@ -8,7 +8,7 @@
 
 import { Linking, Platform } from 'react-native';
 
-import { BACKEND } from '@/services/backend';
+import { getClubSlug } from '@/services/backend';
 import { STRIPE_TOPUP } from '@/services/config';
 import { InsufficientBalanceError } from '@/services/contracts';
 import { supabase } from '@/services/supabaseClient';
@@ -35,12 +35,15 @@ import type { RatingChange } from '@/domain/ratings';
 
 export { InsufficientBalanceError };
 
-/** Whose leaderboard we show. Comes from the hostname (backend.ts) so one built
- *  bundle serves demo and every club subdomain. Slug-drift resilience lives in the
- *  demo's rdr_leaderboard (single-tenant: it returns the one club's standings
- *  regardless of the slug passed), so the client just passes the resolved slug.
- *  Everything else scopes by the signed-in member's club_id — see myClubId. */
-const CLUB_SLUG = BACKEND.slug;
+/** Which club this app is serving: the subdomain on web, the picked-then-reconciled
+ *  club on native (backend.ts + clubStore.ts). Null on native until one is chosen.
+ *
+ *  Only club METADATA is read by slug — the booking gate, branding, payments and
+ *  the signed-out session list. Everything a signed-in member sees scopes by their
+ *  own club_id instead; see myClubId.
+ *
+ *  Every caller handles null rather than substituting a default: on production a
+ *  wrong slug silently matches no club, so failing closed beats guessing. */
 
 const notBuiltYet = (what: string): never => {
   throw new Error(`${what} isn't wired to the backend yet (reuses the existing web planner).`);
@@ -218,14 +221,17 @@ async function myClubId(): Promise<string | null> {
   const { data: sess } = await supabase.auth.getSession();
   const uid = sess.session?.user?.id;
   if (!uid) {
-    // Signed out, browsing publicly: fall back to the club this HOSTNAME serves.
-    // Without this the public session list is empty, because scoping is normally
-    // done by the signed-in member's club. Reads still obey RLS — a visitor sees
-    // exactly what the club's public dashboard already shows.
+    // Signed out, browsing publicly: fall back to the club being served — the
+    // HOSTNAME on web, the picked club on native. Without this the public session
+    // list is empty, because scoping is normally done by the signed-in member's
+    // club. Reads still obey RLS — a visitor sees exactly what the club's public
+    // dashboard already shows.
+    const slug = getClubSlug();
+    if (!slug) return null;   // native, before a club has been picked
     const { data: club } = await supabase
       .from('clubs')
       .select('id')
-      .eq('slug', BACKEND.slug)
+      .eq('slug', slug)
       .maybeSingle();
     _clubId = (club as { id: string } | null)?.id ?? null;
     return _clubId;
@@ -659,13 +665,26 @@ export type ClubBranding = {
  *  renders on every screen. Any failure returns null and the PBTable mark is used,
  *  so a slow or broken lookup can never leave the header empty. */
 let _branding: ClubBranding | null | undefined;
+
+/** Drop everything memoised about the CURRENT club. Called when the club changes
+ *  under the app — a native re-pick, or sign-in adopting the member's own club.
+ *  Without this the header would keep the previous club's name and logo, and the
+ *  payment path its previous answer, for the rest of the launch. */
+export function resetClubCaches(): void {
+  _branding = undefined;
+  _takesPayments = null;
+  _clubId = null;
+}
+
 export async function getClubBranding(): Promise<ClubBranding | null> {
   if (_branding !== undefined) return _branding;
+  const slug = getClubSlug();
+  if (!slug) return null;
   try {
     const { data, error } = await supabase
       .from('clubs')
       .select('name,settings')
-      .eq('slug', BACKEND.slug)
+      .eq('slug', slug)
       .maybeSingle();
     // Do NOT cache a failure: one dropped request would pin the header to the
     // PBTable mark for the rest of the session, on every screen, even after the
@@ -683,8 +702,10 @@ export async function getClubBranding(): Promise<ClubBranding | null> {
 
 export async function clubTakesPayments(): Promise<boolean> {
   if (_takesPayments !== null) return _takesPayments;
+  const slug = getClubSlug();
+  if (!slug) return false;   // fails closed, same as an error below
   try {
-    const { data, error } = await supabase.rpc('club_payments_enabled', { p_slug: BACKEND.slug });
+    const { data, error } = await supabase.rpc('club_payments_enabled', { p_slug: slug });
     // Fails CLOSED. Not knowing must never open a payment path -- the alternative
     // is charging a member on a club that cannot receive it.
     _takesPayments = error ? false : !!data;
@@ -714,7 +735,14 @@ export async function topUp(memberId: string, amountPence: number): Promise<Ledg
       // The slug says WHICH club this top-up is for. Without it the server has to
       // guess from the sign-in alone, which errors outright for anyone who belongs
       // to two clubs.
-      body: { amount_pennies: amountPence, origin, slug: BACKEND.slug },
+      //
+      // On native this is the club reconciled to the member's own membership at
+      // sign-in (clubStore.reconcileClubToMembership), not merely the one they
+      // picked. connect-topup treats the slug as a selector among the CALLER'S OWN
+      // memberships and rejects anything else, so a stale value fails rather than
+      // paying another club — but sending the right one is what makes it work at
+      // all for a member who picked wrong.
+      body: { amount_pennies: amountPence, origin, slug: getClubSlug() },
     });
     if (error) throw await fnError(error, 'Could not start the payment.');
     const url = (data as { url?: string })?.url;
@@ -779,7 +807,7 @@ export async function confirmTopUp(sessionId?: string | null): Promise<TopUpReco
   const { data, error } = await supabase.functions.invoke('connect-topup-confirm', {
     // session_id omitted entirely when there is no reference: the function then
     // sweeps, which is the whole point of calling it on an ordinary wallet visit.
-    body: { slug: BACKEND.slug, ...(sessionId ? { session_id: sessionId } : {}) },
+    body: { slug: getClubSlug(), ...(sessionId ? { session_id: sessionId } : {}) },
   });
   if (error) throw await fnError(error, 'Could not confirm your payment.');
   const r = data as {

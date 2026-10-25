@@ -1,15 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, fonts } from '@/theme';
+import { colors, fonts, radius } from '@/theme';
 
 /** Shown instead of the app when a club has not had booking switched on.
  *
  *  Deliberately a dead end with no sign-in and no retry: there is nothing here for
  *  the visitor to do yet, and offering a sign-in box would invite people to try
- *  accounts that do not exist. It names the club so it never reads as a broken page. */
-export function BookingNotOpen({ clubName }: { clubName?: string }) {
+ *  accounts that do not exist. It names the club so it never reads as a broken page.
+ *
+ *  `onChangeClub` is native-only. On the web the URL is the club, so a visitor can
+ *  simply leave; in the app the picked club is the whole world, and without a way
+ *  back this screen would be a permanent dead end for anyone who picked wrong or
+ *  whose club switched booking off. */
+export function BookingNotOpen({
+  clubName,
+  onChangeClub,
+}: {
+  clubName?: string;
+  onChangeClub?: () => void;
+}) {
   return (
     <View style={styles.wrap}>
       <View style={styles.card}>
@@ -23,6 +34,15 @@ export function BookingNotOpen({ clubName }: { clubName?: string }) {
           In the meantime, session line-ups and the leaderboard are on the club&rsquo;s
           main site.
         </Text>
+        {onChangeClub ? (
+          <Pressable
+            onPress={onChangeClub}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.change, pressed && { opacity: 0.8 }]}
+          >
+            <Text style={styles.changeText}>Choose a different club</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -34,4 +54,13 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.displayBold, fontSize: 24, color: colors.textOnDark, textAlign: 'center', letterSpacing: 0.5 },
   body: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.textOnDark, textAlign: 'center', opacity: 0.9 },
   foot: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.textOnDark, textAlign: 'center', opacity: 0.6 },
+  change: {
+    marginTop: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+  },
+  changeText: { fontFamily: fonts.bold, fontSize: 14, color: colors.textOnDark },
 });

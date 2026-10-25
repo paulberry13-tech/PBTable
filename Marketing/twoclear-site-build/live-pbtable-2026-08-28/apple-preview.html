@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PBTable — Apple-style concept</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --ink:#1d1d1f;          /* Apple near-black */
+  --ink-2:#6e6e73;        /* secondary label */
+  --ink-3:#86868b;        /* tertiary */
+  --hair:#d2d2d7;         /* hairline */
+  --bg:#ffffff;
+  --bg-2:#f5f5f7;         /* Apple grey section */
+  --accent:#d94f2b;       /* PBTable coral — the single accent */
+  --accent-ink:#c0431f;
+  --green:#1a9d54;
+  --radius:22px;
+  --nav-h:48px;
+  --ease:cubic-bezier(.28,.11,.32,1);
+  --sf:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--sf);color:var(--ink);background:var(--bg);line-height:1.47;-webkit-font-smoothing:antialiased;letter-spacing:-.01em;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.wrap{max-width:1000px;margin:0 auto;padding:0 22px}
+.wide{max-width:1200px;margin:0 auto;padding:0 22px}
+
+/* link with chevron — the Apple "Learn more ›" */
+.lnk{color:var(--accent);font-size:19px;font-weight:400;display:inline-flex;align-items:center;gap:2px;transition:opacity .2s}
+.lnk:hover{opacity:.72}
+.lnk .cv{transition:transform .25s var(--ease)}
+.lnk:hover .cv{transform:translateX(2px)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;font-size:17px;font-weight:400;padding:12px 22px;border-radius:980px;transition:background .2s,transform .2s,opacity .2s;letter-spacing:0}
+.btn-fill{background:var(--accent);color:#fff}
+.btn-fill:hover{background:var(--accent-ink)}
+.btn-soft{background:rgba(0,0,0,.04);color:var(--ink)}
+.btn-soft:hover{background:rgba(0,0,0,.07)}
+
+/* ---------- NAV (glass) ---------- */
+.nav{position:sticky;top:0;z-index:100;height:var(--nav-h);background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.08)}
+.nav-in{max-width:1000px;margin:0 auto;height:var(--nav-h);padding:0 22px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:7px;font-weight:600;font-size:19px;letter-spacing:-.02em}
+.nav-brand img{height:26px;width:auto}
+.nav-brand b{color:var(--accent);font-weight:600}
+.nav-menu{display:flex;gap:30px}
+.nav-menu a{font-size:12.5px;color:#1d1d1fcc;font-weight:400;transition:color .2s}
+.nav-menu a:hover{color:var(--ink)}
+.nav-cta{font-size:12.5px;color:#fff;background:var(--accent);padding:5px 12px;border-radius:980px}
+@media(max-width:768px){ .nav-menu{display:none} }
+
+/* ---------- section shell ---------- */
+.sec{padding:110px 0;text-align:center}
+.sec.grey{background:var(--bg-2)}
+.eyebrow{font-size:21px;font-weight:600;color:var(--accent);letter-spacing:-.01em;margin-bottom:6px}
+h1,h2,h3{font-weight:600;letter-spacing:-.025em;line-height:1.05}
+.h-hero{font-size:clamp(44px,7vw,88px);font-weight:700;letter-spacing:-.03em;line-height:1.02}
+.h-sec{font-size:clamp(34px,5vw,56px)}
+.sub{font-size:clamp(19px,2.4vw,28px);font-weight:500;color:var(--ink);letter-spacing:-.015em;line-height:1.25}
+.lede{font-size:clamp(17px,1.8vw,21px);color:var(--ink-2);font-weight:400;max-width:640px;margin:18px auto 0;line-height:1.4}
+.links-row{display:flex;gap:26px;justify-content:center;margin-top:26px;flex-wrap:wrap}
+
+/* ---------- HERO ---------- */
+.hero{padding:74px 0 0;text-align:center;background:linear-gradient(180deg,#fff 0%,#fbfbfd 100%)}
+.hero .eyebrow{margin-bottom:10px}
+.hero h1{margin:0 auto;max-width:12ch}
+.hero .sub{margin-top:16px}
+.hero .links-row{margin-top:22px}
+.hero-media{margin:52px auto 0;max-width:1080px;padding:0 22px}
+
+/* browser frame + leaderboard mock (the "real product") */
+.frame{background:#fff;border-radius:16px;box-shadow:0 40px 90px -30px rgba(0,0,0,.28),0 8px 24px -10px rgba(0,0,0,.12);overflow:hidden;border:1px solid rgba(0,0,0,.06);text-align:left}
+.frame-bar{height:44px;display:flex;align-items:center;gap:8px;padding:0 16px;background:#fbfbfd;border-bottom:1px solid var(--hair)}
+.dot{width:11px;height:11px;border-radius:50%}
+.dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+.frame-url{margin-left:12px;font-size:12.5px;color:var(--ink-3);background:#fff;border:1px solid var(--hair);border-radius:7px;padding:4px 12px}
+.lb{padding:26px 30px 30px}
+.lb-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+.lb-title{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.lb-sub{font-size:13px;color:var(--ink-3)}
+.lb-row{display:grid;grid-template-columns:34px 1fr auto auto;align-items:center;gap:16px;padding:13px 10px;border-radius:12px}
+.lb-row+.lb-row{border-top:1px solid #f0f0f2}
+.lb-row.top{background:linear-gradient(90deg,rgba(217,79,43,.06),rgba(217,79,43,0));border-top:none}
+.lb-rank{font-size:16px;font-weight:600;color:var(--ink-3);text-align:center}
+.lb-row.top .lb-rank{color:var(--accent)}
+.lb-name{font-size:16px;font-weight:500}
+.lb-rating{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.lb-move{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;width:52px;text-align:right}
+.lb-move.up{color:var(--green)}.lb-move.dn{color:#c0392b}.lb-move.fl{color:var(--ink-3)}
+
+/* ---------- feature media generic ---------- */
+.feat-media{margin:44px auto 0;max-width:960px}
+.pill-grid{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+
+/* booking mock */
+.card{background:#fff;border-radius:var(--radius);border:1px solid rgba(0,0,0,.07);box-shadow:0 24px 60px -34px rgba(0,0,0,.25);text-align:left;overflow:hidden}
+.bk{max-width:460px;margin:44px auto 0;padding:26px 26px 28px}
+.bk-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.bk-h .t{font-size:18px;font-weight:600}
+.tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:4px 10px;border-radius:980px;background:rgba(26,157,84,.12);color:var(--green)}
+.bk-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f2;font-size:15px}
+.bk-row:last-of-type{border-bottom:none}
+.bk-row .who{font-weight:500}
+.bk-row .st{font-size:13px;color:var(--green);font-weight:600}
+.bk-row .st.wait{color:var(--ink-3)}
+.bk-bar{margin-top:16px;height:8px;border-radius:980px;background:#eee;overflow:hidden}
+.bk-bar i{display:block;height:100%;width:80%;background:var(--accent);border-radius:980px}
+.bk-cap{margin-top:9px;font-size:13px;color:var(--ink-3)}
+
+/* slips mock */
+.slips{max-width:520px;margin:44px auto 0;padding:24px}
+.slip{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;background:#fbfbfd;border:1px solid #eee}
+.slip+.slip{margin-top:10px}
+.slip .ct{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);width:64px}
+.slip .team{flex:1;font-size:15px;font-weight:500}
+.slip .team.r{text-align:right}
+.slip .vs{font-size:11px;font-weight:700;color:var(--ink-3)}
+
+/* ---------- bento ---------- */
+.bento{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:52px;text-align:left}
+.tile{background:var(--bg-2);border-radius:var(--radius);padding:30px}
+.tile.lg{grid-column:span 2;grid-row:span 1}
+.tile h3{font-size:24px;margin-bottom:8px;letter-spacing:-.02em}
+.tile p{font-size:15px;color:var(--ink-2);line-height:1.45}
+.tile .big{font-size:52px;font-weight:700;letter-spacing:-.03em;color:var(--accent);line-height:1}
+@media(max-width:820px){ .bento{grid-template-columns:1fr 1fr} .tile.lg{grid-column:span 2} }
+@media(max-width:520px){ .bento{grid-template-columns:1fr} .tile.lg{grid-column:span 1} }
+
+/* ---------- pricing ---------- */
+.price-card{max-width:420px;margin:44px auto 0;background:#fff;border:1px solid var(--hair);border-radius:26px;padding:40px 34px;text-align:center;box-shadow:0 30px 70px -40px rgba(0,0,0,.25)}
+.price-amt{font-size:64px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.price-amt small{font-size:22px;font-weight:500;color:var(--ink-2)}
+.price-note{font-size:14px;color:var(--ink-3);margin-top:6px}
+.price-list{list-style:none;margin:26px 0;text-align:left;display:inline-block}
+.price-list li{font-size:16px;padding:8px 0 8px 30px;position:relative;color:var(--ink)}
+.price-list li::before{content:"";position:absolute;left:0;top:12px;width:17px;height:10px;border-left:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg)}
+
+/* ---------- footer ---------- */
+footer{background:var(--bg-2);color:var(--ink-3);font-size:12px;padding:40px 0 26px}
+.foot-top{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;padding-bottom:26px;border-bottom:1px solid var(--hair);text-align:left}
+.foot-col h4{font-size:12px;color:var(--ink);font-weight:600;margin-bottom:12px}
+.foot-col a{display:block;color:var(--ink-2);padding:5px 0;font-size:12px}
+.foot-col a:hover{color:var(--ink)}
+.foot-bottom{padding-top:20px;line-height:1.6}
+@media(max-width:700px){ .foot-top{grid-template-columns:1fr 1fr} }
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){ .reveal{opacity:1;transform:none;transition:none} html{scroll-behavior:auto} }
+
+.concept-note{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:200;background:rgba(29,29,31,.9);color:#fff;font-size:12px;padding:8px 16px;border-radius:980px;backdrop-filter:blur(10px)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-in">
+    <a class="nav-brand" href="#top"><img src="pbtable-logo.png" alt="PBTable" />PB<b>Table</b></a>
+    <div class="nav-menu">
+      <a href="#bookings">Bookings</a>
+      <a href="#courts">Sessions</a>
+      <a href="#ratings">Ratings</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <a class="nav-cta" href="#pricing">Free trial</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="eyebrow">PBTable</div>
+    <h1 class="h-hero">Everything your club needs. In one place.</h1>
+    <p class="sub">Bookings, balanced courts and live player ratings — for UK pickleball clubs.</p>
+    <div class="links-row">
+      <a class="lnk" href="#pricing">Start free trial <span class="cv">›</span></a>
+      <a class="lnk" href="#ratings">See how it works <span class="cv">›</span></a>
+    </div>
+  </div>
+  <div class="hero-media reveal">
+    <div class="frame">
+      <div class="frame-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">swindon.pbtable.com</span></div>
+      <div class="lb">
+        <div class="lb-head"><div class="lb-title">Club leaderboard</div><div class="lb-sub">Updated after Friday night</div></div>
+        <div class="lb-row top"><div class="lb-rank">1</div><div class="lb-name">Priya Sharma</div><div class="lb-rating">4.62</div><div class="lb-move up">▲ 2</div></div>
+        <div class="lb-row"><div class="lb-rank">2</div><div class="lb-name">Tom Hargreaves</div><div class="lb-rating">4.55</div><div class="lb-move dn">▼ 1</div></div>
+        <div class="lb-row"><div class="lb-rank">3</div><div class="lb-name">Aisha Khan</div><div class="lb-rating">4.41</div><div class="lb-move up">▲ 3</div></div>
+        <div class="lb-row"><div class="lb-rank">4</div><div class="lb-name">Dan Mercer</div><div class="lb-rating">4.38</div><div class="lb-move fl">—</div></div>
+        <div class="lb-row"><div class="lb-rank">5</div><div class="lb-name">Grace Okafor</div><div class="lb-rating">4.29</div><div class="lb-move up">▲ 1</div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- BOOKINGS -->
+<section class="sec" id="bookings">
+  <div class="wrap reveal">
+    <div class="eyebrow">Bookings</div>
+    <h2 class="h-sec">Sign-ups and payments.<br />Sorted before you arrive.</h2>
+    <p class="lede">Members book and pay in advance from a link. When a night fills up, the waitlist fills the gaps itself — no clipboard, no chasing.</p>
+    <div class="card bk">
+      <div class="bk-h"><div class="t">Friday Club Night</div><span class="tag">16 / 16 in</span></div>
+      <div class="bk-row"><span class="who">Priya S.</span><span class="st">Paid</span></div>
+      <div class="bk-row"><span class="who">Tom H.</span><span class="st">Paid</span></div>
+      <div class="bk-row"><span class="who">Aisha K.</span><span class="st">Paid</span></div>
+      <div class="bk-row"><span class="who">Jordan P.</span><span class="st wait">Waitlist · 1st</span></div>
+      <div class="bk-bar"><i></i></div>
+      <div class="bk-cap">80% pre-paid · drop-outs fill automatically</div>
+    </div>
+  </div>
+</section>
+
+<!-- COURTS -->
+<section class="sec grey" id="courts">
+  <div class="wrap reveal">
+    <div class="eyebrow">Balanced courts</div>
+    <h2 class="h-sec">Every game a good game.</h2>
+    <p class="lede">PBTable builds fair, balanced court line-ups in seconds — so a first-timer is never stuck against your two strongest players, and nobody sits out twice in a row.</p>
+    <div class="card slips">
+      <div class="slip"><span class="ct">R1 · C1</span><span class="team">Priya &amp; Tom</span><span class="vs">vs</span><span class="team r">Aisha &amp; Dan</span></div>
+      <div class="slip"><span class="ct">R1 · C2</span><span class="team">Grace &amp; Leo</span><span class="vs">vs</span><span class="team r">Nina &amp; Omar</span></div>
+      <div class="slip"><span class="ct">R1 · C3</span><span class="team">Sam &amp; Beth</span><span class="vs">vs</span><span class="team r">Kofi &amp; Ruth</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- RATINGS -->
+<section class="sec" id="ratings">
+  <div class="wrap reveal">
+    <div class="eyebrow">RDR ratings</div>
+    <h2 class="h-sec">A rating your players<br />actually trust.</h2>
+    <p class="lede">Enter the results and every player's Rally Doubles Rating updates instantly. Transparent, results-based, and owned by your club — no player app, no DUPR account needed.</p>
+    <div class="feat-media reveal">
+      <div class="frame" style="max-width:720px;margin:0 auto">
+        <div class="frame-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">Ratings updated · +0.07 avg</span></div>
+        <div class="lb">
+          <div class="lb-row top"><div class="lb-rank">▲</div><div class="lb-name">Aisha Khan</div><div class="lb-rating">4.41</div><div class="lb-move up">+0.13</div></div>
+          <div class="lb-row"><div class="lb-rank">▲</div><div class="lb-name">Priya Sharma</div><div class="lb-rating">4.62</div><div class="lb-move up">+0.05</div></div>
+          <div class="lb-row"><div class="lb-rank">▼</div><div class="lb-name">Tom Hargreaves</div><div class="lb-rating">4.55</div><div class="lb-move dn">−0.08</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BENTO -->
+<section class="sec grey">
+  <div class="wide reveal">
+    <h2 class="h-sec">Built for the way clubs really run.</h2>
+    <div class="bento">
+      <div class="tile lg"><h3>No player app</h3><p>Members just open a web link to see the leaderboard. Nothing to download, nothing to sign up for. Only you manage the club.</p></div>
+      <div class="tile"><div class="big">20<span style="font-size:24px"> min</span></div><p style="margin-top:10px">To set your club up from scratch.</p></div>
+      <div class="tile"><div class="big">£19</div><p style="margin-top:10px">A month. Founding rate, locked for life.</p></div>
+      <div class="tile"><h3>Your data, yours</h3><p>Export any time. No lock-in, ever.</p></div>
+      <div class="tile lg"><h3>Fair to newcomers</h3><p>Unrated players get a sensible starting level for balanced line-ups — never a faked rating, never dumped in the deep end.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="sec" id="pricing">
+  <div class="wrap reveal">
+    <div class="eyebrow">Pricing</div>
+    <h2 class="h-sec">One plan. Everything in.</h2>
+    <p class="lede">Every plan starts with a 30-day free trial. No card needed to start.</p>
+    <div class="price-card">
+      <div class="price-amt">£19<small> /mo</small></div>
+      <div class="price-note">Founding rate · first 20 clubs · locked for life</div>
+      <ul class="price-list">
+        <li>Bookings, payments &amp; waitlists</li>
+        <li>Balanced court line-ups</li>
+        <li>Live RDR ratings &amp; leaderboard</li>
+        <li>Graded &amp; social nights</li>
+      </ul>
+      <div><a class="btn btn-fill" href="#top">Start 30-day free trial</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section class="sec grey">
+  <div class="wrap reveal">
+    <h2 class="h-sec">Run a club night<br />your members love.</h2>
+    <div class="links-row">
+      <a class="lnk" href="#top">Start free trial <span class="cv">›</span></a>
+      <a class="lnk" href="#top">Watch the demo <span class="cv">›</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wide">
+    <div class="foot-top">
+      <div class="foot-col"><h4>Product</h4><a href="#bookings">Bookings</a><a href="#courts">Sessions</a><a href="#ratings">Ratings</a><a href="#pricing">Pricing</a></div>
+      <div class="foot-col"><h4>Clubs</h4><a href="#">Graded nights</a><a href="#">Social nights</a><a href="#">Live demo</a></div>
+      <div class="foot-col"><h4>Company</h4><a href="#">Blog</a><a href="#">Terms</a><a href="#">Data &amp; privacy</a></div>
+      <div class="foot-col"><h4>Get in touch</h4><a href="mailto:paul@pbtable.co.uk">paul@pbtable.co.uk</a><a href="#">pbtable.com</a></div>
+    </div>
+    <div class="foot-bottom">Ratings your players trust — and your club owns.<br />© 2026 PBTable · Paul Berry trading as Nexlane. Concept design.</div>
+  </div>
+</footer>
+
+<div class="concept-note">Apple-style concept · not live</div>
+
+<script>
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold:.12, rootMargin:'0px 0px -8% 0px' });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

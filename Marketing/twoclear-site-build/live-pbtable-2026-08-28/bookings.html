@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pickleball Booking System for UK Clubs — PBTable</title>
+<meta name="description" content="Sign-ups, payments, waitlists and balanced court line-ups in one closed loop — Spond, but built for pickleball. See what your club saves with the calculator." />
+<link rel="canonical" href="https://pbtable.com/bookings.html" />
+<meta name="robots" content="index,follow,max-image-preview:large" />
+<meta name="theme-color" content="#1B2B4B" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="PBTable" />
+<meta property="og:locale" content="en_GB" />
+<meta property="og:url" content="https://pbtable.com/bookings.html" />
+<meta property="og:title" content="Pickleball Booking System for UK Clubs — PBTable" />
+<meta property="og:description" content="Sign-ups, payments, waitlists and balanced court line-ups in one closed loop — Spond, but built for pickleball." />
+<meta property="og:image" content="https://pbtable.com/pbtable-og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Pickleball Booking System for UK Clubs — PBTable" />
+<meta name="twitter:description" content="Sign-ups, payments, waitlists and balanced court line-ups in one closed loop — built for pickleball." />
+<meta name="twitter:image" content="https://pbtable.com/pbtable-og.png" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://pbtable.com/"},{"@type":"ListItem","position":2,"name":"Bookings","item":"https://pbtable.com/bookings.html"}]}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Barlow+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --navy:#1B2B4B;--navy-deep:#0f1e38;--navy-mid:#243660;
+  --coral:#D94F2B;--coral-light:#ff6844;--amber:#E8A020;
+  --cream:#FAF7F2;--mid:#F0F2F5;--border:#E2E8F0;
+  --green:#16a34a;--green-soft:#e7f6ee;--red:#dc2626;
+  --ink:#1B2B4B;--muted:#5a6b86;
+  --radius:18px;--maxw:1180px;
+  --shadow-md:0 18px 45px -20px rgba(15,30,56,.4);
+  --shadow-cell:0 12px 34px -20px rgba(15,30,56,.28);
+  --accent:var(--coral);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Barlow',system-ui,sans-serif;font-weight:400;color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.55}
+h1,h2,h3,h4,.display{font-family:'Barlow Condensed','Barlow',sans-serif;font-weight:800;line-height:1.03;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+section{position:relative}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+
+.eyebrow{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.22em;font-size:13px;color:var(--accent);display:inline-flex;align-items:center;gap:9px}
+.eyebrow::before{content:"";width:26px;height:2px;background:currentColor;border-radius:2px;opacity:.7}
+.eyebrow.on-dark{color:var(--coral-light)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-family:'Barlow',sans-serif;font-weight:600;font-size:16px;padding:15px 28px;border-radius:13px;cursor:pointer;border:none;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background .25s,color .2s;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--coral-light),var(--coral));color:#fff;box-shadow:0 14px 30px -10px rgba(217,79,43,.7),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 22px 42px -12px rgba(217,79,43,.85)}
+.btn-ghost{background:rgba(255,255,255,.05);color:#fff;border:1.5px solid rgba(255,255,255,.22);backdrop-filter:blur(6px)}
+.btn-ghost:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.1)}
+.btn-dark{background:var(--navy);color:#fff;box-shadow:var(--shadow-md)}
+.btn-dark:hover{transform:translateY(-3px);background:var(--navy-mid)}
+.btn-light{background:#fff;color:var(--coral);box-shadow:0 16px 36px -14px rgba(0,0,0,.4)}
+.btn-light:hover{transform:translateY(-3px)}
+
+/* NAV */
+header.nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(15,30,56,.72);backdrop-filter:blur(16px) saturate(140%);border-bottom:1px solid rgba(255,255,255,.06);transition:background .3s,border-color .3s,box-shadow .3s}
+header.nav.scrolled{background:rgba(15,30,56,.94);border-bottom:1px solid rgba(217,79,43,.4);box-shadow:0 10px 40px -20px rgba(0,0,0,.7)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px}
+.brand{display:flex;align-items:center;gap:6px}
+.brand img{height:46px;width:auto}
+.brand .wordmark{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:25px;color:#fff;letter-spacing:.01em}
+.brand .wordmark b{color:var(--coral);font-weight:800}
+.nav-links{display:flex;align-items:center;gap:22px}
+.nav-links a.link{color:#cdd6e6;font-weight:500;font-size:15.5px;position:relative;transition:color .2s}
+.nav-links a.link::after{content:"";position:absolute;left:0;right:100%;bottom:-6px;height:2px;background:var(--coral);transition:right .3s;border-radius:2px}
+.nav-links a.link:hover{color:#fff}
+.nav-links a.link:hover::after,.nav-links a.link.active::after{right:0}
+.nav-links a.link.active{color:#fff}
+.hamburger{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:8px}
+.hamburger span{width:24px;height:2.5px;background:#fff;border-radius:2px;transition:.3s}
+
+/* SUBHERO */
+.subhero{background:radial-gradient(120% 130% at 15% 0%,var(--navy-mid),var(--navy-deep) 60%);color:#fff;padding:150px 0 84px;overflow:hidden}
+.subhero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.subhero h1{font-size:clamp(42px,5.4vw,72px);color:#fff;margin:16px 0 16px;letter-spacing:-.018em;line-height:.98}
+.subhero h1 .hl{color:var(--coral-light)}
+.subhero .lede{font-size:18px;color:#b7c2d6;max-width:520px;font-weight:300;margin-bottom:14px}
+.subhero .lede b{color:#e6ecf6;font-weight:600}
+.subhero .ctas{display:flex;gap:14px;flex-wrap:wrap;margin-top:26px}
+.crumb{font-size:13px;color:#8da0bd}
+.crumb a:hover{color:#fff}
+
+/* sections */
+.sec{padding:90px 0}
+.sec.mid{background:var(--mid)}
+.sec-head{max-width:680px;margin:0 auto 52px;text-align:center}
+.sec-head h2{font-size:clamp(32px,4.2vw,50px);color:var(--navy);margin:14px 0 12px;letter-spacing:-.02em}
+.sec-head p{color:var(--muted);font-size:17px}
+
+/* the loop */
+.loop{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.loop-step{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;box-shadow:var(--shadow-cell);position:relative}
+.loop-step .ln{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--coral)}
+.loop-step .lt{font-weight:700;font-size:14px;color:var(--navy);margin-top:6px;line-height:1.2}
+.loop-step .ld{font-size:12px;color:var(--muted);margin-top:4px}
+.loop-note{text-align:center;color:var(--muted);font-size:14.5px;margin-top:22px}
+.loop-note b{color:var(--navy)}
+@media(max-width:900px){.loop{grid-template-columns:repeat(2,1fr)}}
+
+/* alternating feature rows */
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center;margin-bottom:72px}
+.frow:last-child{margin-bottom:0}
+.frow.flip .fcopy{order:2}
+.f-tag{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--coral);font-weight:500}
+.fcopy h3{font-size:30px;color:var(--navy);margin:12px 0 12px;letter-spacing:-.02em}
+.fcopy p{color:var(--muted);font-size:16.5px;max-width:460px}
+.fcopy ul{list-style:none;margin:18px 0 0;display:flex;flex-direction:column;gap:10px}
+.fcopy li{display:flex;gap:11px;align-items:baseline;font-size:15.5px;font-weight:500;color:var(--ink)}
+.fcopy li svg{width:15px;height:15px;flex-shrink:0;stroke:var(--coral);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;transform:translateY(2px)}
+@media(max-width:860px){.frow{grid-template-columns:1fr;gap:28px;margin-bottom:56px}.frow.flip .fcopy{order:0}}
+
+/* app-style mock cards */
+.mock{background:var(--mid);border:1px solid var(--border);border-radius:22px;padding:22px;box-shadow:var(--shadow-cell)}
+.mock-bar{display:flex;align-items:center;gap:7px;padding:0 4px 14px}
+.mock-bar i{width:11px;height:11px;border-radius:50%;background:#cbd5e1;display:block}
+.mock-bar span{margin-left:8px;font-size:12px;color:var(--muted);font-weight:600}
+.ui-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;color:var(--ink)}
+.ui-card + .ui-card{margin-top:12px}
+.ui-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ui-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--navy);font-size:19px}
+.badge{display:inline-flex;align-items:center;gap:5px;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:11px;padding:5px 11px;border-radius:999px}
+.badge.graded{background:var(--coral);color:#fff}
+.badge.green{background:var(--green);color:#fff}
+.badge.grey{background:var(--mid);color:var(--muted)}
+/* wallet */
+.wal-bal{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:34px;color:var(--navy);letter-spacing:-.01em}
+.wal-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.led{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border);font-size:14px}
+.led:first-of-type{border-top:none}
+.led .ll{font-weight:500}
+.led .lv{font-family:'JetBrains Mono',monospace;font-weight:700}
+.led .lv.up{color:var(--green)}
+.led .lv.dn{color:var(--navy)}
+.ui-btn{margin-top:14px;background:linear-gradient(135deg,var(--coral-light),var(--coral));color:#fff;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:14.5px}
+.ui-note{margin-top:12px;font-size:12.5px;color:var(--muted);text-align:center;font-weight:500}
+.roster-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid var(--border);font-size:14px}
+.roster-row:first-of-type{border-top:none}
+.roster-row .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.roster-row .tag.g{color:var(--green)}
+.roster-row .tag.a{color:var(--muted)}
+/* slips */
+.slips{background:linear-gradient(165deg,var(--navy),var(--navy-deep));border-radius:14px;padding:20px}
+.slips h4{color:#fff;font-size:19px}
+.slips .desc{color:rgba(255,255,255,.72);font-size:13px;margin-top:4px;font-weight:400;line-height:1.45}
+.slip{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 13px;margin-top:11px}
+.slip .st{display:flex;justify-content:space-between;align-items:center}
+.slip .ct{font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.08em;font-size:10.5px;color:var(--coral-light)}
+.slip .av{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:rgba(255,255,255,.68)}
+.slip .teams{display:flex;align-items:center;gap:12px;margin-top:7px}
+.slip .team{flex:1;font-size:13.5px;font-weight:600;color:#fff}
+.slip .team.r{text-align:right}
+.slip .vs{font-size:9.5px;font-weight:800;color:rgba(255,255,255,.5)}
+
+/* savings calculator embed */
+.calc-frame-wrap{max-width:1100px;margin:0 auto;border-radius:22px;overflow:hidden;box-shadow:var(--shadow-cell);border:1px solid var(--border);background:#EEF1F6}
+#calcFrame{width:100%;border:0;display:block}
+.calc-fallback{text-align:center;margin-top:18px;font-size:14.5px;color:var(--muted)}
+.calc-fallback a{color:var(--coral);font-weight:600}
+
+/* crosslink + cta + footer */
+.xlink{background:linear-gradient(150deg,var(--navy),var(--navy-deep));border-radius:22px;padding:44px;display:flex;align-items:center;justify-content:space-between;gap:26px;flex-wrap:wrap}
+.xlink h3{color:#fff;font-size:30px;margin:10px 0 6px}
+.xlink p{color:#b7c2d6;font-size:15.5px;max-width:480px;font-weight:300}
+.cta-banner{background:linear-gradient(135deg,var(--coral),#b83c1c);text-align:center;padding:80px 0}
+.cta-banner h2{color:#fff;font-size:clamp(30px,4vw,46px);margin-bottom:14px}
+.cta-banner p{color:rgba(255,255,255,.9);font-size:17px;margin-bottom:28px;font-weight:300}
+.cta-banner .ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+footer.site{background:var(--navy-deep);padding:70px 0 34px;color:#fff}
+.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:42px}
+.foot-brand .brand{margin-bottom:16px}
+.foot-brand img{height:40px}
+.foot-brand p{color:#8da0bd;font-size:15px;font-weight:300;max-width:300px}
+.foot-brand .strap{color:var(--amber);font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;margin-top:12px}
+.foot-col h4{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:#fff;margin-bottom:16px}
+.foot-col a{display:block;color:#8da0bd;font-size:15px;padding:6px 0;transition:color .2s}
+.foot-col a:hover{color:var(--coral-light)}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.07);padding-top:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.foot-bottom .cpy{color:#6f82a3;font-size:13.5px}
+.foot-bottom .cpy a{color:#9fb0cc}
+.foot-bottom .nex{color:#6f82a3;font-size:13.5px}
+.foot-bottom .nex b{color:#aeb9cf;font-weight:600}
+
+@media(max-width:900px){
+  .subhero .grid{grid-template-columns:1fr;gap:44px}
+  .subhero{padding:120px 0 64px}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .nav-links{position:fixed;top:74px;left:0;right:0;flex-direction:column;background:rgba(15,30,56,.98);backdrop-filter:blur(16px);padding:22px;gap:18px;transform:translateY(-140%);transition:transform .35s;border-bottom:1px solid rgba(217,79,43,.3)}
+  .nav-links.show{transform:translateY(0)}
+  .nav-links a.link{font-size:17px}
+  .hamburger{display:flex}
+}
+@media(max-width:560px){.foot-grid{grid-template-columns:1fr;gap:30px}.xlink{padding:30px}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html">
+      <img src="pbtable-logo.png" alt="PBTable logo" />
+      <span class="wordmark">PB<b>Table</b></span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a class="link" href="index.html" onclick="closeMenu()">Home</a>
+      <a class="link" href="graded-sessions.html" onclick="closeMenu()">Graded</a>
+      <a class="link" href="social-sessions.html" onclick="closeMenu()">Social</a>
+      <a class="link active" href="bookings.html" onclick="closeMenu()">Bookings</a>
+      <a class="link" href="blog/" onclick="closeMenu()">Blog</a>
+      <a class="link" href="index.html#pricing" onclick="closeMenu()">Pricing</a>
+      <a class="link" href="index.html#contact" onclick="closeMenu()">Contact</a>
+      <a class="btn btn-primary" href="index.html#order" onclick="closeMenu()" style="padding:11px 22px;font-size:15px">Order Now</a>
+    </nav>
+    <button class="hamburger" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="subhero" id="top">
+  <div class="wrap grid">
+    <div>
+      <div class="crumb"><a href="index.html">Home</a> · Bookings</div>
+      <div class="eyebrow on-dark" style="margin-top:12px">Bookings &amp; payments</div>
+      <h1>Sign-ups and payments, <span class="hl">built for pickleball</span></h1>
+      <p class="lede">One closed loop: members <b>book &amp; pay</b>, PBTable balances the teams, you play, scores go in, ratings move, and the leaderboard pulls them back to book again.</p>
+      <p class="lede">Think <b>Spond, but tailored for your club</b> — with the court line-ups, ratings and waitlists Spond leaves you to sort by hand.</p>
+      <div class="ctas">
+        <a class="btn btn-primary" href="index.html#order">Start your club</a>
+        <a class="btn btn-ghost" href="https://demo.pbtable.com" target="_blank" rel="noopener">See the live demo →</a>
+      </div>
+    </div>
+    <div class="mock">
+      <div class="mock-bar"><i></i><i></i><i></i><span>Member · Wallet</span></div>
+      <div class="ui-card">
+        <div class="ui-head"><div class="ui-title">Your wallet</div><span class="badge grey">In credit</span></div>
+        <div class="wal-bal">£42.00</div>
+        <div class="wal-sub">Covers your next 7 sessions</div>
+      </div>
+      <div class="ui-card">
+        <div class="led"><span class="ll">Top-up</span><span class="lv up">+£30.00</span></div>
+        <div class="led"><span class="ll">Thu Club League</span><span class="lv dn">−£6.00</span></div>
+        <div class="led"><span class="ll">Cancelled — refunded to wallet</span><span class="lv up">+£6.00</span></div>
+        <div class="ui-btn">Book Thursday · £6</div>
+        <div class="ui-note">Money in, money back — never lost to a card refund.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THE LOOP -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow" style="justify-content:center">One closed loop</div>
+      <h2>Bookings feed the whole club</h2>
+      <p>Every part connects, so a booking isn't the end of the job — it's the start of the thing that keeps members coming back.</p>
+    </div>
+    <div class="loop">
+      <div class="loop-step"><div class="ln">01</div><div class="lt">Book &amp; pay</div><div class="ld">From a prepaid wallet</div></div>
+      <div class="loop-step"><div class="ln">02</div><div class="lt">Balanced teams</div><div class="ld">Fair slips from RDR</div></div>
+      <div class="loop-step"><div class="ln">03</div><div class="lt">Play</div><div class="ld">Close, fun games</div></div>
+      <div class="loop-step"><div class="ln">04</div><div class="lt">Scores in</div><div class="ld">One tap per court</div></div>
+      <div class="loop-step"><div class="ln">05</div><div class="lt">Ratings move</div><div class="ld">RDR updates live</div></div>
+      <div class="loop-step"><div class="ln">06</div><div class="lt">Book again</div><div class="ld">To climb the table</div></div>
+    </div>
+    <p class="loop-note">It's a loop competitors don't close: sign-ups tools stop at step 1. <b>PBTable runs all six.</b></p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec mid">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow" style="justify-content:center">What clubs get</div>
+      <h2>The booking admin, handled</h2>
+    </div>
+
+    <!-- Prepaid wallet -->
+    <div class="frow">
+      <div class="fcopy">
+        <span class="f-tag">Prepaid wallet</span>
+        <h3>Members top up once, then just play</h3>
+        <p>Each member holds a balance in pounds. Booking draws the session price from it; a cancellation puts the money straight back — never out to a card.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> One card payment per top-up, not per booking</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Refunds return to the wallet, instantly</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> A full deposit / spend / refund ledger</li>
+        </ul>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Member · Top up</span></div>
+        <div class="ui-card">
+          <div class="ui-head"><div class="ui-title">Add to wallet</div></div>
+          <div class="led"><span class="ll">Balance now</span><span class="lv dn">£4.00</span></div>
+          <div class="led"><span class="ll">Top up (covers 5 sessions)</span><span class="lv up">+£30.00</span></div>
+          <div class="led"><span class="ll">New balance</span><span class="lv dn">£34.00</span></div>
+          <div class="ui-btn">Add £30 by card</div>
+          <div class="ui-note">The one place real money enters — every booking after is instant.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waitlist + cancellation -->
+    <div class="frow flip">
+      <div class="fcopy">
+        <span class="f-tag">Waitlist &amp; refunds</span>
+        <h3>Full sessions fill themselves</h3>
+        <p>When a session is full the waitlist takes over. Cancel in time and it's a full refund to your wallet; cancel late and you're only refunded if a waitlister takes your seat — and PBTable promotes them automatically.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Automatic waitlist promotion</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> A fair, single 24-hour cancellation rule</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> No organiser chasing the group chat</li>
+        </ul>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Session · Thursday Club League</span></div>
+        <div class="ui-card">
+          <div class="ui-head"><div class="ui-title">Waitlist</div><span class="badge grey">12/12 full</span></div>
+          <div class="roster-row"><span>P. Callahan cancelled</span><span class="tag a">Seat freed</span></div>
+          <div class="roster-row"><span>H. Reyes promoted from waitlist</span><span class="tag g">Booked</span></div>
+          <div class="roster-row"><span>P. Callahan refunded to wallet</span><span class="tag g">+£6.00</span></div>
+          <div class="ui-note">Everyone sorted automatically — no messages, no clipboard.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bookings become the line-up -->
+    <div class="frow">
+      <div class="fcopy">
+        <span class="f-tag">No roster to build</span>
+        <h3>The players who book <em style="font-style:normal;color:var(--coral)">are</em> the line-up</h3>
+        <p>On other tools you'd still round up who's actually playing and split the sides yourself. In PBTable every booking drops straight into the session line-up — so the moment sign-ups close, it's ready for balanced teams. Nothing to type up, no sides to pick.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> The roster fills itself as members book</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> One tap from a full session to balanced slips</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Drop-outs and waitlisters update it live</li>
+        </ul>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Admin · Thursday Club League</span></div>
+        <div class="ui-card">
+          <div class="ui-head"><div class="ui-title">Tonight's line-up</div><span class="badge grey">12/12 booked</span></div>
+          <div class="roster-row"><span>K. Ashworth</span><span class="tag g">Booked in</span></div>
+          <div class="roster-row"><span>M. Oduya</span><span class="tag g">Booked in</span></div>
+          <div class="roster-row"><span>S. Fletcher</span><span class="tag g">Booked in</span></div>
+          <div class="roster-row"><span>+ 9 more, straight from bookings</span><span class="tag a">Auto-filled</span></div>
+          <div class="ui-btn">Generate balanced slips →</div>
+          <div class="ui-note">You picked no one — the players who booked are the roster.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Balanced court slips -->
+    <div class="frow flip">
+      <div class="fcopy">
+        <span class="f-tag">Balanced court slips</span>
+        <h3>Fair teams, generated in a tap</h3>
+        <p>The moment your roster's set, PBTable builds the court line-ups in a tap — strong players paired with developing ones, and partners rotating every round. No captains huddled over a whiteboard.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> Team averages within ~0.1 — every court a close game</li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b style="color:var(--coral)">Graded:</b> ranking-based court assignments, so you play others at your level</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b style="color:var(--green)">Social:</b> a choice of game modes — round robin, ladder, box league &amp; coached nights</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> <span><b>New &amp; unrated players</b> get a sensible starting level — never a faked rating — so first-timers still get fair, even games</span></li>
+        </ul>
+      </div>
+      <div class="mock">
+        <div class="mock-bar"><i></i><i></i><i></i><span>Admin · Court slips</span></div>
+        <div class="slips">
+          <h4>Balanced court slips</h4>
+          <div class="desc">Fair teams from RDR — strong paired with developing, no repeated partners.</div>
+          <div class="slip">
+            <div class="st"><span class="ct">ROUND 1 · COURT 1</span><span class="av">3.42 v 3.51</span></div>
+            <div class="teams"><span class="team">K. Ashworth &amp; P. Callahan</span><span class="vs">VS</span><span class="team r">M. Oduya &amp; S. Fletcher</span></div>
+          </div>
+          <div class="slip">
+            <div class="st"><span class="ct">ROUND 1 · COURT 2</span><span class="av">4.01 v 3.96</span></div>
+            <div class="teams"><span class="team">R. Nkemdirim &amp; T. Balogun</span><span class="vs">VS</span><span class="team r">J. Ellery &amp; D. Marsh</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SAVINGS CALCULATOR -->
+<section class="sec" id="savings">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow" style="justify-content:center">Run the numbers</div>
+      <h2>See what your club saves</h2>
+      <p>Because members pre-pay a wallet, PBTable makes far fewer card transactions than Spond — and you keep the fixed fee on every one removed. Drag the sliders to match your club.</p>
+    </div>
+    <div class="calc-frame-wrap">
+      <iframe id="calcFrame" src="savings-calculator.html?theme=light" title="PBTable club booking savings calculator" scrolling="no" style="height:1040px"></iframe>
+    </div>
+    <p class="calc-fallback">Prefer it full-screen? <a href="savings-calculator.html" target="_blank" rel="noopener">Open the calculator in its own tab →</a></p>
+  </div>
+</section>
+
+<!-- CROSSLINK -->
+<section class="sec mid">
+  <div class="wrap">
+    <div class="xlink">
+      <div>
+        <div class="eyebrow on-dark">Two ways to play</div>
+        <h3>Bookings power both kinds of night</h3>
+        <p>The same booking, wallet and waitlist tools run your relaxed social evenings and your competitive graded leagues.</p>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a class="btn btn-primary" href="graded-sessions.html">Graded →</a>
+        <a class="btn btn-dark" href="social-sessions.html">Social →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-banner">
+  <div class="wrap">
+    <h2>Give your club a booking system that pays for itself</h2>
+    <p>Set up in about 20 minutes — founding-club pricing while the first 20 spots last.</p>
+    <div class="ctas">
+      <a class="btn btn-light" href="index.html#order">Start your club →</a>
+      <a class="btn btn-ghost" href="https://demo.pbtable.com" target="_blank" rel="noopener">See live demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="index.html">
+          <img src="pbtable-logo.png" alt="PBTable logo" />
+          <span class="wordmark" style="font-size:23px">PB<b>Table</b></span>
+        </a>
+        <p>Booking, payments, court line-ups, ratings &amp; waitlists for UK pickleball clubs.</p>
+        <p class="strap">Ratings your players trust — and your club owns.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Product</h4>
+        <a href="graded-sessions.html">Graded sessions</a>
+        <a href="social-sessions.html">Social sessions</a>
+        <a href="bookings.html">Bookings</a>
+        <a href="blog/">Blog</a>
+        <a href="index.html#pricing">Pricing</a>
+        <a href="https://demo.pbtable.com" target="_blank" rel="noopener">Live demo</a>
+      </div>
+      <div class="foot-col">
+        <h4>Get in touch</h4>
+        <a href="index.html#contact">Contact us</a>
+        <a href="index.html#order">Order now</a>
+        <a href="mailto:paul@pbtable.co.uk">paul@pbtable.co.uk</a>
+        <a href="https://pbtable.com">pbtable.com</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div class="cpy">© <span id="yr">2026</span> PBTable · <a href="https://pbtable.com">pbtable.com</a> · <a href="https://pbtable.co.uk">pbtable.co.uk</a></div>
+      <div class="nex">Powered by <b>Nexlane</b></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 30));
+function toggleMenu(){ document.getElementById('navLinks').classList.toggle('show'); }
+function closeMenu(){ document.getElementById('navLinks').classList.remove('show'); }
+document.getElementById('yr').textContent = new Date().getFullYear();
+/* auto-size the embedded savings calculator to its content (no inner scrollbar) */
+window.addEventListener('message', function(e){
+  if(e.data && typeof e.data.pbtCalcHeight === 'number'){
+    document.getElementById('calcFrame').style.height = (e.data.pbtCalcHeight + 8) + 'px';
+  }
+});
+</script>
+</body>
+</html>
